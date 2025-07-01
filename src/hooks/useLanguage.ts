@@ -20,8 +20,14 @@ export function useLanguage() {
   }, [languageSettings.language]);
 
   const changeLanguage = (newLanguage: Language) => {
+    // Update the language setting
     setLanguageSettings({ language: newLanguage });
     setCurrentLanguage(newLanguage);
+    
+    // Force page refresh to ensure all components update
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
   };
 
   const updateLanguageSwitchPreference = (preference: Partial<LanguageSwitchPreference>) => {

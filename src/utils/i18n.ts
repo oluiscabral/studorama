@@ -201,6 +201,57 @@ export interface Translations {
   resetLanguagePreferences: string;
   languagePreferencesReset: string;
   
+  // Support/Pricing Page
+  supportStudorama: string;
+  supportStudoramaDesc: string;
+  freeForever: string;
+  freeForeverDesc: string;
+  sponsorshipHelps: string;
+  noAccountRequired: string;
+  noAccountRequiredDesc: string;
+  startLearningImmediately: string;
+  noBarriersToLearning: string;
+  noEmailRequired: string;
+  noPasswordToRemember: string;
+  noVerificationSteps: string;
+  noPersonalDataCollection: string;
+  startStudyingInSeconds: string;
+  privacyFocused: string;
+  dataStaysInBrowser: string;
+  noTrackingOrAnalytics: string;
+  yourApiKeyStaysLocal: string;
+  completeAnonymity: string;
+  gdprCompliantByDesign: string;
+  sponsorshipTiers: string;
+  librarySponsor: string;
+  bookSponsor: string;
+  coffeeSponsor: string;
+  librarySponsorDesc: string;
+  bookSponsorDesc: string;
+  coffeeSponsorDesc: string;
+  monthlySponsorship: string;
+  becomeSponsor: string;
+  externalCheckout: string;
+  accountOptional: string;
+  whySponsorStudorama: string;
+  keepItFree: string;
+  keepItFreeDesc: string;
+  fundDevelopment: string;
+  fundDevelopmentDesc: string;
+  serverCosts: string;
+  serverCostsDesc: string;
+  privacyFirst: string;
+  privacyFirstDesc: string;
+  supportFreeEducation: string;
+  helpImprovePlatform: string;
+  recognitionAsSupporter: string;
+  helpKeepPlatformAccountless: string;
+  mostPopular: string;
+  startLearningInstantly: string;
+  startLearningInstantlyDesc: string;
+  transparencyTrust: string;
+  transparencyTrustDesc: string;
+  
   // Common
   loading: string;
   error: string;
@@ -415,6 +466,57 @@ const translations: Record<Language, Translations> = {
     resetLanguagePreferences: 'Reset Language Preferences',
     languagePreferencesReset: 'Language preferences have been reset. The modal will appear again when switching languages.',
     
+    // Support/Pricing Page
+    supportStudorama: 'Support Studorama',
+    supportStudoramaDesc: 'Studorama is completely free to use and always will be. Your sponsorship helps us maintain and improve the platform for everyone.',
+    freeForever: '100% Free Forever',
+    freeForeverDesc: 'All features are available to everyone at no cost. No account required! Sponsorships help us keep it that way.',
+    sponsorshipHelps: 'Your sponsorship helps us maintain Studorama as a completely free, accountless platform for all learners worldwide.',
+    noAccountRequired: 'No Account Required!',
+    noAccountRequiredDesc: 'Start learning immediately! Studorama works completely without creating an account. Your study sessions are saved locally in your browser. All AI-powered features, spaced repetition, and learning techniques are available instantly.',
+    startLearningImmediately: 'Start learning immediately',
+    noBarriersToLearning: 'No Barriers to Learning',
+    noEmailRequired: 'No email required',
+    noPasswordToRemember: 'No password to remember',
+    noVerificationSteps: 'No verification steps',
+    noPersonalDataCollection: 'No personal data collection',
+    startStudyingInSeconds: 'Start studying in seconds',
+    privacyFocused: 'Privacy Focused',
+    dataStaysInBrowser: 'Data stays in your browser',
+    noTrackingOrAnalytics: 'No tracking or analytics',
+    yourApiKeyStaysLocal: 'Your API key stays local',
+    completeAnonymity: 'Complete anonymity',
+    gdprCompliantByDesign: 'GDPR compliant by design',
+    sponsorshipTiers: 'Sponsorship Tiers',
+    librarySponsor: 'Library',
+    bookSponsor: 'Book',
+    coffeeSponsor: 'Coffee',
+    librarySponsorDesc: 'Support Studorama development with a generous monthly sponsorship. Help us maintain and improve the platform for everyone.',
+    bookSponsorDesc: 'Show your appreciation with a monthly contribution. Every bit helps us keep Studorama free and accessible.',
+    coffeeSponsorDesc: 'Buy us a coffee each month! A small gesture that makes a big difference in supporting our mission.',
+    monthlySponsorship: 'Monthly sponsorship',
+    becomeSponsor: 'Become a Sponsor',
+    externalCheckout: 'External checkout',
+    accountOptional: 'account optional',
+    whySponsorStudorama: 'Why Sponsor Studorama?',
+    keepItFree: 'Keep It Free',
+    keepItFreeDesc: 'Help us maintain Studorama as a completely free, accountless platform for all learners worldwide.',
+    fundDevelopment: 'Fund Development',
+    fundDevelopmentDesc: 'Support ongoing development of new features and improvements to enhance learning.',
+    serverCosts: 'Server Costs',
+    serverCostsDesc: 'Cover hosting, AI API costs, and infrastructure to keep the platform running smoothly.',
+    privacyFirst: 'Privacy First',
+    privacyFirstDesc: 'Support a platform that respects privacy by not requiring accounts or collecting personal data.',
+    supportFreeEducation: 'Support free education for everyone',
+    helpImprovePlatform: 'Help improve platform features',
+    recognitionAsSupporter: 'Recognition as a supporter',
+    helpKeepPlatformAccountless: 'Help keep the platform accountless',
+    mostPopular: 'Most Popular',
+    startLearningInstantly: 'Start Learning Instantly',
+    startLearningInstantlyDesc: 'Studorama is fully responsive and works seamlessly across mobile devices, tablets, desktop computers, and large screens.',
+    transparencyTrust: 'Transparency & Trust',
+    transparencyTrustDesc: 'Your sponsorship goes directly to: Server hosting costs, OpenAI API usage, development time, and platform maintenance. We believe in keeping education accessible to everyone, regardless of their financial situation or willingness to create accounts. Studorama will always remain free and accountless.',
+    
     // Common
     loading: 'Loading...',
     error: 'Error',
@@ -627,6 +729,57 @@ const translations: Record<Language, Translations> = {
     manageLanguagePreferences: 'Gerenciar Preferências de Troca de Idioma',
     resetLanguagePreferences: 'Redefinir Preferências de Idioma',
     languagePreferencesReset: 'As preferências de idioma foram redefinidas. O modal aparecerá novamente ao trocar de idioma.',
+    
+    // Support/Pricing Page
+    supportStudorama: 'Apoie o Studorama',
+    supportStudoramaDesc: 'O Studorama é completamente gratuito para usar e sempre será. Seu patrocínio nos ajuda a manter e melhorar a plataforma para todos.',
+    freeForever: '100% Gratuito Para Sempre',
+    freeForeverDesc: 'Todos os recursos estão disponíveis para todos sem custo. Nenhuma conta necessária! Os patrocínios nos ajudam a manter assim.',
+    sponsorshipHelps: 'Seu patrocínio nos ajuda a manter o Studorama como uma plataforma completamente gratuita e sem necessidade de conta para todos os estudantes do mundo.',
+    noAccountRequired: 'Nenhuma Conta Necessária!',
+    noAccountRequiredDesc: 'Comece a aprender imediatamente! O Studorama funciona completamente sem criar uma conta. Suas sessões de estudo são salvas localmente no seu navegador. Todos os recursos com IA, repetição espaçada e técnicas de aprendizado estão disponíveis instantaneamente.',
+    startLearningImmediately: 'Comece a aprender imediatamente',
+    noBarriersToLearning: 'Sem Barreiras para o Aprendizado',
+    noEmailRequired: 'Nenhum email necessário',
+    noPasswordToRemember: 'Nenhuma senha para lembrar',
+    noVerificationSteps: 'Nenhuma etapa de verificação',
+    noPersonalDataCollection: 'Nenhuma coleta de dados pessoais',
+    startStudyingInSeconds: 'Comece a estudar em segundos',
+    privacyFocused: 'Focado na Privacidade',
+    dataStaysInBrowser: 'Dados ficam no seu navegador',
+    noTrackingOrAnalytics: 'Sem rastreamento ou análises',
+    yourApiKeyStaysLocal: 'Sua chave da API fica local',
+    completeAnonymity: 'Anonimato completo',
+    gdprCompliantByDesign: 'Compatível com GDPR por design',
+    sponsorshipTiers: 'Níveis de Patrocínio',
+    librarySponsor: 'Biblioteca',
+    bookSponsor: 'Livro',
+    coffeeSponsor: 'Café',
+    librarySponsorDesc: 'Apoie o desenvolvimento do Studorama com um patrocínio mensal generoso. Ajude-nos a manter e melhorar a plataforma para todos.',
+    bookSponsorDesc: 'Mostre seu apreço com uma contribuição mensal. Cada bit nos ajuda a manter o Studorama gratuito e acessível.',
+    coffeeSponsorDesc: 'Nos pague um café todo mês! Um pequeno gesto que faz uma grande diferença em apoiar nossa missão.',
+    monthlySponsorship: 'Patrocínio mensal',
+    becomeSponsor: 'Tornar-se Patrocinador',
+    externalCheckout: 'Checkout externo',
+    accountOptional: 'conta opcional',
+    whySponsorStudorama: 'Por que Patrocinar o Studorama?',
+    keepItFree: 'Manter Gratuito',
+    keepItFreeDesc: 'Ajude-nos a manter o Studorama como uma plataforma completamente gratuita e sem necessidade de conta para todos os estudantes do mundo.',
+    fundDevelopment: 'Financiar Desenvolvimento',
+    fundDevelopmentDesc: 'Apoie o desenvolvimento contínuo de novos recursos e melhorias para aprimorar o aprendizado.',
+    serverCosts: 'Custos do Servidor',
+    serverCostsDesc: 'Cubra custos de hospedagem, API de IA e infraestrutura para manter a plataforma funcionando suavemente.',
+    privacyFirst: 'Privacidade em Primeiro Lugar',
+    privacyFirstDesc: 'Apoie uma plataforma que respeita a privacidade não exigindo contas ou coletando dados pessoais.',
+    supportFreeEducation: 'Apoie educação gratuita para todos',
+    helpImprovePlatform: 'Ajude a melhorar os recursos da plataforma',
+    recognitionAsSupporter: 'Reconhecimento como apoiador',
+    helpKeepPlatformAccountless: 'Ajude a manter a plataforma sem necessidade de conta',
+    mostPopular: 'Mais Popular',
+    startLearningInstantly: 'Comece a Aprender Instantaneamente',
+    startLearningInstantlyDesc: 'O Studorama é totalmente responsivo e funciona perfeitamente em dispositivos móveis, tablets, computadores desktop e telas grandes.',
+    transparencyTrust: 'Transparência e Confiança',
+    transparencyTrustDesc: 'Seu patrocínio vai diretamente para: Custos de hospedagem do servidor, uso da API OpenAI, tempo de desenvolvimento e manutenção da plataforma. Acreditamos em manter a educação acessível para todos, independentemente de sua situação financeira ou disposição para criar contas. O Studorama sempre permanecerá gratuito e sem necessidade de conta.',
     
     // Common
     loading: 'Carregando...',

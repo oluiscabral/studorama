@@ -11,24 +11,24 @@ export const products: Product[] = [
   {
     id: 'prod_SbO1ff2wVlI1Me',
     priceId: 'price_1RgBFtGzYU9LC2rhWCNUvQNG',
-    name: 'Library',
-    description: 'Support Studorama development with a generous monthly sponsorship. Help us maintain and improve the platform for everyone.',
+    name: 'Advanced',
+    description: 'Ad-free content; Private community; General Support; Behind-the-scenes content; Exclusive voting power.',
     mode: 'subscription',
     price: 50.00
   },
   {
     id: 'prod_SbO1n8r99BIcBa',
     priceId: 'price_1RgBFfGzYU9LC2rh4LDpFBCr',
-    name: 'Book',
-    description: 'Show your appreciation with a monthly contribution. Every bit helps us keep Studorama free and accessible.',
+    name: 'Standard',
+    description: 'Ad-free content; Private community; General Support; Behind-the-scenes content; Exclusive voting power.',
     mode: 'subscription',
     price: 15.00
   },
   {
     id: 'prod_SbO0pzgHDGvxyA',
     priceId: 'price_1RgBEPGzYU9LC2rhy3WTMOmk',
-    name: 'Coffee',
-    description: 'Buy us a coffee each month! A small gesture that makes a big difference in supporting our mission.',
+    name: 'Basic',
+    description: 'Ad-free content; Private community; General Support; Behind-the-scenes content; Exclusive voting power.',
     mode: 'subscription',
     price: 5.00
   }

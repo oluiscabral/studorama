@@ -8,23 +8,30 @@ import SessionDetails from './components/SessionDetails';
 import Settings from './components/Settings';
 import PricingPage from './components/pricing/PricingPage';
 import SuccessPage from './components/success/SuccessPage';
-import AccountPage from './components/account/AccountPage';
+import DropboxAuthCallback from './components/dropbox/DropboxAuthCallback';
 
 function App() {
   return (
     <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/study" element={<StudySession />} />
-          <Route path="/history" element={<SessionHistory />} />
-          <Route path="/session/:id" element={<SessionDetails />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/success" element={<SuccessPage />} />
-          <Route path="/account" element={<AccountPage />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        {/* Auth callback route without layout */}
+        <Route path="/dropbox-callback" element={<DropboxAuthCallback />} />
+        
+        {/* Main app routes with layout */}
+        <Route path="/*" element={
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/study" element={<StudySession />} />
+              <Route path="/history" element={<SessionHistory />} />
+              <Route path="/session/:id" element={<SessionDetails />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/success" element={<SuccessPage />} />
+            </Routes>
+          </Layout>
+        } />
+      </Routes>
     </Router>
   );
 }

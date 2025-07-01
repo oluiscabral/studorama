@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Key, Save, Eye, EyeOff, ExternalLink, Bot, MessageSquare, Github, Linkedin, Brain, Globe, RefreshCw } from 'lucide-react';
+import { Key, Save, Eye, EyeOff, ExternalLink, Bot, MessageSquare, Github, Linkedin, Brain, Globe, RefreshCw, Cloud } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
 import { Language } from '../types';
 import LanguageSwitchModal from './LanguageSwitchModal';
+import DropboxSyncSettings from './dropbox/DropboxSyncSettings';
 
 const OPENAI_MODELS = [
   { value: 'gpt-4o', label: 'GPT-4o (Recommended)', description: 'Latest and most capable model' },
@@ -49,7 +50,7 @@ export default function Settings() {
   const [tempModel, setTempModel] = useState(apiSettings.model || 'gpt-4o-mini');
   const [tempPrompts, setTempPrompts] = useState(apiSettings.customPrompts || getDefaultPrompts(language));
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'language' | 'about'>('api');
+  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'language' | 'sync' | 'about'>('api');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [pendingLanguage, setPendingLanguage] = useState<Language | null>(null);
   const [preferencesReset, setPreferencesReset] = useState(false);
@@ -143,6 +144,7 @@ export default function Settings() {
               { id: 'prompts', label: t.aiPrompts, icon: MessageSquare },
               { id: 'learning', label: t.learningTechniquesTab, icon: Brain },
               { id: 'language', label: t.language, icon: Globe },
+              { id: 'sync', label: language === 'pt-BR' ? 'Sincronização' : 'Sync', icon: Cloud },
               { id: 'about', label: t.about, icon: Bot }
             ].map(({ id, label, icon: Icon }) => (
               <button
@@ -332,6 +334,30 @@ export default function Settings() {
                   }
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* Sync Tab */}
+          {activeTab === 'sync' && (
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Cloud className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {language === 'pt-BR' ? 'Sincronização na Nuvem' : 'Cloud Sync'}
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    {language === 'pt-BR' 
+                      ? 'Sincronize seus dados entre dispositivos usando Dropbox'
+                      : 'Sync your data across devices using Dropbox'
+                    }
+                  </p>
+                </div>
+              </div>
+
+              <DropboxSyncSettings />
             </div>
           )}
 

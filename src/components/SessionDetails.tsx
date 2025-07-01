@@ -2,30 +2,33 @@ import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, BookOpen, TrendingUp, CheckCircle, XCircle, Clock, Target } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useLanguage } from '../hooks/useLanguage';
 import { StudySession } from '../types';
+import { formatDate } from '../utils/i18n';
 
 export default function SessionDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   const [sessions] = useLocalStorage<StudySession[]>('studorama-sessions', []);
   
   const session = sessions.find(s => s.id === id);
 
   if (!session) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <BookOpen className="w-8 h-8 text-gray-400" />
           </div>
-          <h2 className="text-xl font-medium text-gray-900 mb-2">Session Not Found</h2>
-          <p className="text-gray-600 mb-6">The study session you're looking for doesn't exist.</p>
+          <h2 className="text-xl font-medium text-gray-900 mb-2">{t.sessionNotFound}</h2>
+          <p className="text-gray-600 mb-6">{t.sessionNotFoundDesc}</p>
           <Link
             to="/history"
             className="inline-flex items-center bg-orange-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-700 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to History
+            {t.backToHistory}
           </Link>
         </div>
       </div>
@@ -37,9 +40,9 @@ export default function SessionDetails() {
   const accuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate('/history')}
@@ -47,9 +50,9 @@ export default function SessionDetails() {
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{session.subject}</h1>
-            <p className="text-gray-600">Study Session Details</p>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{session.subject}</h1>
+            <p className="text-gray-600">{t.sessionDetails}</p>
           </div>
         </div>
         <div className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${
@@ -57,63 +60,63 @@ export default function SessionDetails() {
             ? 'bg-green-100 text-green-800' 
             : 'bg-orange-100 text-orange-800'
         }`}>
-          {session.status === 'completed' ? 'Completed' : 'In Progress'}
+          {session.status === 'completed' ? t.completed : t.inProgress}
         </div>
       </div>
 
       {/* Session Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Date</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {new Date(session.createdAt).toLocaleDateString()}
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-600">{t.date}</p>
+              <p className="text-lg font-semibold text-gray-900 truncate">
+                {formatDate(session.createdAt, language)}
               </p>
             </div>
-            <Calendar className="w-8 h-8 text-orange-600" />
+            <Calendar className="w-6 sm:w-8 h-6 sm:h-8 text-orange-600 flex-shrink-0" />
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Questions</p>
+              <p className="text-sm font-medium text-gray-600">{t.questions}</p>
               <p className="text-lg font-semibold text-gray-900">{totalQuestions}</p>
             </div>
-            <BookOpen className="w-8 h-8 text-blue-600" />
+            <BookOpen className="w-6 sm:w-8 h-6 sm:h-8 text-blue-600 flex-shrink-0" />
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Accuracy</p>
+              <p className="text-sm font-medium text-gray-600">{t.accuracy}</p>
               <p className="text-lg font-semibold text-gray-900">{accuracy}%</p>
             </div>
-            <Target className="w-8 h-8 text-green-600" />
+            <Target className="w-6 sm:w-8 h-6 sm:h-8 text-green-600 flex-shrink-0" />
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Score</p>
+              <p className="text-sm font-medium text-gray-600">{t.score}</p>
               <p className="text-lg font-semibold text-gray-900">{session.score}%</p>
             </div>
-            <TrendingUp className="w-8 h-8 text-purple-600" />
+            <TrendingUp className="w-6 sm:w-8 h-6 sm:h-8 text-purple-600 flex-shrink-0" />
           </div>
         </div>
       </div>
 
       {/* Questions List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">Questions & Answers</h2>
+        <div className="p-4 sm:p-6 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-900">{t.questionsAndAnswers}</h2>
         </div>
         <div className="divide-y divide-gray-100">
           {session.questions.map((question, index) => (
-            <div key={question.id} className="p-6">
+            <div key={question.id} className="p-4 sm:p-6">
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -126,12 +129,12 @@ export default function SessionDetails() {
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <h3 className="text-lg font-medium text-gray-900">{question.question}</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
+                    <h3 className="text-lg font-medium text-gray-900 break-words">{question.question}</h3>
                     {question.isCorrect ? (
-                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
                     ) : (
-                      <XCircle className="w-5 h-5 text-red-600" />
+                      <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
                     )}
                   </div>
 
@@ -148,17 +151,17 @@ export default function SessionDetails() {
                               : 'border-gray-200 bg-gray-50'
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-900">{option}</span>
-                            <div className="flex items-center space-x-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <span className="text-gray-900 break-words">{option}</span>
+                            <div className="flex items-center space-x-2 flex-shrink-0">
                               {optionIndex === question.correctAnswer && (
                                 <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                                  Correct
+                                  {t.correct}
                                 </span>
                               )}
                               {optionIndex === question.userAnswer && optionIndex !== question.correctAnswer && (
                                 <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
-                                  Your Answer
+                                  {t.yourAnswer}
                                 </span>
                               )}
                             </div>
@@ -169,28 +172,28 @@ export default function SessionDetails() {
                   ) : (
                     <div className="space-y-4 mb-4">
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Your Answer:</h4>
-                        <p className="text-gray-900">{question.userAnswer || 'No answer provided'}</p>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">{t.yourAnswer}:</h4>
+                        <p className="text-gray-900 break-words">{question.userAnswer || (language === 'pt-BR' ? 'Nenhuma resposta fornecida' : 'No answer provided')}</p>
                       </div>
                       {question.correctAnswerText && (
                         <div className="bg-green-50 rounded-lg p-4">
-                          <h4 className="text-sm font-medium text-green-700 mb-2">Model Answer:</h4>
-                          <p className="text-green-900">{question.correctAnswerText}</p>
+                          <h4 className="text-sm font-medium text-green-700 mb-2">{t.modelAnswer}:</h4>
+                          <p className="text-green-900 break-words">{question.correctAnswerText}</p>
                         </div>
                       )}
                     </div>
                   )}
 
                   {question.feedback && (
-                    <div className={`p-4 rounded-lg ${
+                    <div className={`p-4 rounded-lg mb-4 ${
                       question.isCorrect ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
                     }`}>
                       <h4 className={`text-sm font-medium mb-2 ${
                         question.isCorrect ? 'text-green-700' : 'text-red-700'
                       }`}>
-                        Feedback:
+                        {t.feedback}
                       </h4>
-                      <p className={`text-sm ${
+                      <p className={`text-sm break-words ${
                         question.isCorrect ? 'text-green-700' : 'text-red-700'
                       }`}>
                         {question.feedback}
@@ -199,20 +202,20 @@ export default function SessionDetails() {
                   )}
 
                   {question.aiEvaluation && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-                      <h4 className="text-sm font-medium text-blue-700 mb-2">AI Evaluation:</h4>
-                      <p className="text-sm text-blue-700">{question.aiEvaluation}</p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <h4 className="text-sm font-medium text-blue-700 mb-2">{t.aiEvaluation}</h4>
+                      <p className="text-sm text-blue-700 break-words">{question.aiEvaluation}</p>
                     </div>
                   )}
 
-                  <div className="flex items-center space-x-4 mt-4 text-sm text-gray-500">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                     <div className="flex items-center">
-                      <Clock className="w-4 h-4 mr-1" />
-                      {question.attempts} attempt{question.attempts !== 1 ? 's' : ''}
+                      <Clock className="w-4 h-4 mr-1 flex-shrink-0" />
+                      {question.attempts} {question.attempts !== 1 ? t.attempts : t.attempt}
                     </div>
                     <div className="flex items-center">
-                      <BookOpen className="w-4 h-4 mr-1" />
-                      {question.type === 'multiple-choice' ? 'Multiple Choice' : 'Dissertative'}
+                      <BookOpen className="w-4 h-4 mr-1 flex-shrink-0" />
+                      {question.type === 'multiple-choice' ? t.multipleChoice : t.dissertative}
                     </div>
                   </div>
                 </div>
@@ -231,7 +234,7 @@ export default function SessionDetails() {
             className="inline-flex items-center bg-orange-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-orange-700 transition-colors"
           >
             <BookOpen className="w-5 h-5 mr-2" />
-            Continue Session
+            {t.continueSession}
           </Link>
         </div>
       )}

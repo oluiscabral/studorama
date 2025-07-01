@@ -59,3 +59,9 @@ export interface APISettings {
     retrievalPrompt: string;
   };
 }
+
+export type Language = 'en-US' | 'pt-BR';
+
+export interface LanguageSettings {
+  language: Language;
+}

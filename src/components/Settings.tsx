@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Key, Save, Eye, EyeOff, ExternalLink, Bot, MessageSquare, Github, Linkedin, Brain } from 'lucide-react';
+import { Key, Save, Eye, EyeOff, ExternalLink, Bot, MessageSquare, Github, Linkedin, Brain, Globe } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useLanguage } from '../hooks/useLanguage';
+import { Language } from '../types';
 
 const OPENAI_MODELS = [
   { value: 'gpt-4o', label: 'GPT-4o (Recommended)', description: 'Latest and most capable model' },
@@ -10,27 +12,43 @@ const OPENAI_MODELS = [
   { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'Fast and economical' },
 ];
 
-const DEFAULT_PROMPTS = {
-  multipleChoice: `You are a study assistant that creates multiple choice questions about {subject}. Create a challenging but fair question with 4 options. Return a JSON object with: question (string), options (array of 4 strings), correctAnswer (number 0-3), and explanation (string explaining why the correct answer is right).`,
-  dissertative: `You are a study assistant that creates dissertative questions about {subject}. Create an open-ended question that requires thoughtful analysis and explanation. Return a JSON object with: question (string), sampleAnswer (string with a comprehensive model answer), and evaluationCriteria (array of strings describing what makes a good answer).`,
-  evaluation: `You are evaluating a student's answer to a dissertative question. Question: {question}. Student's answer: {userAnswer}. Model answer: {modelAnswer}. Provide constructive feedback focusing on accuracy, completeness, and understanding. Rate the answer and suggest improvements. Be encouraging but honest.`,
-  elaborativePrompt: `Generate an elaborative interrogation question that asks "why" to help the student understand the deeper reasoning behind the concept in {subject}. Focus on helping them connect ideas and understand underlying principles.`,
-  retrievalPrompt: `Create a retrieval practice question about {subject} that tests recall of important concepts. This should help strengthen memory through active recall. Return a JSON object with appropriate format for the question type.`
-};
+const LANGUAGES: { value: Language; label: string; flag: string }[] = [
+  { value: 'en-US', label: 'English (US)', flag: '🇺🇸' },
+  { value: 'pt-BR', label: 'Português (Brasil)', flag: '🇧🇷' },
+];
+
+const getDefaultPrompts = (language: Language) => ({
+  multipleChoice: language === 'pt-BR' 
+    ? `Você é um assistente de estudos que cria questões de múltipla escolha sobre {subject}. Crie uma questão desafiadora mas justa com 4 opções. Retorne um objeto JSON com: question (string), options (array de 4 strings), correctAnswer (número 0-3), e explanation (string explicando por que a resposta correta está certa).`
+    : `You are a study assistant that creates multiple choice questions about {subject}. Create a challenging but fair question with 4 options. Return a JSON object with: question (string), options (array of 4 strings), correctAnswer (number 0-3), and explanation (string explaining why the correct answer is right).`,
+  dissertative: language === 'pt-BR'
+    ? `Você é um assistente de estudos que cria questões dissertativas sobre {subject}. Crie uma questão aberta que requer análise reflexiva e explicação. Retorne um objeto JSON com: question (string), sampleAnswer (string com uma resposta modelo abrangente), e evaluationCriteria (array de strings descrevendo o que torna uma boa resposta).`
+    : `You are a study assistant that creates dissertative questions about {subject}. Create an open-ended question that requires thoughtful analysis and explanation. Return a JSON object with: question (string), sampleAnswer (string with a comprehensive model answer), and evaluationCriteria (array of strings describing what makes a good answer).`,
+  evaluation: language === 'pt-BR'
+    ? `Você está avaliando a resposta de um estudante para uma questão dissertativa. Questão: {question}. Resposta do estudante: {userAnswer}. Resposta modelo: {modelAnswer}. Forneça feedback construtivo focando na precisão, completude e compreensão. Avalie a resposta e sugira melhorias. Seja encorajador mas honesto.`
+    : `You are evaluating a student's answer to a dissertative question. Question: {question}. Student's answer: {userAnswer}. Model answer: {modelAnswer}. Provide constructive feedback focusing on accuracy, completeness, and understanding. Rate the answer and suggest improvements. Be encouraging but honest.`,
+  elaborativePrompt: language === 'pt-BR'
+    ? `Gere uma questão de interrogação elaborativa que pergunta "por que" para ajudar o estudante a entender o raciocínio mais profundo por trás do conceito em {subject}. Foque em ajudá-los a conectar ideias e entender princípios subjacentes.`
+    : `Generate an elaborative interrogation question that asks "why" to help the student understand the deeper reasoning behind the concept in {subject}. Focus on helping them connect ideas and understand underlying principles.`,
+  retrievalPrompt: language === 'pt-BR'
+    ? `Crie uma questão de prática de recuperação sobre {subject} que teste a recordação de conceitos importantes. Isso deve ajudar a fortalecer a memória através da recordação ativa. Retorne um objeto JSON com formato apropriado para o tipo de questão.`
+    : `Create a retrieval practice question about {subject} that tests recall of important concepts. This should help strengthen memory through active recall. Return a JSON object with appropriate format for the question type.`
+});
 
 export default function Settings() {
+  const { t, language, changeLanguage } = useLanguage();
   const [apiSettings, setApiSettings] = useLocalStorage('studorama-api-settings', {
     openaiApiKey: '',
     model: 'gpt-4o-mini',
-    customPrompts: DEFAULT_PROMPTS
+    customPrompts: getDefaultPrompts(language)
   });
 
   const [showApiKey, setShowApiKey] = useState(false);
   const [tempApiKey, setTempApiKey] = useState(apiSettings.openaiApiKey);
   const [tempModel, setTempModel] = useState(apiSettings.model || 'gpt-4o-mini');
-  const [tempPrompts, setTempPrompts] = useState(apiSettings.customPrompts || DEFAULT_PROMPTS);
+  const [tempPrompts, setTempPrompts] = useState(apiSettings.customPrompts || getDefaultPrompts(language));
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'about'>('api');
+  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'language' | 'about'>('api');
 
   const handleSave = () => {
     setApiSettings({ 
@@ -43,7 +61,20 @@ export default function Settings() {
   };
 
   const resetPrompts = () => {
-    setTempPrompts(DEFAULT_PROMPTS);
+    const defaultPrompts = getDefaultPrompts(language);
+    setTempPrompts(defaultPrompts);
+  };
+
+  const handleLanguageChange = (newLanguage: Language) => {
+    changeLanguage(newLanguage);
+    // Update prompts to match new language
+    const defaultPrompts = getDefaultPrompts(newLanguage);
+    setTempPrompts(defaultPrompts);
+    // Update saved settings with new language prompts
+    setApiSettings(prev => ({
+      ...prev,
+      customPrompts: defaultPrompts
+    }));
   };
 
   const isValid = tempApiKey.trim().length > 0;
@@ -52,24 +83,25 @@ export default function Settings() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Settings</h1>
-        <p className="text-gray-600">Configure your Studorama preferences and learning techniques</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">{t.settingsTitle}</h1>
+        <p className="text-gray-600">{t.configurePreferences}</p>
       </div>
 
       {/* Tabs */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
+          <nav className="flex space-x-8 px-6 overflow-x-auto">
             {[
-              { id: 'api', label: 'API Configuration', icon: Key },
-              { id: 'prompts', label: 'AI Prompts', icon: MessageSquare },
-              { id: 'learning', label: 'Learning Techniques', icon: Brain },
-              { id: 'about', label: 'About', icon: Bot }
+              { id: 'api', label: t.apiConfiguration, icon: Key },
+              { id: 'prompts', label: t.aiPrompts, icon: MessageSquare },
+              { id: 'learning', label: t.learningTechniquesTab, icon: Brain },
+              { id: 'language', label: t.language, icon: Globe },
+              { id: 'about', label: t.about, icon: Bot }
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id as any)}
-                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
                   activeTab === id
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -91,15 +123,15 @@ export default function Settings() {
                   <Key className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">OpenAI API Configuration</h2>
-                  <p className="text-sm text-gray-600">Configure your OpenAI API key and model preferences</p>
+                  <h2 className="text-lg font-semibold text-gray-900">{t.apiConfiguration}</h2>
+                  <p className="text-sm text-gray-600">{t.openaiApiConfig}</p>
                 </div>
               </div>
 
               {/* API Key */}
               <div>
                 <label htmlFor="api-key" className="block text-sm font-medium text-gray-700 mb-2">
-                  OpenAI API Key
+                  {t.openaiApiKey}
                 </label>
                 <div className="relative">
                   <input
@@ -119,14 +151,14 @@ export default function Settings() {
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  Your API key is stored locally in your browser and never shared with anyone.
+                  {t.apiKeyStored}
                 </p>
               </div>
 
               {/* Model Selection */}
               <div>
                 <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-2">
-                  OpenAI Model
+                  {t.openaiModel}
                 </label>
                 <select
                   id="model"
@@ -146,15 +178,71 @@ export default function Settings() {
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-blue-900 mb-2">How to get your OpenAI API Key:</h3>
+                <h3 className="text-sm font-medium text-blue-900 mb-2">{t.howToGetApiKey}</h3>
                 <ol className="text-sm text-blue-800 space-y-1">
-                  <li>1. Visit <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:no-underline inline-flex items-center">
+                  <li>1. {t.openaiPlatform} <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:no-underline inline-flex items-center">
                     OpenAI Platform <ExternalLink className="w-3 h-3 ml-1" />
                   </a></li>
-                  <li>2. Sign in or create an account</li>
-                  <li>3. Click "Create new secret key"</li>
-                  <li>4. Copy and paste the key here</li>
+                  <li>2. {t.signInOrCreate}</li>
+                  <li>3. {t.createSecretKey}</li>
+                  <li>4. {t.copyPasteKey}</li>
                 </ol>
+              </div>
+            </div>
+          )}
+
+          {/* Language Tab */}
+          {activeTab === 'language' && (
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Globe className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">{t.language}</h2>
+                  <p className="text-sm text-gray-600">{t.selectLanguage}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.value}
+                    onClick={() => handleLanguageChange(lang.value)}
+                    className={`p-4 border-2 rounded-lg transition-all duration-200 text-left ${
+                      language === lang.value
+                        ? 'border-orange-500 bg-orange-50'
+                        : 'border-gray-200 hover:border-orange-300'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="text-2xl">{lang.flag}</span>
+                      <div>
+                        <h3 className="font-medium text-gray-900">{lang.label}</h3>
+                        <p className="text-sm text-gray-600">
+                          {lang.value === 'en-US' ? 'English (United States)' : 'Português (Brasil)'}
+                        </p>
+                      </div>
+                      {language === lang.value && (
+                        <div className="ml-auto w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-green-900 mb-2">
+                  {language === 'pt-BR' ? 'Detecção Automática' : 'Automatic Detection'}
+                </h3>
+                <p className="text-sm text-green-700">
+                  {language === 'pt-BR' 
+                    ? 'O idioma é detectado automaticamente baseado nas configurações do seu navegador e salvo localmente. Os prompts da IA também são atualizados automaticamente para corresponder ao idioma selecionado.'
+                    : 'Language is automatically detected based on your browser settings and saved locally. AI prompts are also automatically updated to match the selected language.'
+                  }
+                </p>
               </div>
             </div>
           )}
@@ -168,22 +256,22 @@ export default function Settings() {
                     <MessageSquare className="w-5 h-5 text-purple-600" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">AI Prompts Customization</h2>
-                    <p className="text-sm text-gray-600">Customize how the AI generates and evaluates questions</p>
+                    <h2 className="text-lg font-semibold text-gray-900">{t.aiPromptsCustomization}</h2>
+                    <p className="text-sm text-gray-600">{t.customizeGeneration}</p>
                   </div>
                 </div>
                 <button
                   onClick={resetPrompts}
                   className="text-sm text-gray-600 hover:text-gray-800 underline"
                 >
-                  Reset to Defaults
+                  {t.resetToDefaults}
                 </button>
               </div>
 
               {/* Multiple Choice Prompt */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Multiple Choice Questions Prompt
+                  {t.multipleChoicePrompt}
                 </label>
                 <textarea
                   value={tempPrompts.multipleChoice}
@@ -193,14 +281,14 @@ export default function Settings() {
                   placeholder="Enter the prompt for generating multiple choice questions..."
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Use {'{subject}'} as a placeholder for the study subject.
+                  {language === 'pt-BR' ? 'Use {subject} como placeholder para a matéria de estudo.' : 'Use {subject} as a placeholder for the study subject.'}
                 </p>
               </div>
 
               {/* Dissertative Prompt */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Dissertative Questions Prompt
+                  {t.dissertativePrompt}
                 </label>
                 <textarea
                   value={tempPrompts.dissertative}
@@ -210,14 +298,14 @@ export default function Settings() {
                   placeholder="Enter the prompt for generating dissertative questions..."
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Use {'{subject}'} as a placeholder for the study subject.
+                  {language === 'pt-BR' ? 'Use {subject} como placeholder para a matéria de estudo.' : 'Use {subject} as a placeholder for the study subject.'}
                 </p>
               </div>
 
               {/* Evaluation Prompt */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Answer Evaluation Prompt
+                  {t.answerEvaluationPrompt}
                 </label>
                 <textarea
                   value={tempPrompts.evaluation}
@@ -227,14 +315,17 @@ export default function Settings() {
                   placeholder="Enter the prompt for evaluating dissertative answers..."
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Use {'{question}'}, {'{userAnswer}'}, and {'{modelAnswer}'} as placeholders.
+                  {language === 'pt-BR' 
+                    ? 'Use {question}, {userAnswer}, e {modelAnswer} como placeholders.'
+                    : 'Use {question}, {userAnswer}, and {modelAnswer} as placeholders.'
+                  }
                 </p>
               </div>
 
               {/* Elaborative Prompt */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Elaborative Interrogation Prompt
+                  {t.elaborativeInterrogationPrompt}
                 </label>
                 <textarea
                   value={tempPrompts.elaborativePrompt}
@@ -244,14 +335,14 @@ export default function Settings() {
                   placeholder="Enter the prompt for generating elaborative questions..."
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Use {'{subject}'} as a placeholder for the study subject.
+                  {language === 'pt-BR' ? 'Use {subject} como placeholder para a matéria de estudo.' : 'Use {subject} as a placeholder for the study subject.'}
                 </p>
               </div>
 
               {/* Retrieval Prompt */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Retrieval Practice Prompt
+                  {t.retrievalPracticePrompt}
                 </label>
                 <textarea
                   value={tempPrompts.retrievalPrompt}
@@ -261,7 +352,7 @@ export default function Settings() {
                   placeholder="Enter the prompt for generating retrieval practice questions..."
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Use {'{subject}'} as a placeholder for the study subject.
+                  {language === 'pt-BR' ? 'Use {subject} como placeholder para a matéria de estudo.' : 'Use {subject} as a placeholder for the study subject.'}
                 </p>
               </div>
             </div>
@@ -275,80 +366,80 @@ export default function Settings() {
                   <Brain className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Learning Techniques</h2>
-                  <p className="text-sm text-gray-600">Based on "Make It Stick: The Science of Successful Learning"</p>
+                  <h2 className="text-lg font-semibold text-gray-900">{t.learningTechniquesTab}</h2>
+                  <p className="text-sm text-gray-600">{t.makeItStickScience}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-3">Spaced Repetition</h3>
+                  <h3 className="text-lg font-semibold text-blue-900 mb-3">{t.spacedRepetition}</h3>
                   <p className="text-sm text-blue-800 mb-4">
-                    Review material at increasing intervals to strengthen long-term retention. Questions are automatically scheduled for review based on your performance.
+                    {t.spacedRepetitionFull}
                   </p>
                   <div className="text-xs text-blue-700">
-                    <strong>How it works:</strong> Correctly answered questions are reviewed after longer intervals, while missed questions are reviewed sooner.
+                    <strong>{language === 'pt-BR' ? 'Como funciona:' : 'How it works:'}</strong> {t.spacedRepetitionHow}
                   </div>
                 </div>
 
                 <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
-                  <h3 className="text-lg font-semibold text-green-900 mb-3">Interleaving</h3>
+                  <h3 className="text-lg font-semibold text-green-900 mb-3">{t.interleaving}</h3>
                   <p className="text-sm text-green-800 mb-4">
-                    Mix different types of questions and topics rather than studying one type at a time. This improves discrimination and transfer of learning.
+                    {t.interleavingFull}
                   </p>
                   <div className="text-xs text-green-700">
-                    <strong>How it works:</strong> When "Mixed" question type is selected, multiple choice and dissertative questions are randomly interleaved.
+                    <strong>{language === 'pt-BR' ? 'Como funciona:' : 'How it works:'}</strong> {t.interleavingHow}
                   </div>
                 </div>
 
                 <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-lg p-6 border border-purple-200">
-                  <h3 className="text-lg font-semibold text-purple-900 mb-3">Elaborative Interrogation</h3>
+                  <h3 className="text-lg font-semibold text-purple-900 mb-3">{t.elaborativeInterrogation}</h3>
                   <p className="text-sm text-purple-800 mb-4">
-                    Ask "why" questions to understand the reasoning behind facts and concepts. This creates deeper understanding and better retention.
+                    {t.elaborativeInterrogationFull}
                   </p>
                   <div className="text-xs text-purple-700">
-                    <strong>How it works:</strong> After incorrect answers, you'll be prompted to explain why the correct answer makes sense.
+                    <strong>{language === 'pt-BR' ? 'Como funciona:' : 'How it works:'}</strong> {t.elaborativeInterrogationHow}
                   </div>
                 </div>
 
                 <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-6 border border-orange-200">
-                  <h3 className="text-lg font-semibold text-orange-900 mb-3">Self-Explanation</h3>
+                  <h3 className="text-lg font-semibold text-orange-900 mb-3">{t.selfExplanation}</h3>
                   <p className="text-sm text-orange-800 mb-4">
-                    Explain how new information relates to what you already know. This builds connections and improves understanding.
+                    {t.selfExplanationFull}
                   </p>
                   <div className="text-xs text-orange-700">
-                    <strong>How it works:</strong> After correct answers, you'll be prompted to connect the concept to your existing knowledge.
+                    <strong>{language === 'pt-BR' ? 'Como funciona:' : 'How it works:'}</strong> {t.selfExplanationHow}
                   </div>
                 </div>
 
                 <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-lg p-6 border border-yellow-200">
-                  <h3 className="text-lg font-semibold text-yellow-900 mb-3">Desirable Difficulties</h3>
+                  <h3 className="text-lg font-semibold text-yellow-900 mb-3">{t.desirableDifficulties}</h3>
                   <p className="text-sm text-yellow-800 mb-4">
-                    Introduce appropriate challenges that require effort but are achievable. This strengthens learning and retention.
+                    {t.desirableDifficultiesFull}
                   </p>
                   <div className="text-xs text-yellow-700">
-                    <strong>How it works:</strong> Some questions are made more challenging to promote deeper thinking and stronger memory formation.
+                    <strong>{language === 'pt-BR' ? 'Como funciona:' : 'How it works:'}</strong> {t.desirableDifficultiesHow}
                   </div>
                 </div>
 
                 <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-lg p-6 border border-teal-200">
-                  <h3 className="text-lg font-semibold text-teal-900 mb-3">Retrieval Practice</h3>
+                  <h3 className="text-lg font-semibold text-teal-900 mb-3">{t.retrievalPractice}</h3>
                   <p className="text-sm text-teal-800 mb-4">
-                    Test yourself frequently to strengthen memory pathways. The act of retrieving information makes it more memorable.
+                    {t.retrievalPracticeFull}
                   </p>
                   <div className="text-xs text-teal-700">
-                    <strong>How it works:</strong> Questions test your ability to recall information, and confidence levels help track your certainty.
+                    <strong>{language === 'pt-BR' ? 'Como funciona:' : 'How it works:'}</strong> {t.retrievalPracticeHow}
                   </div>
                 </div>
               </div>
 
               <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Research-Based Benefits</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">{t.researchBasedBenefits}</h3>
                 <ul className="text-sm text-gray-700 space-y-2">
-                  <li>• <strong>Improved retention:</strong> These techniques can improve long-term retention by 50-200%</li>
-                  <li>• <strong>Better transfer:</strong> Knowledge gained through these methods transfers better to new situations</li>
-                  <li>• <strong>Deeper understanding:</strong> Focus on comprehension rather than just memorization</li>
-                  <li>• <strong>Metacognitive awareness:</strong> Better understanding of what you know and don't know</li>
+                  <li>• <strong>{language === 'pt-BR' ? 'Retenção melhorada:' : 'Improved retention:'}</strong> {t.improvedRetention}</li>
+                  <li>• <strong>{language === 'pt-BR' ? 'Melhor transferência:' : 'Better transfer:'}</strong> {t.betterTransfer}</li>
+                  <li>• <strong>{language === 'pt-BR' ? 'Compreensão mais profunda:' : 'Deeper understanding:'}</strong> {t.deeperUnderstanding}</li>
+                  <li>• <strong>{language === 'pt-BR' ? 'Consciência metacognitiva:' : 'Metacognitive awareness:'}</strong> {t.metacognitiveAwareness}</li>
                 </ul>
               </div>
             </div>
@@ -362,17 +453,15 @@ export default function Settings() {
                   <Bot className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">About Studorama</h2>
-                  <p className="text-sm text-gray-600">AI-powered study sessions with proven learning techniques</p>
+                  <h2 className="text-lg font-semibold text-gray-900">{t.aboutStudorama}</h2>
+                  <p className="text-sm text-gray-600">{t.aiPoweredPlatform}</p>
                 </div>
               </div>
 
               <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Created by oluiscabral</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">{t.createdBy}</h3>
                 <p className="text-gray-700 mb-4">
-                  Studorama combines cutting-edge AI technology with research-backed learning techniques from "Make It Stick" 
-                  to create the most effective study experience possible. Transform your learning with spaced repetition, 
-                  interleaving, and other proven methods.
+                  {t.studoramaDescription}
                 </p>
                 <div className="flex items-center space-x-4">
                   <a
@@ -382,7 +471,7 @@ export default function Settings() {
                     className="inline-flex items-center text-gray-700 hover:text-gray-900 transition-colors"
                   >
                     <Github className="w-5 h-5 mr-2" />
-                    GitHub
+                    {t.github}
                   </a>
                   <a
                     href="https://www.linkedin.com/in/oluiscabral"
@@ -391,53 +480,49 @@ export default function Settings() {
                     className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
                   >
                     <Linkedin className="w-5 h-5 mr-2" />
-                    LinkedIn
+                    {t.linkedin}
                   </a>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Core Features</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">{t.coreFeatures}</h4>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• AI-generated questions (multiple choice & dissertative)</li>
-                    <li>• Mixed question types with interleaving</li>
-                    <li>• Spaced repetition scheduling</li>
-                    <li>• Elaborative interrogation prompts</li>
-                    <li>• Self-explanation exercises</li>
-                    <li>• Confidence tracking</li>
-                    <li>• Session history & analytics</li>
+                    <li>• {t.aiGeneratedQuestions}</li>
+                    <li>• {t.mixedQuestionTypes}</li>
+                    <li>• {t.spacedRepetitionScheduling}</li>
+                    <li>• {t.elaborativePrompts}</li>
+                    <li>• {t.selfExplanationExercises}</li>
+                    <li>• {t.confidenceTracking}</li>
+                    <li>• {t.sessionHistoryAnalytics}</li>
                   </ul>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Learning Science</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">{t.learningScience}</h4>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• Based on "Make It Stick" research</li>
-                    <li>• Retrieval practice implementation</li>
-                    <li>• Desirable difficulties integration</li>
-                    <li>• Generation effect utilization</li>
-                    <li>• Metacognitive strategy training</li>
-                    <li>• Evidence-based spacing algorithms</li>
-                    <li>• Cognitive load optimization</li>
+                    <li>• {t.makeItStickResearch}</li>
+                    <li>• {t.retrievalPracticeImplementation}</li>
+                    <li>• {t.desirableDifficultiesIntegration}</li>
+                    <li>• {t.generationEffectUtilization}</li>
+                    <li>• {t.metacognitiveStrategyTraining}</li>
+                    <li>• {t.evidenceBasedSpacing}</li>
+                    <li>• {t.cognitiveLoadOptimization}</li>
                   </ul>
                 </div>
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-green-900 mb-2">Privacy & Security</h4>
+                <h4 className="text-sm font-medium text-green-900 mb-2">{t.privacySecurity}</h4>
                 <p className="text-sm text-green-700">
-                  Your API key and study data are stored locally in your browser and are never transmitted to our servers. 
-                  Only you have access to your study sessions and progress. Your API key is used solely to communicate 
-                  with OpenAI's services to generate study questions and evaluations.
+                  {t.privacyDescription}
                 </p>
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-blue-900 mb-2">Scientific Foundation</h4>
+                <h4 className="text-sm font-medium text-blue-900 mb-2">{t.scientificFoundation}</h4>
                 <p className="text-sm text-blue-700">
-                  Studorama implements learning techniques validated by cognitive science research, particularly from 
-                  "Make It Stick: The Science of Successful Learning" by Peter C. Brown, Henry L. Roediger III, and Mark A. McDaniel. 
-                  These methods have been proven to enhance long-term retention and transfer of knowledge.
+                  {t.scientificDescription}
                 </p>
               </div>
             </div>
@@ -458,7 +543,7 @@ export default function Settings() {
                 }`}
               >
                 <Save className="w-5 h-5 mr-2" />
-                {saved ? 'Saved!' : 'Save Settings'}
+                {saved ? t.saved : t.saveSettings}
               </button>
             </div>
           )}
@@ -471,39 +556,45 @@ export default function Settings() {
           <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
             <Bot className="w-5 h-5 text-blue-600" />
           </div>
-          <h2 className="text-lg font-semibold text-gray-900">Configuration Status</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t.configurationStatus}</h2>
         </div>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-gray-700">OpenAI API Key</span>
+            <span className="text-gray-700">{t.openaiApiKey}</span>
             <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
               apiSettings.openaiApiKey
                 ? 'bg-green-100 text-green-800'
                 : 'bg-red-100 text-red-800'
             }`}>
-              {apiSettings.openaiApiKey ? 'Configured' : 'Not Configured'}
+              {apiSettings.openaiApiKey ? t.configured : t.notConfigured}
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-gray-700">Selected Model</span>
+            <span className="text-gray-700">{t.selectedModel}</span>
             <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
               {OPENAI_MODELS.find(m => m.value === (apiSettings.model || 'gpt-4o-mini'))?.label || 'GPT-4o Mini'}
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-gray-700">Learning Techniques</span>
+            <span className="text-gray-700">{t.language}</span>
             <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-              Enhanced Study Mode
+              {LANGUAGES.find(l => l.value === language)?.label || 'English (US)'}
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-gray-700">Study Sessions</span>
+            <span className="text-gray-700">{t.learningTechniquesTab}</span>
+            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              {t.enhancedStudyMode}
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-700">{t.study}</span>
             <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
               apiSettings.openaiApiKey
                 ? 'bg-green-100 text-green-800'
                 : 'bg-orange-100 text-orange-800'
             }`}>
-              {apiSettings.openaiApiKey ? 'Ready' : 'Requires API Key'}
+              {apiSettings.openaiApiKey ? t.ready : t.requiresApiKey}
             </div>
           </div>
         </div>

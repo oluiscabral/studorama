@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Key, Save, Eye, EyeOff, ExternalLink, Bot, MessageSquare, Github, Linkedin, Brain, Globe } from 'lucide-react';
+import { Key, Save, Eye, EyeOff, ExternalLink, Bot, MessageSquare, Github, Linkedin, Brain, Globe, RefreshCw } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
 import { Language } from '../types';
+import LanguageSwitchModal from './LanguageSwitchModal';
 
 const OPENAI_MODELS = [
   { value: 'gpt-4o', label: 'GPT-4o (Recommended)', description: 'Latest and most capable model' },
@@ -36,7 +37,7 @@ const getDefaultPrompts = (language: Language) => ({
 });
 
 export default function Settings() {
-  const { t, language, changeLanguage } = useLanguage();
+  const { t, language, changeLanguage, languageSwitchPreference, updateLanguageSwitchPreference, resetLanguageSwitchPreference } = useLanguage();
   const [apiSettings, setApiSettings] = useLocalStorage('studorama-api-settings', {
     openaiApiKey: '',
     model: 'gpt-4o-mini',
@@ -49,6 +50,9 @@ export default function Settings() {
   const [tempPrompts, setTempPrompts] = useState(apiSettings.customPrompts || getDefaultPrompts(language));
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'language' | 'about'>('api');
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [pendingLanguage, setPendingLanguage] = useState<Language | null>(null);
+  const [preferencesReset, setPreferencesReset] = useState(false);
 
   const handleSave = () => {
     setApiSettings({ 
@@ -66,21 +70,64 @@ export default function Settings() {
   };
 
   const handleLanguageChange = (newLanguage: Language) => {
-    changeLanguage(newLanguage);
-    // Update prompts to match new language
-    const defaultPrompts = getDefaultPrompts(newLanguage);
-    setTempPrompts(defaultPrompts);
-    // Update saved settings with new language prompts
-    setApiSettings(prev => ({
-      ...prev,
-      customPrompts: defaultPrompts
-    }));
+    if (newLanguage === language) return;
+
+    // Check if user has remembered their choice
+    if (languageSwitchPreference.rememberChoice) {
+      // Apply the remembered preference
+      if (languageSwitchPreference.autoResetPrompts) {
+        const defaultPrompts = getDefaultPrompts(newLanguage);
+        setTempPrompts(defaultPrompts);
+        setApiSettings(prev => ({
+          ...prev,
+          customPrompts: defaultPrompts
+        }));
+      }
+      changeLanguage(newLanguage);
+    } else {
+      // Show modal for user to choose
+      setPendingLanguage(newLanguage);
+      setShowLanguageModal(true);
+    }
+  };
+
+  const handleLanguageModalConfirm = (resetPrompts: boolean, rememberChoice: boolean) => {
+    if (!pendingLanguage) return;
+
+    // Update language switch preferences if user chose to remember
+    if (rememberChoice) {
+      updateLanguageSwitchPreference({
+        rememberChoice: true,
+        autoResetPrompts: resetPrompts
+      });
+    }
+
+    // Apply language change
+    changeLanguage(pendingLanguage);
+
+    // Reset prompts if requested
+    if (resetPrompts) {
+      const defaultPrompts = getDefaultPrompts(pendingLanguage);
+      setTempPrompts(defaultPrompts);
+      setApiSettings(prev => ({
+        ...prev,
+        customPrompts: defaultPrompts
+      }));
+    }
+
+    setPendingLanguage(null);
+  };
+
+  const handleResetLanguagePreferences = () => {
+    resetLanguageSwitchPreference();
+    setPreferencesReset(true);
+    setTimeout(() => setPreferencesReset(false), 3000);
   };
 
   const isValid = tempApiKey.trim().length > 0;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{t.settingsTitle}</h1>
@@ -233,6 +280,47 @@ export default function Settings() {
                 ))}
               </div>
 
+              {/* Language Switch Preferences */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  {t.languageSwitchPreferences}
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">{t.rememberChoice}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      languageSwitchPreference.rememberChoice 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {languageSwitchPreference.rememberChoice ? t.yes : t.no}
+                    </span>
+                  </div>
+                  {languageSwitchPreference.rememberChoice && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700">{t.resetPromptsOption}</span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        languageSwitchPreference.autoResetPrompts 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {languageSwitchPreference.autoResetPrompts ? t.yes : t.no}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={handleResetLanguagePreferences}
+                  className="mt-3 text-sm text-orange-600 hover:text-orange-700 underline"
+                >
+                  {t.resetLanguagePreferences}
+                </button>
+                {preferencesReset && (
+                  <p className="text-sm text-green-600 mt-2">{t.languagePreferencesReset}</p>
+                )}
+              </div>
+
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h3 className="text-sm font-medium text-green-900 mb-2">
                   {language === 'pt-BR' ? 'Detecção Automática' : 'Automatic Detection'}
@@ -281,7 +369,7 @@ export default function Settings() {
                   placeholder="Enter the prompt for generating multiple choice questions..."
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {language === 'pt-BR' ? 'Use {subject} como placeholder para a matéria de estudo.' : 'Use {subject} as a placeholder for the study subject.'}
+                  {t.subjectPlaceholder2}
                 </p>
               </div>
 
@@ -298,7 +386,7 @@ export default function Settings() {
                   placeholder="Enter the prompt for generating dissertative questions..."
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {language === 'pt-BR' ? 'Use {subject} como placeholder para a matéria de estudo.' : 'Use {subject} as a placeholder for the study subject.'}
+                  {t.subjectPlaceholder2}
                 </p>
               </div>
 
@@ -315,10 +403,7 @@ export default function Settings() {
                   placeholder="Enter the prompt for evaluating dissertative answers..."
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {language === 'pt-BR' 
-                    ? 'Use {question}, {userAnswer}, e {modelAnswer} como placeholders.'
-                    : 'Use {question}, {userAnswer}, and {modelAnswer} as placeholders.'
-                  }
+                  {t.questionPlaceholder}{t.userAnswerPlaceholder} {t.modelAnswerPlaceholder}
                 </p>
               </div>
 
@@ -335,7 +420,7 @@ export default function Settings() {
                   placeholder="Enter the prompt for generating elaborative questions..."
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {language === 'pt-BR' ? 'Use {subject} como placeholder para a matéria de estudo.' : 'Use {subject} as a placeholder for the study subject.'}
+                  {t.subjectPlaceholder2}
                 </p>
               </div>
 
@@ -352,7 +437,7 @@ export default function Settings() {
                   placeholder="Enter the prompt for generating retrieval practice questions..."
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {language === 'pt-BR' ? 'Use {subject} como placeholder para a matéria de estudo.' : 'Use {subject} as a placeholder for the study subject.'}
+                  {t.subjectPlaceholder2}
                 </p>
               </div>
             </div>
@@ -599,6 +684,18 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Language Switch Modal */}
+      <LanguageSwitchModal
+        isOpen={showLanguageModal}
+        onClose={() => {
+          setShowLanguageModal(false);
+          setPendingLanguage(null);
+        }}
+        onConfirm={handleLanguageModalConfirm}
+        currentLanguage={language}
+        newLanguage={pendingLanguage || language}
+      />
     </div>
   );
 }

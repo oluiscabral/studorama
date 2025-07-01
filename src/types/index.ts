@@ -65,3 +65,8 @@ export type Language = 'en-US' | 'pt-BR';
 export interface LanguageSettings {
   language: Language;
 }
+
+export interface LanguageSwitchPreference {
+  rememberChoice: boolean;
+  autoResetPrompts: boolean;
+}

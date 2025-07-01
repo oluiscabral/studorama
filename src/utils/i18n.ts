@@ -188,17 +188,29 @@ export interface Translations {
   ready: string;
   requiresApiKey: string;
   
+  // Language Switch Modal
+  languageChange: string;
+  resetPromptsOption: string;
+  resetPromptsDescription: string;
+  rememberChoice: string;
+  rememberChoiceDescription: string;
+  confirmChange: string;
+  cancel: string;
+  languageSwitchPreferences: string;
+  manageLanguagePreferences: string;
+  resetLanguagePreferences: string;
+  languagePreferencesReset: string;
+  
   // Common
   loading: string;
   error: string;
   retry: string;
-  cancel: string;
-  save: string;
   delete: string;
   edit: string;
   close: string;
   yes: string;
   no: string;
+  save: string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -390,17 +402,29 @@ const translations: Record<Language, Translations> = {
     ready: 'Ready',
     requiresApiKey: 'Requires API Key',
     
+    // Language Switch Modal
+    languageChange: 'Language Change',
+    resetPromptsOption: 'Reset AI prompts for the new language',
+    resetPromptsDescription: 'Recommended: Automatically updates all AI prompts to match the selected language, ensuring questions and evaluations are generated in the correct language.',
+    rememberChoice: 'Remember my choice',
+    rememberChoiceDescription: 'Don\'t show this modal again when switching languages. You can change this preference in settings.',
+    confirmChange: 'Confirm Change',
+    cancel: 'Cancel',
+    languageSwitchPreferences: 'Language Switch Preferences',
+    manageLanguagePreferences: 'Manage Language Switch Preferences',
+    resetLanguagePreferences: 'Reset Language Preferences',
+    languagePreferencesReset: 'Language preferences have been reset. The modal will appear again when switching languages.',
+    
     // Common
     loading: 'Loading...',
     error: 'Error',
     retry: 'Retry',
-    cancel: 'Cancel',
-    save: 'Save',
     delete: 'Delete',
     edit: 'Edit',
     close: 'Close',
     yes: 'Yes',
     no: 'No',
+    save: 'Save',
   },
   
   'pt-BR': {
@@ -591,17 +615,29 @@ const translations: Record<Language, Translations> = {
     ready: 'Pronto',
     requiresApiKey: 'Requer Chave da API',
     
+    // Language Switch Modal
+    languageChange: 'Alteração de Idioma',
+    resetPromptsOption: 'Redefinir prompts da IA para o novo idioma',
+    resetPromptsDescription: 'Recomendado: Atualiza automaticamente todos os prompts da IA para corresponder ao idioma selecionado, garantindo que as questões e avaliações sejam geradas no idioma correto.',
+    rememberChoice: 'Lembrar minha escolha',
+    rememberChoiceDescription: 'Não mostrar este modal novamente ao trocar de idioma. Você pode alterar esta preferência nas configurações.',
+    confirmChange: 'Confirmar Alteração',
+    cancel: 'Cancelar',
+    languageSwitchPreferences: 'Preferências de Troca de Idioma',
+    manageLanguagePreferences: 'Gerenciar Preferências de Troca de Idioma',
+    resetLanguagePreferences: 'Redefinir Preferências de Idioma',
+    languagePreferencesReset: 'As preferências de idioma foram redefinidas. O modal aparecerá novamente ao trocar de idioma.',
+    
     // Common
     loading: 'Carregando...',
     error: 'Erro',
     retry: 'Tentar Novamente',
-    cancel: 'Cancelar',
-    save: 'Salvar',
     delete: 'Excluir',
     edit: 'Editar',
     close: 'Fechar',
     yes: 'Sim',
     no: 'Não',
+    save: 'Salvar',
   }
 };
 

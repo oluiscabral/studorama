@@ -6,7 +6,9 @@ export interface StudySession {
   status: 'active' | 'completed';
   score: number;
   totalQuestions: number;
-  questionType?: 'multiple-choice' | 'dissertative';
+  questionType?: 'multiple-choice' | 'dissertative' | 'mixed';
+  learningSettings?: LearningSettings;
+  spacedRepetition?: SpacedRepetitionData;
 }
 
 export interface Question {
@@ -21,6 +23,29 @@ export interface Question {
   type: 'multiple-choice' | 'dissertative';
   correctAnswerText?: string;
   aiEvaluation?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  reviewCount?: number;
+  lastReviewed?: string;
+  nextReview?: string;
+  confidence?: number; // 1-5 scale
+  retrievalStrength?: number; // How well the user knows this
+}
+
+export interface LearningSettings {
+  spacedRepetition: boolean;
+  interleaving: boolean;
+  elaborativeInterrogation: boolean;
+  selfExplanation: boolean;
+  desirableDifficulties: boolean;
+  retrievalPractice: boolean;
+  generationEffect: boolean;
+}
+
+export interface SpacedRepetitionData {
+  reviewIntervals: number[]; // Days between reviews
+  currentInterval: number;
+  easeFactor: number;
+  reviewCount: number;
 }
 
 export interface APISettings {
@@ -30,5 +55,7 @@ export interface APISettings {
     multipleChoice: string;
     dissertative: string;
     evaluation: string;
+    elaborativePrompt: string;
+    retrievalPrompt: string;
   };
 }

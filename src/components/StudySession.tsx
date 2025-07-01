@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { CheckCircle, XCircle, RefreshCw, ArrowRight, BookOpen, FileText, List } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, ArrowRight, BookOpen, FileText, List, Brain, Target, Clock, Lightbulb, HelpCircle } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { StudySession, Question } from '../types';
-import { generateQuestion, generateDissertativeQuestion, evaluateAnswer } from '../utils/openai';
+import { StudySession, Question, LearningSettings } from '../types';
+import { generateQuestion, generateDissertativeQuestion, evaluateAnswer, generateElaborativeQuestion, generateRetrievalQuestion } from '../utils/openai';
+import { calculateNextReview, shouldReviewQuestion } from '../utils/spacedRepetition';
+
+const DEFAULT_LEARNING_SETTINGS: LearningSettings = {
+  spacedRepetition: true,
+  interleaving: true,
+  elaborativeInterrogation: true,
+  selfExplanation: true,
+  desirableDifficulties: true,
+  retrievalPractice: true,
+  generationEffect: true
+};
 
 export default function StudySessionComponent() {
   const navigate = useNavigate();
@@ -15,7 +26,9 @@ export default function StudySessionComponent() {
     customPrompts: {
       multipleChoice: '',
       dissertative: '',
-      evaluation: ''
+      evaluation: '',
+      elaborativePrompt: '',
+      retrievalPrompt: ''
     }
   });
   
@@ -27,8 +40,14 @@ export default function StudySessionComponent() {
   const [loading, setLoading] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
   const [subject, setSubject] = useState('');
-  const [questionType, setQuestionType] = useState<'multiple-choice' | 'dissertative'>('multiple-choice');
+  const [questionType, setQuestionType] = useState<'multiple-choice' | 'dissertative' | 'mixed'>('multiple-choice');
   const [sessionStarted, setSessionStarted] = useState(false);
+  const [learningSettings, setLearningSettings] = useState<LearningSettings>(DEFAULT_LEARNING_SETTINGS);
+  const [confidenceLevel, setConfidenceLevel] = useState<number>(3);
+  const [showElaborativePrompt, setShowElaborativePrompt] = useState(false);
+  const [elaborativeResponse, setElaborativeResponse] = useState('');
+  const [showSelfExplanation, setShowSelfExplanation] = useState(false);
+  const [selfExplanation, setSelfExplanation] = useState('');
 
   // Check if we're continuing an existing session
   useEffect(() => {
@@ -39,11 +58,31 @@ export default function StudySessionComponent() {
         setCurrentSession(existingSession);
         setSubject(existingSession.subject);
         setQuestionType(existingSession.questionType || 'multiple-choice');
+        setLearningSettings(existingSession.learningSettings || DEFAULT_LEARNING_SETTINGS);
         setSessionStarted(true);
         loadNextQuestion(existingSession);
       }
     }
   }, [location.state, sessions]);
+
+  const getNextQuestionType = (session: StudySession): 'multiple-choice' | 'dissertative' => {
+    if (questionType === 'mixed') {
+      // Implement interleaving - mix question types for better learning
+      if (learningSettings.interleaving) {
+        const lastQuestions = session.questions.slice(-3);
+        const lastTypes = lastQuestions.map(q => q.type);
+        
+        // If last 2 questions were the same type, switch
+        if (lastTypes.length >= 2 && lastTypes[lastTypes.length - 1] === lastTypes[lastTypes.length - 2]) {
+          return lastTypes[lastTypes.length - 1] === 'multiple-choice' ? 'dissertative' : 'multiple-choice';
+        }
+      }
+      
+      // Random selection with slight bias toward multiple choice for variety
+      return Math.random() < 0.6 ? 'multiple-choice' : 'dissertative';
+    }
+    return questionType;
+  };
 
   const startNewSession = async () => {
     if (!subject.trim()) return;
@@ -60,7 +99,14 @@ export default function StudySessionComponent() {
       status: 'active',
       score: 0,
       totalQuestions: 0,
-      questionType
+      questionType,
+      learningSettings,
+      spacedRepetition: {
+        reviewIntervals: [1, 3, 7, 14, 30],
+        currentInterval: 0,
+        easeFactor: 2.5,
+        reviewCount: 0
+      }
     };
 
     setCurrentSession(newSession);
@@ -73,11 +119,34 @@ export default function StudySessionComponent() {
     setSelectedAnswer(null);
     setDissertativeAnswer('');
     setShowFeedback(false);
+    setShowElaborativePrompt(false);
+    setShowSelfExplanation(false);
+    setElaborativeResponse('');
+    setSelfExplanation('');
 
     try {
+      // Check for spaced repetition questions first
+      if (learningSettings.spacedRepetition) {
+        const reviewQuestions = session.questions.filter(q => shouldReviewQuestion(q));
+        if (reviewQuestions.length > 0 && Math.random() < 0.3) {
+          // 30% chance to review a previous question
+          const questionToReview = reviewQuestions[Math.floor(Math.random() * reviewQuestions.length)];
+          setCurrentQuestion({
+            ...questionToReview,
+            id: Date.now().toString(), // New ID for tracking
+            attempts: 0,
+            userAnswer: undefined,
+            isCorrect: undefined
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      const nextType = getNextQuestionType(session);
       let questionData;
       
-      if (questionType === 'dissertative') {
+      if (nextType === 'dissertative') {
         questionData = await generateDissertativeQuestion(
           session.subject, 
           apiSettings.openaiApiKey,
@@ -90,13 +159,22 @@ export default function StudySessionComponent() {
           question: questionData.question,
           correctAnswerText: questionData.sampleAnswer,
           attempts: 0,
-          type: 'dissertative'
+          type: 'dissertative',
+          difficulty: 'medium',
+          reviewCount: 0,
+          confidence: 3,
+          retrievalStrength: 0.5
         };
 
         setCurrentQuestion(newQuestion);
       } else {
+        // Apply desirable difficulties - make some questions harder
+        const difficultyModifier = learningSettings.desirableDifficulties && Math.random() < 0.3 
+          ? ' Make this question more challenging and require deeper thinking.' 
+          : '';
+
         questionData = await generateQuestion(
-          session.subject, 
+          session.subject + difficultyModifier, 
           apiSettings.openaiApiKey,
           apiSettings.model || 'gpt-4o-mini',
           apiSettings.customPrompts?.multipleChoice
@@ -109,7 +187,11 @@ export default function StudySessionComponent() {
           correctAnswer: questionData.correctAnswer,
           attempts: 0,
           feedback: questionData.explanation,
-          type: 'multiple-choice'
+          type: 'multiple-choice',
+          difficulty: difficultyModifier ? 'hard' : 'medium',
+          reviewCount: 0,
+          confidence: 3,
+          retrievalStrength: 0.5
         };
 
         setCurrentQuestion(newQuestion);
@@ -136,7 +218,9 @@ export default function StudySessionComponent() {
         ...currentQuestion,
         userAnswer: selectedAnswer,
         isCorrect,
-        attempts: currentQuestion.attempts + 1
+        attempts: currentQuestion.attempts + 1,
+        confidence: confidenceLevel,
+        retrievalStrength: isCorrect ? Math.min(1, (currentQuestion.retrievalStrength || 0.5) + 0.2) : Math.max(0, (currentQuestion.retrievalStrength || 0.5) - 0.1)
       };
     } else {
       setEvaluating(true);
@@ -150,22 +234,25 @@ export default function StudySessionComponent() {
           apiSettings.customPrompts?.evaluation
         );
 
-        // Simple scoring based on evaluation keywords
-        const positiveWords = ['excellent', 'good', 'correct', 'accurate', 'comprehensive', 'well'];
-        const negativeWords = ['incorrect', 'missing', 'incomplete', 'wrong', 'poor'];
-        
+        // Enhanced scoring based on evaluation
         const evaluationLower = evaluation.toLowerCase();
+        const positiveWords = ['excellent', 'good', 'correct', 'accurate', 'comprehensive', 'well', 'strong', 'clear', 'thorough'];
+        const negativeWords = ['incorrect', 'missing', 'incomplete', 'wrong', 'poor', 'weak', 'unclear', 'insufficient'];
+        
         const positiveCount = positiveWords.filter(word => evaluationLower.includes(word)).length;
         const negativeCount = negativeWords.filter(word => evaluationLower.includes(word)).length;
         
-        const isCorrect = positiveCount > negativeCount;
+        const score = Math.max(0, Math.min(1, (positiveCount - negativeCount + 2) / 4));
+        const isCorrect = score >= 0.6;
 
         updatedQuestion = {
           ...currentQuestion,
           userAnswer: dissertativeAnswer,
           isCorrect,
           attempts: currentQuestion.attempts + 1,
-          aiEvaluation: evaluation
+          aiEvaluation: evaluation,
+          confidence: confidenceLevel,
+          retrievalStrength: isCorrect ? Math.min(1, (currentQuestion.retrievalStrength || 0.5) + 0.2) : Math.max(0, (currentQuestion.retrievalStrength || 0.5) - 0.1)
         };
       } catch (error) {
         console.error('Error evaluating answer:', error);
@@ -174,15 +261,33 @@ export default function StudySessionComponent() {
           userAnswer: dissertativeAnswer,
           isCorrect: false,
           attempts: currentQuestion.attempts + 1,
-          aiEvaluation: 'Error evaluating answer. Please try again.'
+          aiEvaluation: 'Error evaluating answer. Please try again.',
+          confidence: confidenceLevel,
+          retrievalStrength: Math.max(0, (currentQuestion.retrievalStrength || 0.5) - 0.1)
         };
       } finally {
         setEvaluating(false);
       }
     }
 
+    // Calculate next review date for spaced repetition
+    if (learningSettings.spacedRepetition) {
+      updatedQuestion.nextReview = calculateNextReview(updatedQuestion, currentSession.spacedRepetition!);
+      updatedQuestion.lastReviewed = new Date().toISOString();
+    }
+
     setCurrentQuestion(updatedQuestion);
     setShowFeedback(true);
+
+    // Show elaborative interrogation prompt
+    if (learningSettings.elaborativeInterrogation && !updatedQuestion.isCorrect) {
+      setShowElaborativePrompt(true);
+    }
+
+    // Show self-explanation prompt for correct answers
+    if (learningSettings.selfExplanation && updatedQuestion.isCorrect) {
+      setShowSelfExplanation(true);
+    }
 
     // Update session
     const updatedQuestions = [...currentSession.questions];
@@ -246,14 +351,14 @@ export default function StudySessionComponent() {
 
   if (!sessionStarted) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto space-y-6">
         <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-8">
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-8 h-8 text-orange-600" />
+              <Brain className="w-8 h-8 text-orange-600" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Start New Study Session</h1>
-            <p className="text-gray-600">Enter a subject and choose question type to begin your AI-powered study session</p>
+            <p className="text-gray-600">Configure your AI-powered study session with proven learning techniques</p>
           </div>
 
           <div className="space-y-6">
@@ -276,7 +381,7 @@ export default function StudySessionComponent() {
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Question Type
               </label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <button
                   onClick={() => setQuestionType('multiple-choice')}
                   className={`p-4 border-2 rounded-lg transition-all duration-200 ${
@@ -289,7 +394,7 @@ export default function StudySessionComponent() {
                     <List className="w-6 h-6 text-orange-600" />
                   </div>
                   <h3 className="font-medium text-gray-900">Multiple Choice</h3>
-                  <p className="text-sm text-gray-600 mt-1">Quick questions with 4 options</p>
+                  <p className="text-sm text-gray-600 mt-1">Quick assessment questions</p>
                 </button>
 
                 <button
@@ -304,15 +409,62 @@ export default function StudySessionComponent() {
                     <FileText className="w-6 h-6 text-orange-600" />
                   </div>
                   <h3 className="font-medium text-gray-900">Dissertative</h3>
-                  <p className="text-sm text-gray-600 mt-1">Open-ended essay questions</p>
+                  <p className="text-sm text-gray-600 mt-1">Deep analysis questions</p>
+                </button>
+
+                <button
+                  onClick={() => setQuestionType('mixed')}
+                  className={`p-4 border-2 rounded-lg transition-all duration-200 ${
+                    questionType === 'mixed'
+                      ? 'border-orange-500 bg-orange-50'
+                      : 'border-gray-200 hover:border-orange-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-center mb-2">
+                    <Brain className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <h3 className="font-medium text-gray-900">Mixed</h3>
+                  <p className="text-sm text-gray-600 mt-1">Interleaved practice</p>
                 </button>
               </div>
             </div>
 
+            {/* Learning Techniques Settings */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h3 className="text-lg font-medium text-blue-900 mb-4 flex items-center">
+                <Lightbulb className="w-5 h-5 mr-2" />
+                Learning Techniques (Based on "Make It Stick")
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                {Object.entries(learningSettings).map(([key, value]) => (
+                  <label key={key} className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={value}
+                      onChange={(e) => setLearningSettings(prev => ({
+                        ...prev,
+                        [key]: e.target.checked
+                      }))}
+                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    <span className="text-sm text-blue-800 capitalize">
+                      {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-4 text-sm text-blue-700">
+                <p><strong>Spaced Repetition:</strong> Review questions at increasing intervals</p>
+                <p><strong>Interleaving:</strong> Mix different question types for better retention</p>
+                <p><strong>Elaborative Interrogation:</strong> Ask "why" questions for deeper understanding</p>
+                <p><strong>Retrieval Practice:</strong> Test yourself to strengthen memory</p>
+              </div>
+            </div>
+
             {apiSettings.model && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800">
-                  <strong>Using model:</strong> {apiSettings.model}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-sm text-green-800">
+                  <strong>Ready to learn!</strong> Using {apiSettings.model} with proven learning techniques
                 </p>
               </div>
             )}
@@ -320,9 +472,10 @@ export default function StudySessionComponent() {
             <button
               onClick={startNewSession}
               disabled={!subject.trim() || !apiSettings.openaiApiKey}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Start Study Session
+              <Brain className="w-5 h-5 mr-2" />
+              Start Enhanced Study Session
             </button>
 
             {!apiSettings.openaiApiKey && (
@@ -385,6 +538,15 @@ export default function StudySessionComponent() {
                 )}
                 {currentQuestion.type === 'multiple-choice' ? 'Multiple Choice' : 'Dissertative'}
               </span>
+              {currentQuestion.difficulty && (
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  currentQuestion.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
+                  currentQuestion.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {currentQuestion.difficulty}
+                </span>
+              )}
             </div>
             {apiSettings.model && (
               <p className="text-xs text-gray-500">Using {apiSettings.model}</p>
@@ -466,6 +628,34 @@ export default function StudySessionComponent() {
               </p>
             </div>
           )}
+
+          {/* Confidence Level */}
+          {!showFeedback && (
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                How confident are you in your answer?
+              </label>
+              <div className="flex items-center space-x-4">
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <button
+                    key={level}
+                    onClick={() => setConfidenceLevel(level)}
+                    className={`w-10 h-10 rounded-full border-2 transition-all ${
+                      confidenceLevel === level
+                        ? 'border-orange-500 bg-orange-100 text-orange-700'
+                        : 'border-gray-300 hover:border-orange-300'
+                    }`}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-2">
+                <span>Not confident</span>
+                <span>Very confident</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Feedback */}
@@ -482,7 +672,7 @@ export default function StudySessionComponent() {
               <span className={`font-medium ${
                 currentQuestion.isCorrect ? 'text-green-800' : 'text-red-800'
               }`}>
-                {currentQuestion.isCorrect ? 'Correct!' : 'Needs Improvement'}
+                {currentQuestion.isCorrect ? 'Excellent!' : 'Keep Learning!'}
               </span>
             </div>
             
@@ -513,6 +703,40 @@ export default function StudySessionComponent() {
           </div>
         )}
 
+        {/* Elaborative Interrogation */}
+        {showElaborativePrompt && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h4 className="text-sm font-medium text-blue-800 mb-2 flex items-center">
+              <HelpCircle className="w-4 h-4 mr-1" />
+              Elaborative Interrogation: Why do you think this is the correct answer?
+            </h4>
+            <textarea
+              value={elaborativeResponse}
+              onChange={(e) => setElaborativeResponse(e.target.value)}
+              placeholder="Explain your reasoning and why this answer makes sense..."
+              rows={3}
+              className="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+          </div>
+        )}
+
+        {/* Self-Explanation */}
+        {showSelfExplanation && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <h4 className="text-sm font-medium text-green-800 mb-2 flex items-center">
+              <Lightbulb className="w-4 h-4 mr-1" />
+              Self-Explanation: How does this connect to what you already know?
+            </h4>
+            <textarea
+              value={selfExplanation}
+              onChange={(e) => setSelfExplanation(e.target.value)}
+              placeholder="Connect this answer to your existing knowledge or other concepts..."
+              rows={3}
+              className="w-full px-3 py-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+            />
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex justify-between">
           <button
@@ -539,7 +763,10 @@ export default function StudySessionComponent() {
                     Evaluating...
                   </>
                 ) : (
-                  'Submit Answer'
+                  <>
+                    <Target className="w-4 h-4 mr-2" />
+                    Submit Answer
+                  </>
                 )}
               </button>
             ) : (
@@ -549,6 +776,7 @@ export default function StudySessionComponent() {
                     onClick={() => {
                       setSelectedAnswer(null);
                       setShowFeedback(false);
+                      setConfidenceLevel(3);
                     }}
                     className="bg-gray-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors flex items-center"
                   >

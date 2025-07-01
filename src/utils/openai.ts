@@ -135,3 +135,87 @@ export async function evaluateAnswer(question: string, userAnswer: string, corre
   const data = await response.json();
   return data.choices[0].message.content;
 }
+
+export async function generateElaborativeQuestion(subject: string, question: string, apiKey: string, model: string = 'gpt-4o-mini'): Promise<string> {
+  if (!apiKey) {
+    throw new Error('OpenAI API key is required');
+  }
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a study assistant that helps students think deeper about topics through elaborative interrogation.'
+        },
+        {
+          role: 'user',
+          content: `For the subject "${subject}" and question "${question}", generate a follow-up "why" question that helps the student think more deeply about the underlying concepts and connections.`
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 200,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`OpenAI API error: ${response.statusText}. ${errorData.error?.message || ''}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+export async function generateRetrievalQuestion(subject: string, previousQuestions: string[], apiKey: string, model: string = 'gpt-4o-mini'): Promise<any> {
+  if (!apiKey) {
+    throw new Error('OpenAI API key is required');
+  }
+
+  const questionsContext = previousQuestions.length > 0 
+    ? `Previous questions covered: ${previousQuestions.slice(-5).join(', ')}`
+    : '';
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [
+        {
+          role: 'system',
+          content: `You are a study assistant that creates retrieval practice questions about ${subject}. ${questionsContext}. Create a question that tests recall of previously covered material or connects new concepts to old ones. Return a JSON object with: question (string), type (either "multiple-choice" or "dissertative"), and if multiple-choice: options (array), correctAnswer (number), explanation (string). If dissertative: sampleAnswer (string).`
+        },
+        {
+          role: 'user',
+          content: `Create a retrieval practice question about ${subject} that helps reinforce previous learning.`
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 600,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`OpenAI API error: ${response.statusText}. ${errorData.error?.message || ''}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices[0].message.content;
+  
+  try {
+    return JSON.parse(content);
+  } catch (e) {
+    throw new Error('Failed to parse OpenAI response. Please try again.');
+  }
+}

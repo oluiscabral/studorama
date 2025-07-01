@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Key, Save, Eye, EyeOff, ExternalLink, Bot, MessageSquare, Github, Linkedin } from 'lucide-react';
+import { Key, Save, Eye, EyeOff, ExternalLink, Bot, MessageSquare, Github, Linkedin, Brain } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const OPENAI_MODELS = [
@@ -13,7 +13,9 @@ const OPENAI_MODELS = [
 const DEFAULT_PROMPTS = {
   multipleChoice: `You are a study assistant that creates multiple choice questions about {subject}. Create a challenging but fair question with 4 options. Return a JSON object with: question (string), options (array of 4 strings), correctAnswer (number 0-3), and explanation (string explaining why the correct answer is right).`,
   dissertative: `You are a study assistant that creates dissertative questions about {subject}. Create an open-ended question that requires thoughtful analysis and explanation. Return a JSON object with: question (string), sampleAnswer (string with a comprehensive model answer), and evaluationCriteria (array of strings describing what makes a good answer).`,
-  evaluation: `You are evaluating a student's answer to a dissertative question. Question: {question}. Student's answer: {userAnswer}. Model answer: {modelAnswer}. Provide constructive feedback focusing on accuracy, completeness, and understanding. Rate the answer and suggest improvements. Be encouraging but honest.`
+  evaluation: `You are evaluating a student's answer to a dissertative question. Question: {question}. Student's answer: {userAnswer}. Model answer: {modelAnswer}. Provide constructive feedback focusing on accuracy, completeness, and understanding. Rate the answer and suggest improvements. Be encouraging but honest.`,
+  elaborativePrompt: `Generate an elaborative interrogation question that asks "why" to help the student understand the deeper reasoning behind the concept in {subject}. Focus on helping them connect ideas and understand underlying principles.`,
+  retrievalPrompt: `Create a retrieval practice question about {subject} that tests recall of important concepts. This should help strengthen memory through active recall. Return a JSON object with appropriate format for the question type.`
 };
 
 export default function Settings() {
@@ -28,7 +30,7 @@ export default function Settings() {
   const [tempModel, setTempModel] = useState(apiSettings.model || 'gpt-4o-mini');
   const [tempPrompts, setTempPrompts] = useState(apiSettings.customPrompts || DEFAULT_PROMPTS);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'about'>('api');
+  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'about'>('api');
 
   const handleSave = () => {
     setApiSettings({ 
@@ -51,7 +53,7 @@ export default function Settings() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Settings</h1>
-        <p className="text-gray-600">Configure your Studorama preferences and API settings</p>
+        <p className="text-gray-600">Configure your Studorama preferences and learning techniques</p>
       </div>
 
       {/* Tabs */}
@@ -61,6 +63,7 @@ export default function Settings() {
             {[
               { id: 'api', label: 'API Configuration', icon: Key },
               { id: 'prompts', label: 'AI Prompts', icon: MessageSquare },
+              { id: 'learning', label: 'Learning Techniques', icon: Brain },
               { id: 'about', label: 'About', icon: Bot }
             ].map(({ id, label, icon: Icon }) => (
               <button
@@ -227,6 +230,127 @@ export default function Settings() {
                   Use {'{question}'}, {'{userAnswer}'}, and {'{modelAnswer}'} as placeholders.
                 </p>
               </div>
+
+              {/* Elaborative Prompt */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Elaborative Interrogation Prompt
+                </label>
+                <textarea
+                  value={tempPrompts.elaborativePrompt}
+                  onChange={(e) => setTempPrompts(prev => ({ ...prev, elaborativePrompt: e.target.value }))}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors resize-none"
+                  placeholder="Enter the prompt for generating elaborative questions..."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Use {'{subject}'} as a placeholder for the study subject.
+                </p>
+              </div>
+
+              {/* Retrieval Prompt */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Retrieval Practice Prompt
+                </label>
+                <textarea
+                  value={tempPrompts.retrievalPrompt}
+                  onChange={(e) => setTempPrompts(prev => ({ ...prev, retrievalPrompt: e.target.value }))}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors resize-none"
+                  placeholder="Enter the prompt for generating retrieval practice questions..."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Use {'{subject}'} as a placeholder for the study subject.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Learning Techniques Tab */}
+          {activeTab === 'learning' && (
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Learning Techniques</h2>
+                  <p className="text-sm text-gray-600">Based on "Make It Stick: The Science of Successful Learning"</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-3">Spaced Repetition</h3>
+                  <p className="text-sm text-blue-800 mb-4">
+                    Review material at increasing intervals to strengthen long-term retention. Questions are automatically scheduled for review based on your performance.
+                  </p>
+                  <div className="text-xs text-blue-700">
+                    <strong>How it works:</strong> Correctly answered questions are reviewed after longer intervals, while missed questions are reviewed sooner.
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
+                  <h3 className="text-lg font-semibold text-green-900 mb-3">Interleaving</h3>
+                  <p className="text-sm text-green-800 mb-4">
+                    Mix different types of questions and topics rather than studying one type at a time. This improves discrimination and transfer of learning.
+                  </p>
+                  <div className="text-xs text-green-700">
+                    <strong>How it works:</strong> When "Mixed" question type is selected, multiple choice and dissertative questions are randomly interleaved.
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-lg p-6 border border-purple-200">
+                  <h3 className="text-lg font-semibold text-purple-900 mb-3">Elaborative Interrogation</h3>
+                  <p className="text-sm text-purple-800 mb-4">
+                    Ask "why" questions to understand the reasoning behind facts and concepts. This creates deeper understanding and better retention.
+                  </p>
+                  <div className="text-xs text-purple-700">
+                    <strong>How it works:</strong> After incorrect answers, you'll be prompted to explain why the correct answer makes sense.
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-6 border border-orange-200">
+                  <h3 className="text-lg font-semibold text-orange-900 mb-3">Self-Explanation</h3>
+                  <p className="text-sm text-orange-800 mb-4">
+                    Explain how new information relates to what you already know. This builds connections and improves understanding.
+                  </p>
+                  <div className="text-xs text-orange-700">
+                    <strong>How it works:</strong> After correct answers, you'll be prompted to connect the concept to your existing knowledge.
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-lg p-6 border border-yellow-200">
+                  <h3 className="text-lg font-semibold text-yellow-900 mb-3">Desirable Difficulties</h3>
+                  <p className="text-sm text-yellow-800 mb-4">
+                    Introduce appropriate challenges that require effort but are achievable. This strengthens learning and retention.
+                  </p>
+                  <div className="text-xs text-yellow-700">
+                    <strong>How it works:</strong> Some questions are made more challenging to promote deeper thinking and stronger memory formation.
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-lg p-6 border border-teal-200">
+                  <h3 className="text-lg font-semibold text-teal-900 mb-3">Retrieval Practice</h3>
+                  <p className="text-sm text-teal-800 mb-4">
+                    Test yourself frequently to strengthen memory pathways. The act of retrieving information makes it more memorable.
+                  </p>
+                  <div className="text-xs text-teal-700">
+                    <strong>How it works:</strong> Questions test your ability to recall information, and confidence levels help track your certainty.
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Research-Based Benefits</h3>
+                <ul className="text-sm text-gray-700 space-y-2">
+                  <li>• <strong>Improved retention:</strong> These techniques can improve long-term retention by 50-200%</li>
+                  <li>• <strong>Better transfer:</strong> Knowledge gained through these methods transfers better to new situations</li>
+                  <li>• <strong>Deeper understanding:</strong> Focus on comprehension rather than just memorization</li>
+                  <li>• <strong>Metacognitive awareness:</strong> Better understanding of what you know and don't know</li>
+                </ul>
+              </div>
             </div>
           )}
 
@@ -239,15 +363,16 @@ export default function Settings() {
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">About Studorama</h2>
-                  <p className="text-sm text-gray-600">AI-powered study sessions platform</p>
+                  <p className="text-sm text-gray-600">AI-powered study sessions with proven learning techniques</p>
                 </div>
               </div>
 
               <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Created by oluiscabral</h3>
                 <p className="text-gray-700 mb-4">
-                  Studorama is an open-source AI-powered study platform designed to enhance your learning experience 
-                  through personalized questions and intelligent feedback. Transform your study sessions with the power of AI.
+                  Studorama combines cutting-edge AI technology with research-backed learning techniques from "Make It Stick" 
+                  to create the most effective study experience possible. Transform your learning with spaced repetition, 
+                  interleaving, and other proven methods.
                 </p>
                 <div className="flex items-center space-x-4">
                   <a
@@ -273,23 +398,27 @@ export default function Settings() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Features</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">Core Features</h4>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• AI-generated questions</li>
-                    <li>• Multiple choice & dissertative questions</li>
-                    <li>• Session tracking & history</li>
-                    <li>• Customizable AI prompts</li>
-                    <li>• Progress analytics</li>
+                    <li>• AI-generated questions (multiple choice & dissertative)</li>
+                    <li>• Mixed question types with interleaving</li>
+                    <li>• Spaced repetition scheduling</li>
+                    <li>• Elaborative interrogation prompts</li>
+                    <li>• Self-explanation exercises</li>
+                    <li>• Confidence tracking</li>
+                    <li>• Session history & analytics</li>
                   </ul>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Technology</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">Learning Science</h4>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• React & TypeScript</li>
-                    <li>• Tailwind CSS</li>
-                    <li>• OpenAI API integration</li>
-                    <li>• Local storage</li>
-                    <li>• Responsive design</li>
+                    <li>• Based on "Make It Stick" research</li>
+                    <li>• Retrieval practice implementation</li>
+                    <li>• Desirable difficulties integration</li>
+                    <li>• Generation effect utilization</li>
+                    <li>• Metacognitive strategy training</li>
+                    <li>• Evidence-based spacing algorithms</li>
+                    <li>• Cognitive load optimization</li>
                   </ul>
                 </div>
               </div>
@@ -299,7 +428,16 @@ export default function Settings() {
                 <p className="text-sm text-green-700">
                   Your API key and study data are stored locally in your browser and are never transmitted to our servers. 
                   Only you have access to your study sessions and progress. Your API key is used solely to communicate 
-                  with OpenAI's services to generate study questions.
+                  with OpenAI's services to generate study questions and evaluations.
+                </p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-blue-900 mb-2">Scientific Foundation</h4>
+                <p className="text-sm text-blue-700">
+                  Studorama implements learning techniques validated by cognitive science research, particularly from 
+                  "Make It Stick: The Science of Successful Learning" by Peter C. Brown, Henry L. Roediger III, and Mark A. McDaniel. 
+                  These methods have been proven to enhance long-term retention and transfer of knowledge.
                 </p>
               </div>
             </div>
@@ -350,6 +488,12 @@ export default function Settings() {
             <span className="text-gray-700">Selected Model</span>
             <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
               {OPENAI_MODELS.find(m => m.value === (apiSettings.model || 'gpt-4o-mini'))?.label || 'GPT-4o Mini'}
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-700">Learning Techniques</span>
+            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              Enhanced Study Mode
             </div>
           </div>
           <div className="flex items-center justify-between">

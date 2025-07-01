@@ -132,10 +132,13 @@ export default function SessionHistory() {
                       Continue
                     </Link>
                   )}
-                  <button className="inline-flex items-center px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
+                  <Link
+                    to={`/session/${session.id}`}
+                    className="inline-flex items-center px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                  >
                     <Eye className="w-4 h-4 mr-1" />
                     View Details
-                  </button>
+                  </Link>
                 </div>
               </div>
 

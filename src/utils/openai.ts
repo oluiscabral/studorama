@@ -15,7 +15,7 @@ export async function generateQuestion(subject: string, apiKey: string, model: s
       messages: [
         {
           role: "system",
-          content: `You are a study assistant that creates multiple choice questions about ${subject}. Return a JSON object with: question (string), options (array of 4 strings), correctAnswer (number 0-3), and explanation (string explaining why the correct answer is right).`,
+          content: `You are a study assistant that creates multiple choice questions about ${subject}. Return a JSON object with: question (string), options (array of 4 strings), correctAnswer (number 0-3), and explanation (string explaining why the correct answer is right). The returned JSON is valid. It should be possible to parse your response text as JSON.`,
         },
         {
           role: "user",

@@ -8,16 +8,28 @@ export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleSponsor = async (priceId: string, mode: 'payment' | 'subscription') => {
-    // For accountless app, redirect to external Stripe checkout
     setLoading(priceId);
     
     try {
-      // Create a simple checkout URL - this would need to be implemented
-      // For now, show a message about account requirement for sponsorship
-      const message = language === 'pt-BR' 
-        ? 'Para se tornar um apoiador, você precisaria criar uma conta. Os recursos principais do Studorama permanecem completamente gratuitos e sem necessidade de conta!'
-        : 'To become a supporter, you would need to create an account. The core Studorama features remain completely free and accountless!';
-      alert(message);
+      // Create Stripe checkout URL - replace with your actual Stripe checkout URLs
+      const checkoutUrls: Record<string, string> = {
+        'price_1RgBFtGzYU9LC2rhWCNUvQNG': 'https://buy.stripe.com/test_advanced_monthly', // Advanced
+        'price_1RgBFfGzYU9LC2rh4LDpFBCr': 'https://buy.stripe.com/test_standard_monthly', // Standard
+        'price_1RgBEPGzYU9LC2rhy3WTMOmk': 'https://buy.stripe.com/test_basic_monthly'     // Basic
+      };
+
+      const checkoutUrl = checkoutUrls[priceId];
+      
+      if (checkoutUrl) {
+        // Redirect to Stripe checkout
+        window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        // Fallback message for development
+        const message = language === 'pt-BR' 
+          ? 'Checkout do Stripe será configurado em breve. Obrigado pelo seu interesse em apoiar o Studorama!'
+          : 'Stripe checkout will be configured soon. Thank you for your interest in supporting Studorama!';
+        alert(message);
+      }
     } catch (error: any) {
       console.error('Error:', error);
       const errorMessage = language === 'pt-BR' 
@@ -244,7 +256,7 @@ export default function PricingPage() {
               </button>
 
               <p className="text-center text-xs sm:text-sm text-gray-500 mt-2 sm:mt-3 leading-relaxed">
-                {t.externalCheckout} ({t.accountOptional})
+                {t.externalCheckout}
               </p>
             </div>
           ))}

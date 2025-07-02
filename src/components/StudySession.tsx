@@ -54,7 +54,7 @@ export default function StudySessionComponent() {
   const [sessionStarted, setSessionStarted] = useState(false);
   const [learningSettings, setLearningSettings] = useState<LearningSettings>(learningPreference.defaultSettings);
   const [rememberChoice, setRememberChoice] = useState(learningPreference.rememberChoice);
-  const [confidenceLevel, setConfidenceLevel] = useState<number>(3);
+  const [confidenceLevel, setConfidenceLevel] = useState<number>(3); // Changed back to 3 (middle)
   const [showElaborativePrompt, setShowElaborativePrompt] = useState(false);
   const [elaborativeResponse, setElaborativeResponse] = useState('');
   const [showSelfExplanation, setShowSelfExplanation] = useState(false);
@@ -185,6 +185,7 @@ export default function StudySessionComponent() {
     setShowSelfExplanation(false);
     setElaborativeResponse('');
     setSelfExplanation('');
+    setConfidenceLevel(3); // Reset to 3 (middle)
 
     try {
       // Check for spaced repetition questions first
@@ -226,7 +227,7 @@ export default function StudySessionComponent() {
           type: 'dissertative',
           difficulty: 'medium',
           reviewCount: 0,
-          confidence: 3,
+          confidence: 3, // Changed back to 3
           retrievalStrength: 0.5
         };
 
@@ -257,7 +258,7 @@ export default function StudySessionComponent() {
           type: 'multiple-choice',
           difficulty: difficultyModifier ? 'hard' : 'medium',
           reviewCount: 0,
-          confidence: 3,
+          confidence: 3, // Changed back to 3
           retrievalStrength: 0.5
         };
 
@@ -963,7 +964,7 @@ export default function StudySessionComponent() {
                     onClick={() => {
                       setSelectedAnswer(null);
                       setShowFeedback(false);
-                      setConfidenceLevel(3);
+                      setConfidenceLevel(3); // Reset to 3 (middle)
                     }}
                     className="bg-gray-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors flex items-center justify-center"
                   >

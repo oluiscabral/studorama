@@ -1,27 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://studorama.netlify.app/</loc>
-    <lastmod>2024-01-01</lastmod>
+    <loc>https://www.studorama.com/</loc>
+    <lastmod>2024-12-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/?lang=pt-BR" />
   </url>
   <url>
-    <loc>https://studorama.netlify.app/study</loc>
-    <lastmod>2024-01-01</lastmod>
+    <loc>https://www.studorama.com/study</loc>
+    <lastmod>2024-12-20</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/study" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/study?lang=pt-BR" />
   </url>
   <url>
-    <loc>https://studorama.netlify.app/history</loc>
-    <lastmod>2024-01-01</lastmod>
+    <loc>https://www.studorama.com/history</loc>
+    <lastmod>2024-12-20</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/history" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/history?lang=pt-BR" />
   </url>
   <url>
-    <loc>https://studorama.netlify.app/settings</loc>
-    <lastmod>2024-01-01</lastmod>
+    <loc>https://www.studorama.com/settings</loc>
+    <lastmod>2024-12-20</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/settings" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/settings?lang=pt-BR" />
+  </url>
+  <url>
+    <loc>https://www.studorama.com/pricing</loc>
+    <lastmod>2024-12-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/pricing" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/pricing?lang=pt-BR" />
   </url>
 </urlset>

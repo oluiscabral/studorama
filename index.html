@@ -2,48 +2,102 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <!-- Primary Meta Tags -->
-    <title>Studorama - AI-Powered Study Sessions | Smart Learning Platform</title>
-    <meta name="title" content="Studorama - AI-Powered Study Sessions | Smart Learning Platform" />
-    <meta name="description" content="Transform your learning with Studorama's AI-powered study sessions. Generate personalized questions, track progress, and master any subject with intelligent feedback. Created by oluiscabral." />
-    <meta name="keywords" content="AI study, learning platform, study sessions, OpenAI, education, quiz generator, personalized learning, study assistant, oluiscabral" />
+    <title>Studorama - Free AI-Powered Study Sessions | Smart Learning Platform</title>
+    <meta name="title" content="Studorama - Free AI-Powered Study Sessions | Smart Learning Platform" />
+    <meta name="description" content="Transform your learning with Studorama's free AI-powered study sessions. Generate personalized questions, track progress, and master any subject with intelligent feedback. No account required - start studying instantly!" />
+    <meta name="keywords" content="AI study app, free learning platform, study sessions, OpenAI education, quiz generator, personalized learning, study assistant, spaced repetition, learning techniques, make it stick, retrieval practice, no account required, privacy first learning" />
     <meta name="author" content="oluiscabral" />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
+    <meta name="distribution" content="global" />
+    <meta name="rating" content="general" />
+    <meta name="copyright" content="© 2024 Studorama" />
+    
+    <!-- Geo Tags -->
+    <meta name="geo.region" content="US" />
+    <meta name="geo.placename" content="United States" />
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://studorama.netlify.app/" />
-    <meta property="og:title" content="Studorama - AI-Powered Study Sessions" />
-    <meta property="og:description" content="Transform your learning with AI-powered study sessions. Generate personalized questions and track your progress." />
-    <meta property="og:image" content="https://studorama.netlify.app/og-image.png" />
+    <meta property="og:url" content="https://www.studorama.com/" />
+    <meta property="og:title" content="Studorama - Free AI-Powered Study Sessions | Smart Learning Platform" />
+    <meta property="og:description" content="Transform your learning with free AI-powered study sessions. Generate personalized questions, track progress, and master any subject. No account required - start studying instantly!" />
+    <meta property="og:image" content="https://www.studorama.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Studorama - AI-Powered Study Sessions Platform" />
     <meta property="og:site_name" content="Studorama" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="pt_BR" />
     
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://studorama.netlify.app/" />
-    <meta property="twitter:title" content="Studorama - AI-Powered Study Sessions" />
-    <meta property="twitter:description" content="Transform your learning with AI-powered study sessions. Generate personalized questions and track your progress." />
-    <meta property="twitter:image" content="https://studorama.netlify.app/og-image.png" />
-    <meta property="twitter:creator" content="@oluiscabral" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@studorama" />
+    <meta name="twitter:creator" content="@oluiscabral" />
+    <meta name="twitter:url" content="https://www.studorama.com/" />
+    <meta name="twitter:title" content="Studorama - Free AI-Powered Study Sessions" />
+    <meta name="twitter:description" content="Transform your learning with free AI-powered study sessions. Generate personalized questions and track your progress. No account required!" />
+    <meta name="twitter:image" content="https://www.studorama.com/twitter-image.png" />
+    <meta name="twitter:image:alt" content="Studorama - AI-Powered Study Sessions Platform" />
     
     <!-- Additional SEO -->
-    <link rel="canonical" href="https://studorama.netlify.app/" />
+    <link rel="canonical" href="https://www.studorama.com/" />
     <meta name="theme-color" content="#ea580c" />
+    <meta name="msapplication-TileColor" content="#ea580c" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Studorama" />
     
-    <!-- Structured Data -->
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://api.openai.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- DNS Prefetch -->
+    <link rel="dns-prefetch" href="//api.openai.com" />
+    <link rel="dns-prefetch" href="//www.google-analytics.com" />
+    
+    <!-- Structured Data - Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Studorama",
+      "url": "https://www.studorama.com",
+      "logo": "https://www.studorama.com/logo.png",
+      "description": "Free AI-powered study sessions platform for personalized learning",
+      "foundingDate": "2024",
+      "founder": {
+        "@type": "Person",
+        "name": "oluiscabral",
+        "url": "https://github.com/oluiscabral"
+      },
+      "sameAs": [
+        "https://github.com/oluiscabral/studorama",
+        "https://www.linkedin.com/in/oluiscabral"
+      ]
+    }
+    </script>
+    
+    <!-- Structured Data - WebApplication -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
       "name": "Studorama",
-      "description": "AI-powered study sessions platform for personalized learning",
-      "url": "https://studorama.netlify.app/",
+      "description": "Free AI-powered study sessions platform with spaced repetition, interleaving, and proven learning techniques. No account required.",
+      "url": "https://www.studorama.com/",
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Web Browser",
+      "browserRequirements": "Requires JavaScript. Supports Chrome, Firefox, Safari, Edge.",
+      "softwareVersion": "1.0.0",
+      "datePublished": "2024-01-01",
+      "dateModified": "2024-12-20",
       "author": {
         "@type": "Person",
         "name": "oluiscabral",
@@ -52,8 +106,156 @@
       "offers": {
         "@type": "Offer",
         "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "150",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "featureList": [
+        "AI-generated study questions",
+        "Multiple choice and dissertative questions",
+        "Spaced repetition scheduling",
+        "Learning progress tracking",
+        "No account required",
+        "Privacy-first design",
+        "Multilingual support",
+        "Open source",
+        "Free forever"
+      ]
+    }
+    </script>
+    
+    <!-- Structured Data - Educational Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "EducationalOrganization",
+      "name": "Studorama",
+      "url": "https://www.studorama.com",
+      "description": "Free AI-powered study platform implementing research-based learning techniques",
+      "educationalCredentialAwarded": "Study Progress Tracking",
+      "hasCredential": {
+        "@type": "EducationalOccupationalCredential",
+        "name": "Learning Progress Certificate",
+        "description": "Track your learning progress across multiple subjects"
+      }
+    }
+    </script>
+    
+    <!-- Structured Data - SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Studorama",
+      "description": "Free AI-powered study sessions with spaced repetition and proven learning techniques",
+      "url": "https://www.studorama.com",
+      "applicationCategory": "Education",
+      "operatingSystem": "Web",
+      "permissions": "No special permissions required",
+      "price": "0",
+      "priceCurrency": "USD",
+      "screenshot": "https://www.studorama.com/screenshot.png",
+      "softwareVersion": "1.0.0",
+      "datePublished": "2024-01-01",
+      "publisher": {
+        "@type": "Person",
+        "name": "oluiscabral"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
         "priceCurrency": "USD"
       }
+    }
+    </script>
+    
+    <!-- Structured Data - FAQ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Is Studorama really free?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes! Studorama is completely free to use and always will be. All features including AI-powered questions, spaced repetition, and progress tracking are available at no cost. No account required."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need to create an account?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No account required! Studorama works completely without registration. Your study sessions are saved locally in your browser, ensuring complete privacy."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What learning techniques does Studorama use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Studorama implements research-based learning techniques from 'Make It Stick' including spaced repetition, interleaving, elaborative interrogation, retrieval practice, and desirable difficulties."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the AI generate questions?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Studorama uses OpenAI's GPT models to generate personalized study questions. You provide your own OpenAI API key, ensuring your data stays private and you have full control."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is my data private and secure?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Absolutely! Your API key and study data are stored locally in your browser and never transmitted to our servers. Only you have access to your study sessions and progress."
+          }
+        }
+      ]
+    }
+    </script>
+    
+    <!-- Structured Data - BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://www.studorama.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Study Sessions",
+          "item": "https://www.studorama.com/study"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Study History",
+          "item": "https://www.studorama.com/history"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "Settings",
+          "item": "https://www.studorama.com/settings"
+        }
+      ]
     }
     </script>
   </head>

@@ -31,6 +31,10 @@ export interface Translations {
   configureSession: string;
   studySubject: string;
   subjectPlaceholder: string;
+  subjectModifiers: string;
+  subjectModifiersPlaceholder: string;
+  addModifier: string;
+  removeModifier: string;
   questionType: string;
   multipleChoice: string;
   quickAssessment: string;
@@ -44,6 +48,8 @@ export interface Translations {
   interleavingDesc: string;
   elaborativeInterrogationDesc: string;
   retrievalPracticeDesc: string;
+  rememberMyChoice: string;
+  rememberLearningTechniques: string;
   readyToLearn: string;
   startEnhancedSession: string;
   configureApiKeyFirst: string;
@@ -84,6 +90,10 @@ export interface Translations {
   continue: string;
   viewDetails: string;
   correctAnswers: string;
+  deleteAllSessions: string;
+  deleteAllSessionsConfirm: string;
+  deleteAllSessionsWarning: string;
+  sessionsDeleted: string;
   
   // Session Details
   sessionNotFound: string;
@@ -125,6 +135,12 @@ export interface Translations {
   userAnswerPlaceholder: string;
   modelAnswerPlaceholder: string;
   learningTechniquesTab: string;
+  learningTechniquesSettings: string;
+  manageLearningTechniques: string;
+  defaultLearningTechniques: string;
+  rememberChoiceForSessions: string;
+  rememberChoiceDescription: string;
+  unsetRememberChoice: string;
   makeItStickScience: string;
   spacedRepetition: string;
   spacedRepetitionFull: string;
@@ -178,6 +194,12 @@ export interface Translations {
   privacyDescription: string;
   scientificFoundation: string;
   scientificDescription: string;
+  openSourceProject: string;
+  openSourceDescription: string;
+  viewOnGitHub: string;
+  contributeToProject: string;
+  reportIssue: string;
+  requestFeature: string;
   saveSettings: string;
   saved: string;
   configurationStatus: string;
@@ -201,15 +223,44 @@ export interface Translations {
   resetLanguagePreferences: string;
   languagePreferencesReset: string;
   
-  // Support/Pricing Page
+  // OpenAI Models
+  gpt4oRecommended: string;
+  gpt4oMini: string;
+  gpt4Turbo: string;
+  gpt4: string;
+  gpt35Turbo: string;
+  latestMostCapable: string;
+  fasterCostEffective: string;
+  highPerformance: string;
+  previousGeneration: string;
+  fastEconomical: string;
+  
+  // Pricing
   supportStudorama: string;
   supportStudoramaDesc: string;
   freeForever: string;
   freeForeverDesc: string;
-  sponsorshipHelps: string;
   noAccountRequired: string;
-  noAccountRequiredDesc: string;
   startLearningImmediately: string;
+  noAccountRequiredDesc: string;
+  monthlySponsorship: string;
+  supportFreeEducation: string;
+  helpImprovePlatform: string;
+  recognitionAsSupporter: string;
+  helpKeepPlatformAccountless: string;
+  becomeSupporter: string;
+  externalCheckout: string;
+  accountOptional: string;
+  whySponsorStudorama: string;
+  keepItFree: string;
+  keepItFreeDesc: string;
+  fundDevelopment: string;
+  fundDevelopmentDesc: string;
+  serverCosts: string;
+  serverCostsDesc: string;
+  privacyFirst: string;
+  privacyFirstDesc: string;
+  startLearningInstantly: string;
   noBarriersToLearning: string;
   noEmailRequired: string;
   noPasswordToRemember: string;
@@ -222,35 +273,44 @@ export interface Translations {
   yourApiKeyStaysLocal: string;
   completeAnonymity: string;
   gdprCompliantByDesign: string;
-  sponsorshipTiers: string;
-  librarySponsor: string;
-  bookSponsor: string;
-  coffeeSponsor: string;
-  librarySponsorDesc: string;
-  bookSponsorDesc: string;
-  coffeeSponsorDesc: string;
-  monthlySponsorship: string;
-  becomeSponsor: string;
-  externalCheckout: string;
-  accountOptional: string;
-  whySponsorStudorama: string;
-  keepItFree: string;
-  keepItFreeDesc: string;
-  fundDevelopment: string;
-  fundDevelopmentDesc: string;
-  serverCosts: string;
-  serverCostsDesc: string;
-  privacyFirst: string;
-  privacyFirstDesc: string;
-  supportFreeEducation: string;
-  helpImprovePlatform: string;
-  recognitionAsSupporter: string;
-  helpKeepPlatformAccountless: string;
-  mostPopular: string;
-  startLearningInstantly: string;
-  startLearningInstantlyDesc: string;
   transparencyTrust: string;
   transparencyTrustDesc: string;
+  mostPopular: string;
+  advanced: string;
+  standard: string;
+  basic: string;
+  advancedDesc: string;
+  standardDesc: string;
+  basicDesc: string;
+  
+  // Dropbox Sync
+  syncYourData: string;
+  connected: string;
+  disconnected: string;
+  connectToDropbox: string;
+  connecting: string;
+  syncStatus: string;
+  lastSync: string;
+  neverSynced: string;
+  syncing: string;
+  conflictDetected: string;
+  resolveConflict: string;
+  autoSync: string;
+  syncInterval: string;
+  minutes: string;
+  hour: string;
+  hours: string;
+  syncNow: string;
+  disconnectDropbox: string;
+  syncConflict: string;
+  localData: string;
+  cloudData: string;
+  useLocalData: string;
+  useCloudData: string;
+  importExportData: string;
+  backupOrRestore: string;
+  exportData: string;
+  importData: string;
   
   // Common
   loading: string;
@@ -296,6 +356,10 @@ const translations: Record<Language, Translations> = {
     configureSession: 'Configure your AI-powered study session with proven learning techniques',
     studySubject: 'Study Subject',
     subjectPlaceholder: 'e.g., JavaScript, World History, Biology...',
+    subjectModifiers: 'Subject Modifiers (Optional)',
+    subjectModifiersPlaceholder: 'e.g., Discrete Mathematical Structures with Applications to Computer Science by JP Tremblay R Manohar',
+    addModifier: 'Add Modifier',
+    removeModifier: 'Remove',
     questionType: 'Question Type',
     multipleChoice: 'Multiple Choice',
     quickAssessment: 'Quick assessment questions',
@@ -309,6 +373,8 @@ const translations: Record<Language, Translations> = {
     interleavingDesc: 'Mix different question types for better retention',
     elaborativeInterrogationDesc: 'Ask "why" questions for deeper understanding',
     retrievalPracticeDesc: 'Test yourself to strengthen memory',
+    rememberMyChoice: 'Remember my choice',
+    rememberLearningTechniques: 'Use these learning technique preferences as default values when creating new study sessions',
     readyToLearn: 'Ready to learn!',
     startEnhancedSession: 'Start Enhanced Study Session',
     configureApiKeyFirst: 'Please configure your OpenAI API key in Settings first.',
@@ -349,6 +415,10 @@ const translations: Record<Language, Translations> = {
     continue: 'Continue',
     viewDetails: 'View Details',
     correctAnswers: 'Correct Answers',
+    deleteAllSessions: 'Delete All Sessions',
+    deleteAllSessionsConfirm: 'Are you sure you want to delete all study sessions? This action cannot be undone.',
+    deleteAllSessionsWarning: 'This will permanently delete all your study sessions, progress, and history.',
+    sessionsDeleted: 'All sessions have been deleted successfully.',
     
     // Session Details
     sessionNotFound: 'Session Not Found',
@@ -390,6 +460,12 @@ const translations: Record<Language, Translations> = {
     userAnswerPlaceholder: ', and {modelAnswer}',
     modelAnswerPlaceholder: 'as placeholders.',
     learningTechniquesTab: 'Learning Techniques',
+    learningTechniquesSettings: 'Learning Techniques Settings',
+    manageLearningTechniques: 'Manage your default learning technique preferences',
+    defaultLearningTechniques: 'Default Learning Techniques',
+    rememberChoiceForSessions: 'Remember choice for new sessions',
+    rememberChoiceDescription: 'When enabled, new study sessions will automatically use these learning techniques without showing the selection interface.',
+    unsetRememberChoice: 'Unset "Remember Choice"',
     makeItStickScience: 'Based on "Make It Stick: The Science of Successful Learning"',
     spacedRepetition: 'Spaced Repetition',
     spacedRepetitionFull: 'Review material at increasing intervals to strengthen long-term retention. Questions are automatically scheduled for review based on your performance.',
@@ -443,6 +519,12 @@ const translations: Record<Language, Translations> = {
     privacyDescription: 'Your API key and study data are stored locally in your browser and are never transmitted to our servers. Only you have access to your study sessions and progress. Your API key is used solely to communicate with OpenAI\'s services to generate study questions and evaluations.',
     scientificFoundation: 'Scientific Foundation',
     scientificDescription: 'Studorama implements learning techniques validated by cognitive science research, particularly from "Make It Stick: The Science of Successful Learning" by Peter C. Brown, Henry L. Roediger III, and Mark A. McDaniel. These methods have been proven to enhance long-term retention and transfer of knowledge.',
+    openSourceProject: 'Open Source Project',
+    openSourceDescription: 'Studorama is completely open source and available on GitHub. You can view the code, contribute improvements, report issues, or fork the project for your own use.',
+    viewOnGitHub: 'View on GitHub',
+    contributeToProject: 'Contribute to Project',
+    reportIssue: 'Report Issue',
+    requestFeature: 'Request Feature',
     saveSettings: 'Save Settings',
     saved: 'Saved!',
     configurationStatus: 'Configuration Status',
@@ -458,23 +540,52 @@ const translations: Record<Language, Translations> = {
     resetPromptsOption: 'Reset AI prompts for the new language',
     resetPromptsDescription: 'Recommended: Automatically updates all AI prompts to match the selected language, ensuring questions and evaluations are generated in the correct language.',
     rememberChoice: 'Remember my choice',
-    rememberChoiceDescription: 'Don\'t show this modal again when switching languages. You can change this preference in settings.',
+    rememberChoiceDescription: 'Don\'t show this dialog again when switching languages. You can change this preference in settings.',
     confirmChange: 'Confirm Change',
     cancel: 'Cancel',
     languageSwitchPreferences: 'Language Switch Preferences',
     manageLanguagePreferences: 'Manage Language Switch Preferences',
     resetLanguagePreferences: 'Reset Language Preferences',
-    languagePreferencesReset: 'Language preferences have been reset. The modal will appear again when switching languages.',
+    languagePreferencesReset: 'Language preferences have been reset. The dialog will appear again when switching languages.',
     
-    // Support/Pricing Page
+    // OpenAI Models
+    gpt4oRecommended: 'GPT-4o (Recommended)',
+    gpt4oMini: 'GPT-4o Mini',
+    gpt4Turbo: 'GPT-4 Turbo',
+    gpt4: 'GPT-4',
+    gpt35Turbo: 'GPT-3.5 Turbo',
+    latestMostCapable: 'Latest and most capable model',
+    fasterCostEffective: 'Faster and more cost-effective',
+    highPerformance: 'High performance model',
+    previousGeneration: 'Previous generation flagship model',
+    fastEconomical: 'Fast and economical',
+    
+    // Pricing
     supportStudorama: 'Support Studorama',
     supportStudoramaDesc: 'Studorama is completely free to use and always will be. Your sponsorship helps us maintain and improve the platform for everyone.',
     freeForever: '100% Free Forever',
     freeForeverDesc: 'All features are available to everyone at no cost. No account required! Sponsorships help us keep it that way.',
-    sponsorshipHelps: 'Your sponsorship helps us maintain Studorama as a completely free, accountless platform for all learners worldwide.',
     noAccountRequired: 'No Account Required!',
-    noAccountRequiredDesc: 'Start learning immediately! Studorama works completely without creating an account. Your study sessions are saved locally in your browser. All AI-powered features, spaced repetition, and learning techniques are available instantly.',
     startLearningImmediately: 'Start learning immediately',
+    noAccountRequiredDesc: 'Studorama works completely without creating an account. Your study sessions are saved locally in your browser. All AI-powered features, spaced repetition, and learning techniques are available instantly.',
+    monthlySponsorship: 'Monthly sponsorship',
+    supportFreeEducation: 'Support free education for everyone',
+    helpImprovePlatform: 'Help improve platform features',
+    recognitionAsSupporter: 'Recognition as a supporter',
+    helpKeepPlatformAccountless: 'Help keep the platform accountless',
+    becomeSupporter: 'Become a',
+    externalCheckout: 'External checkout',
+    accountOptional: 'account optional',
+    whySponsorStudorama: 'Why Sponsor Studorama?',
+    keepItFree: 'Keep It Free',
+    keepItFreeDesc: 'Help us maintain Studorama as a completely free, accountless platform for all learners worldwide.',
+    fundDevelopment: 'Fund Development',
+    fundDevelopmentDesc: 'Support ongoing development of new features and improvements to enhance learning.',
+    serverCosts: 'Server Costs',
+    serverCostsDesc: 'Cover hosting, AI API costs, and infrastructure to keep the platform running smoothly.',
+    privacyFirst: 'Privacy First',
+    privacyFirstDesc: 'Support a platform that respects privacy by not requiring accounts or collecting personal data.',
+    startLearningInstantly: 'Start Learning Instantly',
     noBarriersToLearning: 'No Barriers to Learning',
     noEmailRequired: 'No email required',
     noPasswordToRemember: 'No password to remember',
@@ -487,35 +598,44 @@ const translations: Record<Language, Translations> = {
     yourApiKeyStaysLocal: 'Your API key stays local',
     completeAnonymity: 'Complete anonymity',
     gdprCompliantByDesign: 'GDPR compliant by design',
-    sponsorshipTiers: 'Sponsorship Tiers',
-    librarySponsor: 'Library',
-    bookSponsor: 'Book',
-    coffeeSponsor: 'Coffee',
-    librarySponsorDesc: 'Support Studorama development with a generous monthly sponsorship. Help us maintain and improve the platform for everyone.',
-    bookSponsorDesc: 'Show your appreciation with a monthly contribution. Every bit helps us keep Studorama free and accessible.',
-    coffeeSponsorDesc: 'Buy us a coffee each month! A small gesture that makes a big difference in supporting our mission.',
-    monthlySponsorship: 'Monthly sponsorship',
-    becomeSponsor: 'Become a Sponsor',
-    externalCheckout: 'External checkout',
-    accountOptional: 'account optional',
-    whySponsorStudorama: 'Why Sponsor Studorama?',
-    keepItFree: 'Keep It Free',
-    keepItFreeDesc: 'Help us maintain Studorama as a completely free, accountless platform for all learners worldwide.',
-    fundDevelopment: 'Fund Development',
-    fundDevelopmentDesc: 'Support ongoing development of new features and improvements to enhance learning.',
-    serverCosts: 'Server Costs',
-    serverCostsDesc: 'Cover hosting, AI API costs, and infrastructure to keep the platform running smoothly.',
-    privacyFirst: 'Privacy First',
-    privacyFirstDesc: 'Support a platform that respects privacy by not requiring accounts or collecting personal data.',
-    supportFreeEducation: 'Support free education for everyone',
-    helpImprovePlatform: 'Help improve platform features',
-    recognitionAsSupporter: 'Recognition as a supporter',
-    helpKeepPlatformAccountless: 'Help keep the platform accountless',
-    mostPopular: 'Most Popular',
-    startLearningInstantly: 'Start Learning Instantly',
-    startLearningInstantlyDesc: 'Studorama is fully responsive and works seamlessly across mobile devices, tablets, desktop computers, and large screens.',
     transparencyTrust: 'Transparency & Trust',
     transparencyTrustDesc: 'Your sponsorship goes directly to: Server hosting costs, OpenAI API usage, development time, and platform maintenance. We believe in keeping education accessible to everyone, regardless of their financial situation or willingness to create accounts. Studorama will always remain free and accountless.',
+    mostPopular: 'Most Popular',
+    advanced: 'Advanced',
+    standard: 'Standard',
+    basic: 'Basic',
+    advancedDesc: 'Support Studorama development with a generous monthly contribution. Help us maintain and improve the platform for everyone.',
+    standardDesc: 'Show your appreciation with a monthly contribution. Every bit helps us keep Studorama free and accessible.',
+    basicDesc: 'Buy us a coffee each month! A small gesture that makes a big difference in supporting our mission.',
+    
+    // Dropbox Sync
+    syncYourData: 'Sync your data across devices',
+    connected: 'Connected',
+    disconnected: 'Disconnected',
+    connectToDropbox: 'Connect to Dropbox',
+    connecting: 'Connecting...',
+    syncStatus: 'Sync Status',
+    lastSync: 'Last Sync',
+    neverSynced: 'Never synced',
+    syncing: 'Syncing...',
+    conflictDetected: 'Conflict detected',
+    resolveConflict: 'Resolve Conflict',
+    autoSync: 'Auto Sync',
+    syncInterval: 'Sync Interval',
+    minutes: 'minutes',
+    hour: 'hour',
+    hours: 'hours',
+    syncNow: 'Sync Now',
+    disconnectDropbox: 'Disconnect Dropbox',
+    syncConflict: 'Sync Conflict',
+    localData: 'Local Data',
+    cloudData: 'Cloud Data',
+    useLocalData: 'Use Local Data',
+    useCloudData: 'Use Cloud Data',
+    importExportData: 'Import/Export Data',
+    backupOrRestore: 'Backup or restore your Studorama data',
+    exportData: 'Export Data',
+    importData: 'Import Data',
     
     // Common
     loading: 'Loading...',
@@ -560,6 +680,10 @@ const translations: Record<Language, Translations> = {
     configureSession: 'Configure sua sessão de estudo com IA usando técnicas de aprendizado comprovadas',
     studySubject: 'Matéria de Estudo',
     subjectPlaceholder: 'ex: JavaScript, História Mundial, Biologia...',
+    subjectModifiers: 'Modificadores da Matéria (Opcional)',
+    subjectModifiersPlaceholder: 'ex: Estruturas Matemáticas Discretas com Aplicações à Ciência da Computação por JP Tremblay R Manohar',
+    addModifier: 'Adicionar Modificador',
+    removeModifier: 'Remover',
     questionType: 'Tipo de Questão',
     multipleChoice: 'Múltipla Escolha',
     quickAssessment: 'Questões de avaliação rápida',
@@ -573,6 +697,8 @@ const translations: Record<Language, Translations> = {
     interleavingDesc: 'Misturar diferentes tipos de questões para melhor retenção',
     elaborativeInterrogationDesc: 'Fazer perguntas "por que" para compreensão mais profunda',
     retrievalPracticeDesc: 'Testar-se para fortalecer a memória',
+    rememberMyChoice: 'Lembrar minha escolha',
+    rememberLearningTechniques: 'Usar essas preferências de técnicas de aprendizado como valores padrão ao criar novas sessões de estudo',
     readyToLearn: 'Pronto para aprender!',
     startEnhancedSession: 'Iniciar Sessão de Estudo Aprimorada',
     configureApiKeyFirst: 'Configure sua chave da API OpenAI nas Configurações primeiro.',
@@ -613,6 +739,10 @@ const translations: Record<Language, Translations> = {
     continue: 'Continuar',
     viewDetails: 'Ver Detalhes',
     correctAnswers: 'Respostas Corretas',
+    deleteAllSessions: 'Excluir Todas as Sessões',
+    deleteAllSessionsConfirm: 'Tem certeza de que deseja excluir todas as sessões de estudo? Esta ação não pode ser desfeita.',
+    deleteAllSessionsWarning: 'Isso excluirá permanentemente todas as suas sessões de estudo, progresso e histórico.',
+    sessionsDeleted: 'Todas as sessões foram excluídas com sucesso.',
     
     // Session Details
     sessionNotFound: 'Sessão Não Encontrada',
@@ -654,6 +784,12 @@ const translations: Record<Language, Translations> = {
     userAnswerPlaceholder: ', e {modelAnswer}',
     modelAnswerPlaceholder: 'como placeholders.',
     learningTechniquesTab: 'Técnicas de Aprendizado',
+    learningTechniquesSettings: 'Configurações de Técnicas de Aprendizado',
+    manageLearningTechniques: 'Gerencie suas preferências padrão de técnicas de aprendizado',
+    defaultLearningTechniques: 'Técnicas de Aprendizado Padrão',
+    rememberChoiceForSessions: 'Lembrar escolha para novas sessões',
+    rememberChoiceDescription: 'Quando habilitado, novas sessões de estudo usarão automaticamente essas técnicas de aprendizado sem mostrar a interface de seleção.',
+    unsetRememberChoice: 'Desmarcar "Lembrar Escolha"',
     makeItStickScience: 'Baseado em "Make It Stick: The Science of Successful Learning"',
     spacedRepetition: 'Repetição Espaçada',
     spacedRepetitionFull: 'Revise material em intervalos crescentes para fortalecer a retenção a longo prazo. As questões são automaticamente agendadas para revisão baseado no seu desempenho.',
@@ -707,6 +843,12 @@ const translations: Record<Language, Translations> = {
     privacyDescription: 'Sua chave da API e dados de estudo são armazenados localmente no seu navegador e nunca são transmitidos para nossos servidores. Apenas você tem acesso às suas sessões de estudo e progresso. Sua chave da API é usada apenas para se comunicar com os serviços da OpenAI para gerar questões e avaliações de estudo.',
     scientificFoundation: 'Fundação Científica',
     scientificDescription: 'O Studorama implementa técnicas de aprendizado validadas pela pesquisa em ciência cognitiva, particularmente do "Make It Stick: The Science of Successful Learning" por Peter C. Brown, Henry L. Roediger III, e Mark A. McDaniel. Esses métodos foram comprovados para melhorar a retenção a longo prazo e transferência de conhecimento.',
+    openSourceProject: 'Projeto de Código Aberto',
+    openSourceDescription: 'O Studorama é completamente de código aberto e está disponível no GitHub. Você pode visualizar o código, contribuir com melhorias, relatar problemas ou fazer fork do projeto para seu próprio uso.',
+    viewOnGitHub: 'Ver no GitHub',
+    contributeToProject: 'Contribuir para o Projeto',
+    reportIssue: 'Relatar Problema',
+    requestFeature: 'Solicitar Recurso',
     saveSettings: 'Salvar Configurações',
     saved: 'Salvo!',
     configurationStatus: 'Status da Configuração',
@@ -722,24 +864,53 @@ const translations: Record<Language, Translations> = {
     resetPromptsOption: 'Redefinir prompts da IA para o novo idioma',
     resetPromptsDescription: 'Recomendado: Atualiza automaticamente todos os prompts da IA para corresponder ao idioma selecionado, garantindo que as questões e avaliações sejam geradas no idioma correto.',
     rememberChoice: 'Lembrar minha escolha',
-    rememberChoiceDescription: 'Não mostrar este modal novamente ao trocar de idioma. Você pode alterar esta preferência nas configurações.',
+    rememberChoiceDescription: 'Não mostrar este diálogo novamente ao trocar de idioma. Você pode alterar esta preferência nas configurações.',
     confirmChange: 'Confirmar Alteração',
     cancel: 'Cancelar',
     languageSwitchPreferences: 'Preferências de Troca de Idioma',
     manageLanguagePreferences: 'Gerenciar Preferências de Troca de Idioma',
     resetLanguagePreferences: 'Redefinir Preferências de Idioma',
-    languagePreferencesReset: 'As preferências de idioma foram redefinidas. O modal aparecerá novamente ao trocar de idioma.',
+    languagePreferencesReset: 'As preferências de idioma foram redefinidas. O diálogo aparecerá novamente ao trocar de idioma.',
     
-    // Support/Pricing Page
+    // OpenAI Models
+    gpt4oRecommended: 'GPT-4o (Recomendado)',
+    gpt4oMini: 'GPT-4o Mini',
+    gpt4Turbo: 'GPT-4 Turbo',
+    gpt4: 'GPT-4',
+    gpt35Turbo: 'GPT-3.5 Turbo',
+    latestMostCapable: 'Modelo mais recente e capaz',
+    fasterCostEffective: 'Mais rápido e econômico',
+    highPerformance: 'Modelo de alta performance',
+    previousGeneration: 'Modelo principal da geração anterior',
+    fastEconomical: 'Rápido e econômico',
+    
+    // Pricing
     supportStudorama: 'Apoie o Studorama',
-    supportStudoramaDesc: 'O Studorama é completamente gratuito para usar e sempre será. Seu patrocínio nos ajuda a manter e melhorar a plataforma para todos.',
+    supportStudoramaDesc: 'O Studorama é completamente gratuito para usar e sempre será. Seu apoio nos ajuda a manter e melhorar a plataforma para todos.',
     freeForever: '100% Gratuito Para Sempre',
-    freeForeverDesc: 'Todos os recursos estão disponíveis para todos sem custo. Nenhuma conta necessária! Os patrocínios nos ajudam a manter assim.',
-    sponsorshipHelps: 'Seu patrocínio nos ajuda a manter o Studorama como uma plataforma completamente gratuita e sem necessidade de conta para todos os estudantes do mundo.',
+    freeForeverDesc: 'Todos os recursos estão disponíveis para todos sem custo. Nenhuma conta necessária! Os apoios nos ajudam a manter assim.',
     noAccountRequired: 'Nenhuma Conta Necessária!',
-    noAccountRequiredDesc: 'Comece a aprender imediatamente! O Studorama funciona completamente sem criar uma conta. Suas sessões de estudo são salvas localmente no seu navegador. Todos os recursos com IA, repetição espaçada e técnicas de aprendizado estão disponíveis instantaneamente.',
     startLearningImmediately: 'Comece a aprender imediatamente',
-    noBarriersToLearning: 'Sem Barreiras para o Aprendizado',
+    noAccountRequiredDesc: 'O Studorama funciona completamente sem criar uma conta. Suas sessões de estudo são salvas localmente no seu navegador. Todos os recursos com IA, repetição espaçada e técnicas de aprendizado estão disponíveis instantaneamente.',
+    monthlySponsorship: 'Apoio mensal',
+    supportFreeEducation: 'Apoie educação gratuita para todos',
+    helpImprovePlatform: 'Ajude a melhorar os recursos da plataforma',
+    recognitionAsSupporter: 'Reconhecimento como apoiador',
+    helpKeepPlatformAccountless: 'Ajude a manter a plataforma sem necessidade de conta',
+    becomeSupporter: 'Torne-se um',
+    externalCheckout: 'Checkout externo',
+    accountOptional: 'conta opcional',
+    whySponsorStudorama: 'Por que Apoiar o Studorama?',
+    keepItFree: 'Manter Gratuito',
+    keepItFreeDesc: 'Nos ajude a manter o Studorama como uma plataforma completamente gratuita e sem necessidade de conta para todos os estudantes do mundo.',
+    fundDevelopment: 'Financiar Desenvolvimento',
+    fundDevelopmentDesc: 'Apoie o desenvolvimento contínuo de novos recursos e melhorias para aprimorar o aprendizado.',
+    serverCosts: 'Custos do Servidor',
+    serverCostsDesc: 'Cubra hospedagem, custos da API de IA e infraestrutura para manter a plataforma funcionando perfeitamente.',
+    privacyFirst: 'Privacidade Primeiro',
+    privacyFirstDesc: 'Apoie uma plataforma que respeita a privacidade ao não exigir contas ou coletar dados pessoais.',
+    startLearningInstantly: 'Comece a Aprender Instantaneamente',
+    noBarriersToLearning: 'Sem Barreiras ao Aprendizado',
     noEmailRequired: 'Nenhum email necessário',
     noPasswordToRemember: 'Nenhuma senha para lembrar',
     noVerificationSteps: 'Nenhuma etapa de verificação',
@@ -751,35 +922,44 @@ const translations: Record<Language, Translations> = {
     yourApiKeyStaysLocal: 'Sua chave da API fica local',
     completeAnonymity: 'Anonimato completo',
     gdprCompliantByDesign: 'Compatível com GDPR por design',
-    sponsorshipTiers: 'Níveis de Patrocínio',
-    librarySponsor: 'Biblioteca',
-    bookSponsor: 'Livro',
-    coffeeSponsor: 'Café',
-    librarySponsorDesc: 'Apoie o desenvolvimento do Studorama com um patrocínio mensal generoso. Ajude-nos a manter e melhorar a plataforma para todos.',
-    bookSponsorDesc: 'Mostre seu apreço com uma contribuição mensal. Cada bit nos ajuda a manter o Studorama gratuito e acessível.',
-    coffeeSponsorDesc: 'Nos pague um café todo mês! Um pequeno gesto que faz uma grande diferença em apoiar nossa missão.',
-    monthlySponsorship: 'Patrocínio mensal',
-    becomeSponsor: 'Tornar-se Patrocinador',
-    externalCheckout: 'Checkout externo',
-    accountOptional: 'conta opcional',
-    whySponsorStudorama: 'Por que Patrocinar o Studorama?',
-    keepItFree: 'Manter Gratuito',
-    keepItFreeDesc: 'Ajude-nos a manter o Studorama como uma plataforma completamente gratuita e sem necessidade de conta para todos os estudantes do mundo.',
-    fundDevelopment: 'Financiar Desenvolvimento',
-    fundDevelopmentDesc: 'Apoie o desenvolvimento contínuo de novos recursos e melhorias para aprimorar o aprendizado.',
-    serverCosts: 'Custos do Servidor',
-    serverCostsDesc: 'Cubra custos de hospedagem, API de IA e infraestrutura para manter a plataforma funcionando suavemente.',
-    privacyFirst: 'Privacidade em Primeiro Lugar',
-    privacyFirstDesc: 'Apoie uma plataforma que respeita a privacidade não exigindo contas ou coletando dados pessoais.',
-    supportFreeEducation: 'Apoie educação gratuita para todos',
-    helpImprovePlatform: 'Ajude a melhorar os recursos da plataforma',
-    recognitionAsSupporter: 'Reconhecimento como apoiador',
-    helpKeepPlatformAccountless: 'Ajude a manter a plataforma sem necessidade de conta',
-    mostPopular: 'Mais Popular',
-    startLearningInstantly: 'Comece a Aprender Instantaneamente',
-    startLearningInstantlyDesc: 'O Studorama é totalmente responsivo e funciona perfeitamente em dispositivos móveis, tablets, computadores desktop e telas grandes.',
     transparencyTrust: 'Transparência e Confiança',
-    transparencyTrustDesc: 'Seu patrocínio vai diretamente para: Custos de hospedagem do servidor, uso da API OpenAI, tempo de desenvolvimento e manutenção da plataforma. Acreditamos em manter a educação acessível para todos, independentemente de sua situação financeira ou disposição para criar contas. O Studorama sempre permanecerá gratuito e sem necessidade de conta.',
+    transparencyTrustDesc: 'Seu apoio vai diretamente para: Custos de hospedagem do servidor, uso da API OpenAI, tempo de desenvolvimento e manutenção da plataforma. Acreditamos em manter a educação acessível para todos, independentemente de sua situação financeira ou disposição para criar contas. O Studorama sempre permanecerá gratuito e sem necessidade de conta.',
+    mostPopular: 'Mais Popular',
+    advanced: 'Avançado',
+    standard: 'Padrão',
+    basic: 'Básico',
+    advancedDesc: 'Apoie o desenvolvimento do Studorama com uma contribuição mensal generosa. Nos ajude a manter e melhorar a plataforma para todos.',
+    standardDesc: 'Mostre seu apreço com uma contribuição mensal. Cada bit nos ajuda a manter o Studorama gratuito e acessível.',
+    basicDesc: 'Nos compre um café todo mês! Um pequeno gesto que faz uma grande diferença no apoio à nossa missão.',
+    
+    // Dropbox Sync
+    syncYourData: 'Sincronize seus dados entre dispositivos',
+    connected: 'Conectado',
+    disconnected: 'Desconectado',
+    connectToDropbox: 'Conectar ao Dropbox',
+    connecting: 'Conectando...',
+    syncStatus: 'Status da Sincronização',
+    lastSync: 'Última Sincronização',
+    neverSynced: 'Nunca sincronizado',
+    syncing: 'Sincronizando...',
+    conflictDetected: 'Conflito detectado',
+    resolveConflict: 'Resolver Conflito',
+    autoSync: 'Sincronização Automática',
+    syncInterval: 'Intervalo de Sincronização',
+    minutes: 'minutos',
+    hour: 'hora',
+    hours: 'horas',
+    syncNow: 'Sincronizar Agora',
+    disconnectDropbox: 'Desconectar Dropbox',
+    syncConflict: 'Conflito de Sincronização',
+    localData: 'Dados Locais',
+    cloudData: 'Dados da Nuvem',
+    useLocalData: 'Usar Dados Locais',
+    useCloudData: 'Usar Dados da Nuvem',
+    importExportData: 'Importar/Exportar Dados',
+    backupOrRestore: 'Faça backup ou restaure seus dados do Studorama',
+    exportData: 'Exportar Dados',
+    importData: 'Importar Dados',
     
     // Common
     loading: 'Carregando...',

@@ -10,7 +10,6 @@ export default function DropboxAuthCallback() {
     const handleAuth = async () => {
       const code = searchParams.get('code');
       const error = searchParams.get('error');
-      const state = searchParams.get('state');
 
       if (error) {
         // Send error to parent window
@@ -24,16 +23,7 @@ export default function DropboxAuthCallback() {
 
       if (code) {
         try {
-          // Get the app key from localStorage (set by parent window)
-          const appKey = localStorage.getItem('dropbox-temp-app-key');
-          if (!appKey) {
-            throw new Error('App key not found');
-          }
-
-          const accessToken = await DropboxSync.completeAuth(code, appKey);
-          
-          // Clean up temp app key
-          localStorage.removeItem('dropbox-temp-app-key');
+          const accessToken = await DropboxSync.completeAuth(code);
           
           // Send success to parent window
           window.opener?.postMessage({

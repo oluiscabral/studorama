@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Cloud, CloudOff, FolderSync as Sync, Settings as SettingsIcon, User, HardDrive, Clock, AlertCircle, CheckCircle, Loader2, RefreshCw, Key, Download, Upload, FileText } from 'lucide-react';
+import { Cloud, CloudOff, FolderSync as Sync, Settings as SettingsIcon, User, HardDrive, Clock, AlertCircle, CheckCircle, Loader2, RefreshCw, Download, Upload, FileText } from 'lucide-react';
 import { useDropboxSync } from '../../hooks/useDropboxSync';
 import { useLanguage } from '../../hooks/useLanguage';
 import { formatLastSync, formatFileSize } from '../../utils/dropbox';
@@ -7,7 +7,7 @@ import { ExportData } from '../../types/dropbox';
 import SyncConflictModal from './SyncConflictModal';
 
 export default function DropboxSyncSettings() {
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const { 
     config, 
     syncStatus, 
@@ -24,7 +24,6 @@ export default function DropboxSyncSettings() {
 
   const [accountInfo, setAccountInfo] = useState<any>(null);
   const [showConflictModal, setShowConflictModal] = useState(false);
-  const [appKey, setAppKey] = useState(config.appKey || '');
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Load account info when connected
@@ -44,17 +43,10 @@ export default function DropboxSyncSettings() {
   }, [syncStatus.hasConflict]);
 
   const handleConnect = async () => {
-    if (!appKey.trim()) {
-      alert(language === 'pt-BR' ? 'Por favor, insira sua Dropbox App Key' : 'Please enter your Dropbox App Key');
-      return;
-    }
-
     setIsConnecting(true);
-    // Store app key temporarily for the callback
-    localStorage.setItem('dropbox-temp-app-key', appKey);
     
     try {
-      await connectDropbox(appKey);
+      await connectDropbox();
     } catch (error) {
       console.error('Connection error:', error);
     } finally {
@@ -170,18 +162,18 @@ export default function DropboxSyncSettings() {
 
   const getSyncStatusText = () => {
     if (syncStatus.isLoading) {
-      return language === 'pt-BR' ? 'Sincronizando...' : 'Syncing...';
+      return t.syncing;
     }
     if (syncStatus.error) {
       return syncStatus.error;
     }
     if (syncStatus.hasConflict) {
-      return language === 'pt-BR' ? 'Conflito detectado' : 'Conflict detected';
+      return t.conflictDetected;
     }
     if (syncStatus.lastSync) {
       return language === 'pt-BR' ? 'Sincronizado' : 'Synced';
     }
-    return language === 'pt-BR' ? 'Nunca sincronizado' : 'Never synced';
+    return t.neverSynced;
   };
 
   return (
@@ -194,13 +186,10 @@ export default function DropboxSyncSettings() {
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
-              {language === 'pt-BR' ? 'Importar/Exportar Dados' : 'Import/Export Data'}
+              {t.importExportData}
             </h3>
             <p className="text-sm text-gray-600">
-              {language === 'pt-BR' 
-                ? 'Faça backup ou restaure seus dados de um arquivo'
-                : 'Backup or restore your data from a file'
-              }
+              {t.backupOrRestore}
             </p>
           </div>
         </div>
@@ -211,12 +200,12 @@ export default function DropboxSyncSettings() {
             className="flex items-center justify-center space-x-2 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
           >
             <Download className="w-5 h-5" />
-            <span>{language === 'pt-BR' ? 'Exportar Dados' : 'Export Data'}</span>
+            <span>{t.exportData}</span>
           </button>
 
           <label className="flex items-center justify-center space-x-2 bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors cursor-pointer">
             <Upload className="w-5 h-5" />
-            <span>{language === 'pt-BR' ? 'Importar Dados' : 'Import Data'}</span>
+            <span>{t.importData}</span>
             <input
               type="file"
               accept=".json"
@@ -257,7 +246,7 @@ export default function DropboxSyncSettings() {
               <p className="text-sm text-gray-600">
                 {isConnected 
                   ? (language === 'pt-BR' ? 'Conectado e sincronizando' : 'Connected and syncing')
-                  : (language === 'pt-BR' ? 'Configure sua própria autenticação Dropbox' : 'Configure your own Dropbox authentication')
+                  : t.syncYourData
                 }
               </p>
             </div>
@@ -268,10 +257,7 @@ export default function DropboxSyncSettings() {
               ? 'bg-green-100 text-green-800' 
               : 'bg-gray-100 text-gray-600'
           }`}>
-            {isConnected 
-              ? (language === 'pt-BR' ? 'Conectado' : 'Connected')
-              : (language === 'pt-BR' ? 'Desconectado' : 'Disconnected')
-            }
+            {isConnected ? t.connected : t.disconnected}
           </div>
         </div>
 
@@ -279,52 +265,30 @@ export default function DropboxSyncSettings() {
           <div className="space-y-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-medium text-blue-900 mb-2">
-                {language === 'pt-BR' ? 'Configure sua própria autenticação Dropbox' : 'Set up your own Dropbox authentication'}
+                {t.connectToDropbox}
               </h4>
               <p className="text-blue-800 text-sm mb-4">
                 {language === 'pt-BR' 
-                  ? 'Para manter o Studorama totalmente sem servidor, você precisa criar seu próprio app Dropbox e fornecer a App Key.'
-                  : 'To keep Studorama fully serverless, you need to create your own Dropbox app and provide the App Key.'
+                  ? 'Sincronize seus dados do Studorama entre dispositivos usando sua conta Dropbox. Seus dados ficam privados e seguros.'
+                  : 'Sync your Studorama data across devices using your Dropbox account. Your data stays private and secure.'
                 }
               </p>
-              <div className="bg-blue-100 rounded-lg p-3 mb-4">
+              <div className="bg-blue-100 rounded-lg p-3">
                 <h5 className="font-medium text-blue-900 mb-2">
-                  {language === 'pt-BR' ? 'Como obter sua Dropbox App Key:' : 'How to get your Dropbox App Key:'}
+                  {language === 'pt-BR' ? '🔒 Privacidade e Segurança:' : '🔒 Privacy & Security:'}
                 </h5>
-                <ol className="text-blue-800 text-sm space-y-1 list-decimal list-inside">
-                  <li>{language === 'pt-BR' ? 'Visite' : 'Visit'} <a href="https://www.dropbox.com/developers/apps" target="_blank" rel="noopener noreferrer" className="underline">dropbox.com/developers/apps</a></li>
-                  <li>{language === 'pt-BR' ? 'Clique em "Create app"' : 'Click "Create app"'}</li>
-                  <li>{language === 'pt-BR' ? 'Escolha "Scoped access" e "Full Dropbox"' : 'Choose "Scoped access" and "Full Dropbox"'}</li>
-                  <li>{language === 'pt-BR' ? 'Nomeie seu app (ex: "Meu Studorama")' : 'Name your app (e.g., "My Studorama")'}</li>
-                  <li>{language === 'pt-BR' ? 'Nas configurações, adicione' : 'In settings, add'} <code className="bg-blue-200 px-1 rounded">{window.location.origin}/dropbox-callback</code> {language === 'pt-BR' ? 'como Redirect URI' : 'as Redirect URI'}</li>
-                  <li>{language === 'pt-BR' ? 'Copie a "App key" e cole abaixo' : 'Copy the "App key" and paste below'}</li>
-                </ol>
+                <ul className="text-blue-800 text-sm space-y-1 list-disc list-inside">
+                  <li>{language === 'pt-BR' ? 'Seus dados são criptografados durante a transmissão' : 'Your data is encrypted during transmission'}</li>
+                  <li>{language === 'pt-BR' ? 'Apenas você tem acesso aos seus arquivos' : 'Only you have access to your files'}</li>
+                  <li>{language === 'pt-BR' ? 'Nenhum dado é armazenado em nossos servidores' : 'No data is stored on our servers'}</li>
+                  <li>{language === 'pt-BR' ? 'Você pode desconectar a qualquer momento' : 'You can disconnect at any time'}</li>
+                </ul>
               </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Key className="w-4 h-4 inline mr-1" />
-                {language === 'pt-BR' ? 'Sua Dropbox App Key' : 'Your Dropbox App Key'}
-              </label>
-              <input
-                type="text"
-                value={appKey}
-                onChange={(e) => setAppKey(e.target.value)}
-                placeholder={language === 'pt-BR' ? 'Cole sua App Key aqui...' : 'Paste your App Key here...'}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                {language === 'pt-BR' 
-                  ? 'Sua App Key é armazenada localmente e nunca compartilhada.'
-                  : 'Your App Key is stored locally and never shared.'
-                }
-              </p>
             </div>
             
             <button
               onClick={handleConnect}
-              disabled={!appKey.trim() || isConnecting}
+              disabled={isConnecting}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {isConnecting ? (
@@ -332,10 +296,7 @@ export default function DropboxSyncSettings() {
               ) : (
                 <Cloud className="w-5 h-5 mr-2" />
               )}
-              {isConnecting 
-                ? (language === 'pt-BR' ? 'Conectando...' : 'Connecting...')
-                : (language === 'pt-BR' ? 'Conectar ao Dropbox' : 'Connect to Dropbox')
-              }
+              {isConnecting ? t.connecting : t.connectToDropbox}
             </button>
           </div>
         ) : (
@@ -367,7 +328,7 @@ export default function DropboxSyncSettings() {
                 <div className="flex items-center space-x-2">
                   {getSyncStatusIcon()}
                   <span className="font-medium text-gray-900">
-                    {language === 'pt-BR' ? 'Status da Sincronização' : 'Sync Status'}
+                    {t.syncStatus}
                   </span>
                 </div>
                 <button
@@ -395,7 +356,7 @@ export default function DropboxSyncSettings() {
                 
                 <div className="flex justify-between">
                   <span className="text-gray-600">
-                    {language === 'pt-BR' ? 'Última sincronização:' : 'Last sync:'}
+                    {t.lastSync}
                   </span>
                   <span className="text-gray-900">
                     {formatLastSync(syncStatus.lastSync, language)}
@@ -410,7 +371,7 @@ export default function DropboxSyncSettings() {
                     className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 transition-colors flex items-center justify-center"
                   >
                     <AlertCircle className="w-4 h-4 mr-2" />
-                    {language === 'pt-BR' ? 'Resolver Conflito' : 'Resolve Conflict'}
+                    {t.resolveConflict}
                   </button>
                 </div>
               )}
@@ -426,7 +387,7 @@ export default function DropboxSyncSettings() {
               <div className="space-y-3">
                 <label className="flex items-center justify-between">
                   <span className="text-sm text-gray-700">
-                    {language === 'pt-BR' ? 'Sincronização automática' : 'Auto sync'}
+                    {t.autoSync}
                   </span>
                   <input
                     type="checkbox"
@@ -439,18 +400,18 @@ export default function DropboxSyncSettings() {
                 {config.autoSync && (
                   <div>
                     <label className="block text-sm text-gray-700 mb-2">
-                      {language === 'pt-BR' ? 'Intervalo de sincronização (minutos)' : 'Sync interval (minutes)'}
+                      {t.syncInterval}
                     </label>
                     <select
                       value={config.syncInterval}
                       onChange={(e) => updateConfig({ syncInterval: parseInt(e.target.value) })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value={5}>5 {language === 'pt-BR' ? 'minutos' : 'minutes'}</option>
-                      <option value={15}>15 {language === 'pt-BR' ? 'minutos' : 'minutes'}</option>
-                      <option value={30}>30 {language === 'pt-BR' ? 'minutos' : 'minutes'}</option>
-                      <option value={60}>1 {language === 'pt-BR' ? 'hora' : 'hour'}</option>
-                      <option value={180}>3 {language === 'pt-BR' ? 'horas' : 'hours'}</option>
+                      <option value={5}>5 {t.minutes}</option>
+                      <option value={15}>15 {t.minutes}</option>
+                      <option value={30}>30 {t.minutes}</option>
+                      <option value={60}>1 {t.hour}</option>
+                      <option value={180}>3 {t.hours}</option>
                     </select>
                   </div>
                 )}
@@ -468,10 +429,7 @@ export default function DropboxSyncSettings() {
               ) : (
                 <Sync className="w-5 h-5 mr-2" />
               )}
-              {syncStatus.isLoading 
-                ? (language === 'pt-BR' ? 'Sincronizando...' : 'Syncing...')
-                : (language === 'pt-BR' ? 'Sincronizar Agora' : 'Sync Now')
-              }
+              {syncStatus.isLoading ? t.syncing : t.syncNow}
             </button>
 
             {/* Disconnect */}
@@ -480,7 +438,7 @@ export default function DropboxSyncSettings() {
               className="w-full bg-red-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center justify-center"
             >
               <CloudOff className="w-5 h-5 mr-2" />
-              {language === 'pt-BR' ? 'Desconectar Dropbox' : 'Disconnect Dropbox'}
+              {t.disconnectDropbox}
             </button>
           </div>
         )}

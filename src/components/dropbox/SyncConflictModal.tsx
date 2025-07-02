@@ -19,7 +19,7 @@ export default function SyncConflictModal({
   onClose,
   isLoading = false
 }: SyncConflictModalProps) {
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
 
   if (!isOpen || !conflict) return null;
 
@@ -50,7 +50,7 @@ export default function SyncConflictModal({
               </div>
               <div>
                 <h2 className="text-xl font-bold">
-                  {language === 'pt-BR' ? 'Conflito de Sincronização' : 'Sync Conflict'}
+                  {t.syncConflict}
                 </h2>
                 <p className="text-orange-100 text-sm">
                   {language === 'pt-BR' 
@@ -101,7 +101,7 @@ export default function SyncConflictModal({
                 </div>
                 <div>
                   <h3 className="font-semibold text-blue-900">
-                    {language === 'pt-BR' ? 'Dados Locais' : 'Local Data'}
+                    {t.localData}
                   </h3>
                   <p className="text-blue-700 text-sm">
                     {language === 'pt-BR' ? 'No seu navegador' : 'In your browser'}
@@ -160,7 +160,7 @@ export default function SyncConflictModal({
                 ) : (
                   <>
                     <HardDrive className="w-5 h-5 mr-2" />
-                    {language === 'pt-BR' ? 'Usar Dados Locais' : 'Use Local Data'}
+                    {t.useLocalData}
                   </>
                 )}
               </button>
@@ -174,7 +174,7 @@ export default function SyncConflictModal({
                 </div>
                 <div>
                   <h3 className="font-semibold text-green-900">
-                    {language === 'pt-BR' ? 'Dados da Nuvem' : 'Cloud Data'}
+                    {t.cloudData}
                   </h3>
                   <p className="text-green-700 text-sm">
                     {language === 'pt-BR' ? 'No Dropbox' : 'In Dropbox'}
@@ -233,7 +233,7 @@ export default function SyncConflictModal({
                 ) : (
                   <>
                     <Cloud className="w-5 h-5 mr-2" />
-                    {language === 'pt-BR' ? 'Usar Dados da Nuvem' : 'Use Cloud Data'}
+                    {t.useCloudData}
                   </>
                 )}
               </button>

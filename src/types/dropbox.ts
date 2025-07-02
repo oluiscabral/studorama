@@ -1,5 +1,4 @@
 export interface DropboxConfig {
-  appKey: string;
   accessToken: string | null;
   isConnected: boolean;
   lastSync: string | null;

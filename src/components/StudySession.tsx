@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { CheckCircle, XCircle, RefreshCw, ArrowRight, BookOpen, FileText, List, Brain, Target, Clock, Lightbulb, HelpCircle } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, ArrowRight, BookOpen, FileText, List, Brain, Target, Clock, Lightbulb, HelpCircle, Settings, Plus, X } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
-import { StudySession, Question, LearningSettings } from '../types';
+import { StudySession, Question, LearningSettings, LearningTechniquesPreference } from '../types';
 import { generateQuestion, generateDissertativeQuestion, evaluateAnswer, generateElaborativeQuestion, generateRetrievalQuestion } from '../utils/openai';
 import { calculateNextReview, shouldReviewQuestion } from '../utils/spacedRepetition';
 
@@ -17,11 +17,17 @@ const DEFAULT_LEARNING_SETTINGS: LearningSettings = {
   generationEffect: true
 };
 
+const DEFAULT_LEARNING_PREFERENCE: LearningTechniquesPreference = {
+  rememberChoice: false,
+  defaultSettings: DEFAULT_LEARNING_SETTINGS
+};
+
 export default function StudySessionComponent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t, language } = useLanguage();
   const [sessions, setSessions] = useLocalStorage<StudySession[]>('studorama-sessions', []);
+  const [learningPreference, setLearningPreference] = useLocalStorage<LearningTechniquesPreference>('studorama-learning-preference', DEFAULT_LEARNING_PREFERENCE);
   const [apiSettings] = useLocalStorage('studorama-api-settings', { 
     openaiApiKey: '',
     model: 'gpt-4o-mini',
@@ -42,9 +48,11 @@ export default function StudySessionComponent() {
   const [loading, setLoading] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
   const [subject, setSubject] = useState('');
+  const [subjectModifiers, setSubjectModifiers] = useState<string[]>([]);
   const [questionType, setQuestionType] = useState<'multiple-choice' | 'dissertative' | 'mixed'>('multiple-choice');
   const [sessionStarted, setSessionStarted] = useState(false);
-  const [learningSettings, setLearningSettings] = useState<LearningSettings>(DEFAULT_LEARNING_SETTINGS);
+  const [learningSettings, setLearningSettings] = useState<LearningSettings>(learningPreference.defaultSettings);
+  const [rememberChoice, setRememberChoice] = useState(learningPreference.rememberChoice);
   const [confidenceLevel, setConfidenceLevel] = useState<number>(3);
   const [showElaborativePrompt, setShowElaborativePrompt] = useState(false);
   const [elaborativeResponse, setElaborativeResponse] = useState('');
@@ -77,6 +85,7 @@ export default function StudySessionComponent() {
       if (existingSession) {
         setCurrentSession(existingSession);
         setSubject(existingSession.subject);
+        setSubjectModifiers(existingSession.subjectModifiers || []);
         setQuestionType(existingSession.questionType || 'multiple-choice');
         setLearningSettings(existingSession.learningSettings || DEFAULT_LEARNING_SETTINGS);
         setSessionStarted(true);
@@ -104,6 +113,30 @@ export default function StudySessionComponent() {
     return questionType;
   };
 
+  const addModifier = () => {
+    setSubjectModifiers([...subjectModifiers, '']);
+  };
+
+  const removeModifier = (index: number) => {
+    if (subjectModifiers.length > 1) {
+      setSubjectModifiers(subjectModifiers.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateModifier = (index: number, value: string) => {
+    const newModifiers = [...subjectModifiers];
+    newModifiers[index] = value;
+    setSubjectModifiers(newModifiers);
+  };
+
+  const buildSubjectContext = () => {
+    const validModifiers = subjectModifiers.filter(m => m.trim());
+    if (validModifiers.length === 0) {
+      return subject.trim();
+    }
+    return `${subject.trim()}. Context: ${validModifiers.join('. ')}`;
+  };
+
   const startNewSession = async () => {
     if (!subject.trim()) return;
     if (!apiSettings.openaiApiKey) {
@@ -111,9 +144,19 @@ export default function StudySessionComponent() {
       return;
     }
 
+    // Save learning preference if remember choice is checked
+    if (rememberChoice !== learningPreference.rememberChoice || 
+        JSON.stringify(learningSettings) !== JSON.stringify(learningPreference.defaultSettings)) {
+      setLearningPreference({
+        rememberChoice,
+        defaultSettings: learningSettings
+      });
+    }
+
     const newSession: StudySession = {
       id: Date.now().toString(),
       subject: subject.trim(),
+      subjectModifiers: subjectModifiers.filter(m => m.trim()),
       createdAt: new Date().toISOString(),
       questions: [],
       status: 'active',
@@ -164,11 +207,12 @@ export default function StudySessionComponent() {
       }
 
       const nextType = getNextQuestionType(session);
+      const subjectContext = buildSubjectContext();
       let questionData;
       
       if (nextType === 'dissertative') {
         questionData = await generateDissertativeQuestion(
-          session.subject, 
+          subjectContext, 
           apiSettings.openaiApiKey,
           apiSettings.model || 'gpt-4o-mini',
           apiSettings.customPrompts?.dissertative,
@@ -197,7 +241,7 @@ export default function StudySessionComponent() {
           : '';
 
         questionData = await generateQuestion(
-          session.subject + difficultyModifier, 
+          subjectContext + difficultyModifier, 
           apiSettings.openaiApiKey,
           apiSettings.model || 'gpt-4o-mini',
           apiSettings.customPrompts?.multipleChoice,
@@ -399,7 +443,7 @@ export default function StudySessionComponent() {
           <div className="space-y-6">
             <div>
               <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                {t.studySubject}
+                {t.studySubject} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -411,6 +455,44 @@ export default function StudySessionComponent() {
                 onKeyPress={(e) => e.key === 'Enter' && startNewSession()}
               />
             </div>
+
+            {/* Subject Modifiers - Only show when user wants to add them */}
+            {subjectModifiers.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t.subjectModifiers}
+                </label>
+                <div className="space-y-3">
+                  {subjectModifiers.map((modifier, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={modifier}
+                        onChange={(e) => updateModifier(index, e.target.value)}
+                        placeholder={t.subjectModifiersPlaceholder}
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
+                      />
+                      <button
+                        onClick={() => removeModifier(index)}
+                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                        title={t.removeModifier}
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Add Modifier Button */}
+            <button
+              onClick={addModifier}
+              className="flex items-center space-x-2 text-orange-600 hover:text-orange-700 font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t.addModifier}</span>
+            </button>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -464,37 +546,94 @@ export default function StudySessionComponent() {
               </div>
             </div>
 
-            {/* Learning Techniques Settings */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-medium text-blue-900 mb-4 flex items-center">
-                <Lightbulb className="w-5 h-5 mr-2 flex-shrink-0" />
-                <span className="break-words">{t.learningTechniques}</span>
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {Object.entries(learningSettings).map(([key, value]) => (
-                  <label key={key} className="flex items-center space-x-3">
+            {/* Learning Techniques Settings - Only show if not remembered */}
+            {!learningPreference.rememberChoice && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-medium text-blue-900 mb-4 flex items-center">
+                  <Lightbulb className="w-5 h-5 mr-2 flex-shrink-0" />
+                  <span className="break-words">{t.learningTechniques}</span>
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  {Object.entries(learningSettings).map(([key, value]) => (
+                    <label key={key} className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={value}
+                        onChange={(e) => setLearningSettings(prev => ({
+                          ...prev,
+                          [key]: e.target.checked
+                        }))}
+                        className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 flex-shrink-0"
+                      />
+                      <span className="text-sm text-blue-800 break-words">
+                        {getLearningTechniqueLabel(key)}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-4 text-sm text-blue-700 space-y-1">
+                  <p><strong>{t.spacedRepetition}:</strong> {t.spacedRepetitionDesc}</p>
+                  <p><strong>{t.interleaving}:</strong> {t.interleavingDesc}</p>
+                  <p><strong>{t.elaborativeInterrogation}:</strong> {t.elaborativeInterrogationDesc}</p>
+                  <p><strong>{t.retrievalPractice}:</strong> {t.retrievalPracticeDesc}</p>
+                </div>
+
+                {/* Remember Choice Option */}
+                <div className="mt-4 pt-4 border-t border-blue-200">
+                  <label className="flex items-start space-x-3">
                     <input
                       type="checkbox"
-                      checked={value}
-                      onChange={(e) => setLearningSettings(prev => ({
-                        ...prev,
-                        [key]: e.target.checked
-                      }))}
-                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 flex-shrink-0"
+                      checked={rememberChoice}
+                      onChange={(e) => setRememberChoice(e.target.checked)}
+                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 mt-0.5 flex-shrink-0"
                     />
-                    <span className="text-sm text-blue-800 break-words">
-                      {getLearningTechniqueLabel(key)}
-                    </span>
+                    <div>
+                      <span className="text-sm font-medium text-blue-900">
+                        {t.rememberMyChoice}
+                      </span>
+                      <p className="text-xs text-blue-700 mt-1">
+                        {t.rememberLearningTechniques}
+                      </p>
+                    </div>
                   </label>
-                ))}
+                </div>
               </div>
-              <div className="mt-4 text-sm text-blue-700 space-y-1">
-                <p><strong>{t.spacedRepetition}:</strong> {t.spacedRepetitionDesc}</p>
-                <p><strong>{t.interleaving}:</strong> {t.interleavingDesc}</p>
-                <p><strong>{t.elaborativeInterrogation}:</strong> {t.elaborativeInterrogationDesc}</p>
-                <p><strong>{t.retrievalPractice}:</strong> {t.retrievalPracticeDesc}</p>
+            )}
+
+            {/* Show current learning techniques if remembered */}
+            {learningPreference.rememberChoice && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base sm:text-lg font-medium text-green-900 flex items-center">
+                    <Lightbulb className="w-5 h-5 mr-2 flex-shrink-0" />
+                    <span className="break-words">{t.learningTechniques}</span>
+                  </h3>
+                  <button
+                    onClick={() => navigate('/settings')}
+                    className="text-green-700 hover:text-green-800 p-1 rounded-lg hover:bg-green-100 transition-colors"
+                    title={language === 'pt-BR' ? 'Gerenciar nas Configurações' : 'Manage in Settings'}
+                  >
+                    <Settings className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {Object.entries(learningSettings).filter(([_, value]) => value).map(([key]) => (
+                    <div key={key} className="flex items-center space-x-2">
+                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      <span className="text-sm text-green-800">
+                        {getLearningTechniqueLabel(key)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-green-700 mt-3">
+                  {language === 'pt-BR' 
+                    ? 'Suas técnicas de aprendizado salvas serão usadas. Você pode alterá-las nas Configurações.'
+                    : 'Your saved learning techniques will be used. You can change them in Settings.'
+                  }
+                </p>
               </div>
-            </div>
+            )}
 
             {apiSettings.model && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
@@ -562,8 +701,19 @@ export default function StudySessionComponent() {
       <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{currentSession?.subject}</h1>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-600">
+            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
+              {currentSession?.subject}
+            </h1>
+            {currentSession?.subjectModifiers && currentSession.subjectModifiers.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {currentSession.subjectModifiers.map((modifier, index) => (
+                  <p key={index} className="text-sm text-gray-600 truncate">
+                    {modifier}
+                  </p>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-600 mt-2">
               <span>{t.question} {currentSession?.questions.length + 1}</span>
               <span className="flex items-center">
                 {currentQuestion.type === 'multiple-choice' ? (

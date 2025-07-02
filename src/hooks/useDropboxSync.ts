@@ -4,7 +4,6 @@ import { DropboxConfig, SyncStatus, SyncConflict } from '../types/dropbox';
 import { useLocalStorage } from './useLocalStorage';
 
 const DEFAULT_CONFIG: DropboxConfig = {
-  appKey: '',
   accessToken: null,
   isConnected: false,
   lastSync: null,
@@ -25,12 +24,12 @@ export function useDropboxSync() {
 
   // Update sync instance when config changes
   useEffect(() => {
-    if (config.accessToken && config.appKey && !dropboxSync.isConnected()) {
-      dropboxSync.connect(config.accessToken, config.appKey);
-    } else if ((!config.accessToken || !config.appKey) && dropboxSync.isConnected()) {
+    if (config.accessToken && !dropboxSync.isConnected()) {
+      dropboxSync.connect(config.accessToken);
+    } else if (!config.accessToken && dropboxSync.isConnected()) {
       dropboxSync.disconnect();
     }
-  }, [config.accessToken, config.appKey, dropboxSync]);
+  }, [config.accessToken, dropboxSync]);
 
   // Auto-sync interval
   useEffect(() => {
@@ -44,17 +43,9 @@ export function useDropboxSync() {
   }, [config.autoSync, config.isConnected, config.syncInterval]);
 
   // Connect to Dropbox
-  const connectDropbox = useCallback(async (appKey: string) => {
-    if (!appKey.trim()) {
-      setSyncStatus(prev => ({
-        ...prev,
-        error: 'Dropbox App Key is required'
-      }));
-      return;
-    }
-
+  const connectDropbox = useCallback(async () => {
     try {
-      const authUrl = DropboxSync.getAuthUrl(appKey);
+      const authUrl = DropboxSync.getAuthUrl();
       const popup = window.open(authUrl, '_blank', 'width=600,height=700');
       
       // Listen for the auth completion
@@ -65,7 +56,6 @@ export function useDropboxSync() {
           const { accessToken } = event.data;
           setConfig(prev => ({
             ...prev,
-            appKey,
             accessToken,
             isConnected: true
           }));

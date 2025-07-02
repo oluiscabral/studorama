@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { Key, Save, Eye, EyeOff, ExternalLink, Bot, MessageSquare, Github, Linkedin, Brain, Globe, RefreshCw, Cloud } from 'lucide-react';
+import { Key, Save, Eye, EyeOff, ExternalLink, Bot, MessageSquare, Github, Linkedin, Brain, Globe, RefreshCw, Cloud, CheckCircle, X } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
-import { Language } from '../types';
+import { Language, LearningTechniquesPreference, LearningSettings } from '../types';
 import LanguageSwitchModal from './LanguageSwitchModal';
-import DropboxSyncSettings from './dropbox/DropboxSyncSettings';
 
 const OPENAI_MODELS = [
-  { value: 'gpt-4o', label: 'GPT-4o (Recommended)', description: 'Latest and most capable model' },
-  { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Faster and more cost-effective' },
-  { value: 'gpt-4-turbo', label: 'GPT-4 Turbo', description: 'High performance model' },
-  { value: 'gpt-4', label: 'GPT-4', description: 'Previous generation flagship model' },
-  { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'Fast and economical' },
+  { value: 'gpt-4o', label: 'gpt4oRecommended', description: 'latestMostCapable' },
+  { value: 'gpt-4o-mini', label: 'gpt4oMini', description: 'fasterCostEffective' },
+  { value: 'gpt-4-turbo', label: 'gpt4Turbo', description: 'highPerformance' },
+  { value: 'gpt-4', label: 'gpt4', description: 'previousGeneration' },
+  { value: 'gpt-3.5-turbo', label: 'gpt35Turbo', description: 'fastEconomical' },
 ];
 
 const LANGUAGES: { value: Language; label: string; flag: string }[] = [
@@ -37,6 +36,21 @@ const getDefaultPrompts = (language: Language) => ({
     : `Create a retrieval practice question about {subject} that tests recall of important concepts. This should help strengthen memory through active recall. Return a JSON object with appropriate format for the question type.`
 });
 
+const DEFAULT_LEARNING_SETTINGS: LearningSettings = {
+  spacedRepetition: true,
+  interleaving: true,
+  elaborativeInterrogation: true,
+  selfExplanation: true,
+  desirableDifficulties: true,
+  retrievalPractice: true,
+  generationEffect: true
+};
+
+const DEFAULT_LEARNING_PREFERENCE: LearningTechniquesPreference = {
+  rememberChoice: false,
+  defaultSettings: DEFAULT_LEARNING_SETTINGS
+};
+
 export default function Settings() {
   const { t, language, changeLanguage, languageSwitchPreference, updateLanguageSwitchPreference, resetLanguageSwitchPreference } = useLanguage();
   const [apiSettings, setApiSettings] = useLocalStorage('studorama-api-settings', {
@@ -45,12 +59,14 @@ export default function Settings() {
     customPrompts: getDefaultPrompts(language)
   });
 
+  const [learningPreference, setLearningPreference] = useLocalStorage<LearningTechniquesPreference>('studorama-learning-preference', DEFAULT_LEARNING_PREFERENCE);
+
   const [showApiKey, setShowApiKey] = useState(false);
   const [tempApiKey, setTempApiKey] = useState(apiSettings.openaiApiKey);
   const [tempModel, setTempModel] = useState(apiSettings.model || 'gpt-4o-mini');
   const [tempPrompts, setTempPrompts] = useState(apiSettings.customPrompts || getDefaultPrompts(language));
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'language' | 'sync' | 'about'>('api');
+  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'language' | 'about'>('api');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [pendingLanguage, setPendingLanguage] = useState<Language | null>(null);
   const [preferencesReset, setPreferencesReset] = useState(false);
@@ -125,6 +141,27 @@ export default function Settings() {
     setTimeout(() => setPreferencesReset(false), 3000);
   };
 
+  const updateLearningPreference = (updates: Partial<LearningTechniquesPreference>) => {
+    setLearningPreference(prev => ({ ...prev, ...updates }));
+  };
+
+  const getLearningTechniqueLabel = (key: string): string => {
+    const labels: Record<string, { en: string; pt: string }> = {
+      spacedRepetition: { en: 'Spaced Repetition', pt: 'Repetição Espaçada' },
+      interleaving: { en: 'Interleaving', pt: 'Intercalação' },
+      elaborativeInterrogation: { en: 'Elaborative Interrogation', pt: 'Interrogação Elaborativa' },
+      selfExplanation: { en: 'Self Explanation', pt: 'Auto-Explicação' },
+      desirableDifficulties: { en: 'Desirable Difficulties', pt: 'Dificuldades Desejáveis' },
+      retrievalPractice: { en: 'Retrieval Practice', pt: 'Prática de Recuperação' },
+      generationEffect: { en: 'Generation Effect', pt: 'Efeito de Geração' }
+    };
+
+    const label = labels[key];
+    if (!label) return key;
+    
+    return language === 'pt-BR' ? label.pt : label.en;
+  };
+
   const isValid = tempApiKey.trim().length > 0;
 
   return (
@@ -144,7 +181,6 @@ export default function Settings() {
               { id: 'prompts', label: t.aiPrompts, icon: MessageSquare },
               { id: 'learning', label: t.learningTechniquesTab, icon: Brain },
               { id: 'language', label: t.language, icon: Globe },
-              { id: 'sync', label: language === 'pt-BR' ? 'Sincronização' : 'Sync', icon: Cloud },
               { id: 'about', label: t.about, icon: Bot }
             ].map(({ id, label, icon: Icon }) => (
               <button
@@ -217,12 +253,15 @@ export default function Settings() {
                 >
                   {OPENAI_MODELS.map((model) => (
                     <option key={model.value} value={model.value}>
-                      {model.label}
+                      {t[model.label as keyof typeof t] || model.label}
                     </option>
                   ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-2">
-                  {OPENAI_MODELS.find(m => m.value === tempModel)?.description}
+                  {(() => {
+                    const selectedModel = OPENAI_MODELS.find(m => m.value === tempModel);
+                    return selectedModel ? t[selectedModel.description as keyof typeof t] || selectedModel.description : '';
+                  })()}
                 </p>
               </div>
 
@@ -237,127 +276,6 @@ export default function Settings() {
                   <li>4. {t.copyPasteKey}</li>
                 </ol>
               </div>
-            </div>
-          )}
-
-          {/* Language Tab */}
-          {activeTab === 'language' && (
-            <div className="space-y-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Globe className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{t.language}</h2>
-                  <p className="text-sm text-gray-600">{t.selectLanguage}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {LANGUAGES.map((lang) => (
-                  <button
-                    key={lang.value}
-                    onClick={() => handleLanguageChange(lang.value)}
-                    className={`p-4 border-2 rounded-lg transition-all duration-200 text-left ${
-                      language === lang.value
-                        ? 'border-orange-500 bg-orange-50'
-                        : 'border-gray-200 hover:border-orange-300'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">{lang.flag}</span>
-                      <div>
-                        <h3 className="font-medium text-gray-900">{lang.label}</h3>
-                        <p className="text-sm text-gray-600">
-                          {lang.value === 'en-US' ? 'English (United States)' : 'Português (Brasil)'}
-                        </p>
-                      </div>
-                      {language === lang.value && (
-                        <div className="ml-auto w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Language Switch Preferences */}
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  {t.languageSwitchPreferences}
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">{t.rememberChoice}</span>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      languageSwitchPreference.rememberChoice 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {languageSwitchPreference.rememberChoice ? t.yes : t.no}
-                    </span>
-                  </div>
-                  {languageSwitchPreference.rememberChoice && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">{t.resetPromptsOption}</span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        languageSwitchPreference.autoResetPrompts 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {languageSwitchPreference.autoResetPrompts ? t.yes : t.no}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={handleResetLanguagePreferences}
-                  className="mt-3 text-sm text-orange-600 hover:text-orange-700 underline"
-                >
-                  {t.resetLanguagePreferences}
-                </button>
-                {preferencesReset && (
-                  <p className="text-sm text-green-600 mt-2">{t.languagePreferencesReset}</p>
-                )}
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-green-900 mb-2">
-                  {language === 'pt-BR' ? 'Detecção Automática' : 'Automatic Detection'}
-                </h3>
-                <p className="text-sm text-green-700">
-                  {language === 'pt-BR' 
-                    ? 'O idioma é detectado automaticamente baseado nas configurações do seu navegador e salvo localmente. Os prompts da IA também são atualizados automaticamente para corresponder ao idioma selecionado.'
-                    : 'Language is automatically detected based on your browser settings and saved locally. AI prompts are also automatically updated to match the selected language.'
-                  }
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Sync Tab */}
-          {activeTab === 'sync' && (
-            <div className="space-y-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Cloud className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {language === 'pt-BR' ? 'Sincronização na Nuvem' : 'Cloud Sync'}
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    {language === 'pt-BR' 
-                      ? 'Sincronize seus dados entre dispositivos usando Dropbox'
-                      : 'Sync your data across devices using Dropbox'
-                    }
-                  </p>
-                </div>
-              </div>
-
-              <DropboxSyncSettings />
             </div>
           )}
 
@@ -477,73 +395,81 @@ export default function Settings() {
                   <Brain className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{t.learningTechniquesTab}</h2>
-                  <p className="text-sm text-gray-600">{t.makeItStickScience}</p>
+                  <h2 className="text-lg font-semibold text-gray-900">{t.learningTechniquesSettings}</h2>
+                  <p className="text-sm text-gray-600">{t.manageLearningTechniques}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-3">{t.spacedRepetition}</h3>
-                  <p className="text-sm text-blue-800 mb-4">
-                    {t.spacedRepetitionFull}
-                  </p>
-                  <div className="text-xs text-blue-700">
-                    <strong>{language === 'pt-BR' ? 'Como funciona:' : 'How it works:'}</strong> {t.spacedRepetitionHow}
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
-                  <h3 className="text-lg font-semibold text-green-900 mb-3">{t.interleaving}</h3>
-                  <p className="text-sm text-green-800 mb-4">
-                    {t.interleavingFull}
-                  </p>
-                  <div className="text-xs text-green-700">
-                    <strong>{language === 'pt-BR' ? 'Como funciona:' : 'How it works:'}</strong> {t.interleavingHow}
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-lg p-6 border border-purple-200">
-                  <h3 className="text-lg font-semibold text-purple-900 mb-3">{t.elaborativeInterrogation}</h3>
-                  <p className="text-sm text-purple-800 mb-4">
-                    {t.elaborativeInterrogationFull}
-                  </p>
-                  <div className="text-xs text-purple-700">
-                    <strong>{language === 'pt-BR' ? 'Como funciona:' : 'How it works:'}</strong> {t.elaborativeInterrogationHow}
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-6 border border-orange-200">
-                  <h3 className="text-lg font-semibold text-orange-900 mb-3">{t.selfExplanation}</h3>
-                  <p className="text-sm text-orange-800 mb-4">
-                    {t.selfExplanationFull}
-                  </p>
-                  <div className="text-xs text-orange-700">
-                    <strong>{language === 'pt-BR' ? 'Como funciona:' : 'How it works:'}</strong> {t.selfExplanationHow}
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-lg p-6 border border-yellow-200">
-                  <h3 className="text-lg font-semibold text-yellow-900 mb-3">{t.desirableDifficulties}</h3>
-                  <p className="text-sm text-yellow-800 mb-4">
-                    {t.desirableDifficultiesFull}
-                  </p>
-                  <div className="text-xs text-yellow-700">
-                    <strong>{language === 'pt-BR' ? 'Como funciona:' : 'How it works:'}</strong> {t.desirableDifficultiesHow}
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-lg p-6 border border-teal-200">
-                  <h3 className="text-lg font-semibold text-teal-900 mb-3">{t.retrievalPractice}</h3>
-                  <p className="text-sm text-teal-800 mb-4">
-                    {t.retrievalPracticeFull}
-                  </p>
-                  <div className="text-xs text-teal-700">
-                    <strong>{language === 'pt-BR' ? 'Como funciona:' : 'How it works:'}</strong> {t.retrievalPracticeHow}
-                  </div>
+              {/* Default Learning Techniques */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                <h3 className="text-base font-medium text-gray-900 mb-4">{t.defaultLearningTechniques}</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {Object.entries(learningPreference.defaultSettings).map(([key, value]) => (
+                    <label key={key} className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={value}
+                        onChange={(e) => updateLearningPreference({
+                          defaultSettings: {
+                            ...learningPreference.defaultSettings,
+                            [key]: e.target.checked
+                          }
+                        })}
+                        className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 flex-shrink-0"
+                      />
+                      <span className="text-sm text-gray-800">
+                        {getLearningTechniqueLabel(key)}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
 
+              {/* Remember Choice Setting */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-medium text-blue-900">{t.rememberChoiceForSessions}</h3>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={learningPreference.rememberChoice}
+                      onChange={(e) => updateLearningPreference({ rememberChoice: e.target.checked })}
+                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    {learningPreference.rememberChoice && (
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    )}
+                  </div>
+                </div>
+                <p className="text-sm text-blue-800 mb-4">
+                  {t.rememberChoiceDescription}
+                </p>
+                
+                {learningPreference.rememberChoice && (
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-blue-900">
+                        {language === 'pt-BR' ? 'Status: Ativo' : 'Status: Active'}
+                      </span>
+                      <button
+                        onClick={() => updateLearningPreference({ rememberChoice: false })}
+                        className="text-red-600 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                        title={t.unsetRememberChoice}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-blue-700 mt-2">
+                      {language === 'pt-BR' 
+                        ? 'Novas sessões usarão automaticamente suas técnicas de aprendizado padrão.'
+                        : 'New sessions will automatically use your default learning techniques.'
+                      }
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Learning Techniques Info */}
               <div className="bg-gray-50 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">{t.researchBasedBenefits}</h3>
                 <ul className="text-sm text-gray-700 space-y-2">
@@ -552,6 +478,103 @@ export default function Settings() {
                   <li>• <strong>{language === 'pt-BR' ? 'Compreensão mais profunda:' : 'Deeper understanding:'}</strong> {t.deeperUnderstanding}</li>
                   <li>• <strong>{language === 'pt-BR' ? 'Consciência metacognitiva:' : 'Metacognitive awareness:'}</strong> {t.metacognitiveAwareness}</li>
                 </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Language Tab */}
+          {activeTab === 'language' && (
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Globe className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">{t.language}</h2>
+                  <p className="text-sm text-gray-600">{t.selectLanguage}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.value}
+                    onClick={() => handleLanguageChange(lang.value)}
+                    className={`p-4 border-2 rounded-lg transition-all duration-200 text-left ${
+                      language === lang.value
+                        ? 'border-orange-500 bg-orange-50'
+                        : 'border-gray-200 hover:border-orange-300'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="text-2xl">{lang.flag}</span>
+                      <div>
+                        <h3 className="font-medium text-gray-900">{lang.label}</h3>
+                        <p className="text-sm text-gray-600">
+                          {lang.value === 'en-US' ? 'English (United States)' : 'Português (Brasil)'}
+                        </p>
+                      </div>
+                      {language === lang.value && (
+                        <div className="ml-auto w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Language Switch Preferences */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  {t.languageSwitchPreferences}
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">{t.rememberChoice}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      languageSwitchPreference.rememberChoice 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {languageSwitchPreference.rememberChoice ? t.yes : t.no}
+                    </span>
+                  </div>
+                  {languageSwitchPreference.rememberChoice && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700">{t.resetPromptsOption}</span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        languageSwitchPreference.autoResetPrompts 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {languageSwitchPreference.autoResetPrompts ? t.yes : t.no}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={handleResetLanguagePreferences}
+                  className="mt-3 text-sm text-orange-600 hover:text-orange-700 underline"
+                >
+                  {t.resetLanguagePreferences}
+                </button>
+                {preferencesReset && (
+                  <p className="text-sm text-green-600 mt-2">{t.languagePreferencesReset}</p>
+                )}
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-green-900 mb-2">
+                  {language === 'pt-BR' ? 'Detecção Automática' : 'Automatic Detection'}
+                </h3>
+                <p className="text-sm text-green-700">
+                  {language === 'pt-BR' 
+                    ? 'O idioma é detectado automaticamente baseado nas configurações do seu navegador e salvo localmente. Os prompts da IA também são atualizados automaticamente para corresponder ao idioma selecionado.'
+                    : 'Language is automatically detected based on your browser settings and saved locally. AI prompts are also automatically updated to match the selected language.'
+                  }
+                </p>
               </div>
             </div>
           )}
@@ -593,6 +616,42 @@ export default function Settings() {
                     <Linkedin className="w-5 h-5 mr-2" />
                     {t.linkedin}
                   </a>
+                </div>
+              </div>
+
+              {/* Open Source Section */}
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6 border border-purple-200">
+                <h3 className="text-lg font-semibold text-purple-900 mb-3 flex items-center">
+                  <Github className="w-6 h-6 mr-2" />
+                  {t.openSourceProject}
+                </h3>
+                <p className="text-purple-800 mb-4">
+                  {t.openSourceDescription}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <a
+                    href="https://github.com/oluiscabral/studorama"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center bg-purple-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+                  >
+                    <Github className="w-5 h-5 mr-2" />
+                    {t.viewOnGitHub}
+                  </a>
+                  <a
+                    href="https://github.com/oluiscabral/studorama/issues"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center bg-white text-purple-600 border border-purple-300 px-4 py-3 rounded-lg font-medium hover:bg-purple-50 transition-colors"
+                  >
+                    <ExternalLink className="w-5 h-5 mr-2" />
+                    {t.reportIssue}
+                  </a>
+                </div>
+                <div className="mt-4 p-3 bg-white/50 rounded-lg">
+                  <p className="text-purple-700 text-sm">
+                    <strong>Repository:</strong> https://github.com/oluiscabral/studorama
+                  </p>
                 </div>
               </div>
 
@@ -683,7 +742,10 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <span className="text-gray-700">{t.selectedModel}</span>
             <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              {OPENAI_MODELS.find(m => m.value === (apiSettings.model || 'gpt-4o-mini'))?.label || 'GPT-4o Mini'}
+              {(() => {
+                const selectedModel = OPENAI_MODELS.find(m => m.value === (apiSettings.model || 'gpt-4o-mini'));
+                return selectedModel ? t[selectedModel.label as keyof typeof t] || selectedModel.label : t.gpt4oMini;
+              })()}
             </div>
           </div>
           <div className="flex items-center justify-between">
@@ -694,8 +756,15 @@ export default function Settings() {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-gray-700">{t.learningTechniquesTab}</span>
-            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-              {t.enhancedStudyMode}
+            <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              learningPreference.rememberChoice 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-blue-100 text-blue-800'
+            }`}>
+              {learningPreference.rememberChoice 
+                ? (language === 'pt-BR' ? 'Lembradas' : 'Remembered')
+                : t.enhancedStudyMode
+              }
             </div>
           </div>
           <div className="flex items-center justify-between">

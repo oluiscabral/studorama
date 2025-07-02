@@ -1,6 +1,7 @@
 export interface StudySession {
   id: string;
   subject: string;
+  subjectModifiers?: string[];
   createdAt: string;
   questions: Question[];
   status: 'active' | 'completed';
@@ -39,6 +40,11 @@ export interface LearningSettings {
   desirableDifficulties: boolean;
   retrievalPractice: boolean;
   generationEffect: boolean;
+}
+
+export interface LearningTechniquesPreference {
+  rememberChoice: boolean;
+  defaultSettings: LearningSettings;
 }
 
 export interface SpacedRepetitionData {

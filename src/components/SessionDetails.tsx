@@ -52,6 +52,13 @@ export default function SessionDetails() {
           </button>
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{session.subject}</h1>
+            {session.subjectModifiers && session.subjectModifiers.length > 0 && (
+              <div className="mt-1 space-y-1">
+                {session.subjectModifiers.map((modifier, index) => (
+                  <p key={index} className="text-sm text-gray-600 truncate">{modifier}</p>
+                ))}
+              </div>
+            )}
             <p className="text-gray-600">{t.sessionDetails}</p>
           </div>
         </div>

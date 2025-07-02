@@ -15,14 +15,14 @@ export default function PricingPage() {
       // Create a simple checkout URL - this would need to be implemented
       // For now, show a message about account requirement for sponsorship
       const message = language === 'pt-BR' 
-        ? 'Para se tornar um patrocinador, você precisaria criar uma conta. Os recursos principais do Studorama permanecem completamente gratuitos e sem necessidade de conta!'
-        : 'To become a sponsor, you would need to create an account. The core Studorama features remain completely free and accountless!';
+        ? 'Para se tornar um apoiador, você precisaria criar uma conta. Os recursos principais do Studorama permanecem completamente gratuitos e sem necessidade de conta!'
+        : 'To become a supporter, you would need to create an account. The core Studorama features remain completely free and accountless!';
       alert(message);
     } catch (error: any) {
       console.error('Error:', error);
       const errorMessage = language === 'pt-BR' 
-        ? 'Erro ao processar solicitação de patrocínio'
-        : 'Error processing sponsorship request';
+        ? 'Erro ao processar solicitação de apoio'
+        : 'Error processing support request';
       alert(errorMessage);
     } finally {
       setLoading(null);
@@ -35,11 +35,11 @@ export default function PricingPage() {
 
   const getIcon = (name: string) => {
     switch (name) {
-      case 'Library':
+      case 'Advanced':
         return <Crown className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />;
-      case 'Book':
+      case 'Standard':
         return <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />;
-      case 'Coffee':
+      case 'Basic':
         return <Coffee className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />;
       default:
         return <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-gray-600" />;
@@ -48,43 +48,43 @@ export default function PricingPage() {
 
   const getGradient = (name: string) => {
     switch (name) {
-      case 'Library':
+      case 'Advanced':
         return 'from-purple-500 to-purple-600';
-      case 'Book':
+      case 'Standard':
         return 'from-blue-500 to-blue-600';
-      case 'Coffee':
+      case 'Basic':
         return 'from-orange-500 to-orange-600';
       default:
         return 'from-gray-500 to-gray-600';
     }
   };
 
-  const getSponsorName = (name: string) => {
+  const getSupportName = (name: string) => {
     if (language === 'pt-BR') {
       switch (name) {
-        case 'Library': return t.librarySponsor;
-        case 'Book': return t.bookSponsor;
-        case 'Coffee': return t.coffeeSponsor;
+        case 'Advanced': return t.advanced;
+        case 'Standard': return t.standard;
+        case 'Basic': return t.basic;
         default: return name;
       }
     }
     return name;
   };
 
-  const getSponsorDescription = (name: string) => {
+  const getSupportDescription = (name: string) => {
     if (language === 'pt-BR') {
       switch (name) {
-        case 'Library': return t.librarySponsorDesc;
-        case 'Book': return t.bookSponsorDesc;
-        case 'Coffee': return t.coffeeSponsorDesc;
+        case 'Advanced': return t.advancedDesc;
+        case 'Standard': return t.standardDesc;
+        case 'Basic': return t.basicDesc;
         default: return '';
       }
     }
     
     switch (name) {
-      case 'Library': return t.librarySponsorDesc;
-      case 'Book': return t.bookSponsorDesc;
-      case 'Coffee': return t.coffeeSponsorDesc;
+      case 'Advanced': return t.advancedDesc;
+      case 'Standard': return t.standardDesc;
+      case 'Basic': return t.basicDesc;
       default: return '';
     }
   };
@@ -164,20 +164,20 @@ export default function PricingPage() {
           </h2>
           <p className="text-gray-600 text-sm sm:text-base">
             {language === 'pt-BR' 
-              ? 'Prefere outras formas de apoio? Confira nossas opções de patrocínio direto:'
-              : 'Prefer other ways to support? Check out our direct sponsorship options:'
+              ? 'Prefere outras formas de apoio? Confira nossas opções de apoio direto:'
+              : 'Prefer other ways to support? Check out our direct support options:'
             }
           </p>
         </div>
 
-        {/* Sponsorship Tiers */}
+        {/* Support Tiers */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto mb-8 sm:mb-12">
           {products.map((product) => (
             <div
               key={product.id}
               className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 relative overflow-hidden hover:shadow-xl transition-shadow duration-300"
             >
-              {product.name === 'Library' && (
+              {product.name === 'Advanced' && (
                 <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-500 to-purple-600 text-white px-2 sm:px-4 py-1 text-xs sm:text-sm font-medium rounded-bl-lg">
                   {t.mostPopular}
                 </div>
@@ -188,10 +188,7 @@ export default function PricingPage() {
                   {getIcon(product.name)}
                 </div>
                 <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2 leading-tight">
-                  {getSponsorName(product.name)}<br className="sm:hidden" />
-                  <span className="text-base sm:text-lg lg:text-xl">
-                    {language === 'pt-BR' ? ' Patrocinador' : ' Sponsor'}
-                  </span>
+                  {getSupportName(product.name)}
                 </h3>
                 <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1">
                   ${product.price}
@@ -206,7 +203,7 @@ export default function PricingPage() {
 
               <div className="mb-6 sm:mb-8">
                 <p className="text-gray-700 text-center leading-relaxed text-sm sm:text-base">
-                  {getSponsorDescription(product.name)}
+                  {getSupportDescription(product.name)}
                 </p>
               </div>
 
@@ -240,7 +237,7 @@ export default function PricingPage() {
                   <>
                     <Heart className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
                     <span className="text-center leading-tight">
-                      {t.becomeSponsor} {getSponsorName(product.name)}
+                      {t.becomeSupporter} {getSupportName(product.name)}
                     </span>
                   </>
                 )}
@@ -253,7 +250,7 @@ export default function PricingPage() {
           ))}
         </div>
 
-        {/* Why Sponsor Section */}
+        {/* Why Support Section */}
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 mb-8 sm:mb-12">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-6 sm:mb-8 px-2">
             {t.whySponsorStudorama}

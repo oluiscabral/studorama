@@ -3,6 +3,7 @@ import { DropboxConfig, DropboxFile, SyncConflict } from '../types/dropbox';
 
 const STUDORAMA_FOLDER = '/Studorama';
 const DATA_FILE = `${STUDORAMA_FOLDER}/studorama-data.json`;
+const OFFICIAL_APP_KEY = 'vq0jbn0fzynvxa6'; // Official Studorama Dropbox App Key
 
 export class DropboxSync {
   private dbx: Dropbox | null = null;
@@ -10,34 +11,26 @@ export class DropboxSync {
 
   constructor(config: DropboxConfig) {
     this.config = config;
-    if (config.accessToken && config.appKey) {
+    if (config.accessToken) {
       this.dbx = new Dropbox({ 
         accessToken: config.accessToken,
-        clientId: config.appKey,
+        clientId: OFFICIAL_APP_KEY,
         fetch: fetch
       });
     }
   }
 
-  // Initialize Dropbox OAuth flow with user's app key
-  static getAuthUrl(appKey: string): string {
-    if (!appKey) {
-      throw new Error('Dropbox App Key is required');
-    }
-    
+  // Initialize Dropbox OAuth flow with official app key
+  static getAuthUrl(): string {
     const dbx = new Dropbox({ 
-      clientId: appKey,
+      clientId: OFFICIAL_APP_KEY,
       fetch: fetch
     });
     return dbx.getAuthenticationUrl(`${window.location.origin}/dropbox-callback`);
   }
 
-  // Complete OAuth flow with user's app key
-  static async completeAuth(code: string, appKey: string): Promise<string> {
-    if (!appKey) {
-      throw new Error('Dropbox App Key is required');
-    }
-
+  // Complete OAuth flow with official app key
+  static async completeAuth(code: string): Promise<string> {
     try {
       const response = await fetch('https://api.dropboxapi.com/oauth2/token', {
         method: 'POST',
@@ -47,7 +40,7 @@ export class DropboxSync {
         body: new URLSearchParams({
           code,
           grant_type: 'authorization_code',
-          client_id: appKey,
+          client_id: OFFICIAL_APP_KEY,
           redirect_uri: `${window.location.origin}/dropbox-callback`,
         }),
       });
@@ -65,14 +58,13 @@ export class DropboxSync {
     }
   }
 
-  // Connect to Dropbox with user's credentials
-  connect(accessToken: string, appKey: string): void {
+  // Connect to Dropbox with access token
+  connect(accessToken: string): void {
     this.config.accessToken = accessToken;
-    this.config.appKey = appKey;
     this.config.isConnected = true;
     this.dbx = new Dropbox({ 
       accessToken,
-      clientId: appKey,
+      clientId: OFFICIAL_APP_KEY,
       fetch: fetch
     });
   }
@@ -86,7 +78,7 @@ export class DropboxSync {
 
   // Check if connected
   isConnected(): boolean {
-    return this.config.isConnected && this.dbx !== null && !!this.config.appKey;
+    return this.config.isConnected && this.dbx !== null;
   }
 
   // Create Studorama folder if it doesn't exist

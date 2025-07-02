@@ -1,34 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, BookOpen, TrendingUp, Play, Eye, Trash2, AlertTriangle } from 'lucide-react';
+import { Calendar, BookOpen, TrendingUp, Play, Eye } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
 import { StudySession } from '../types';
 import { formatDate } from '../utils/i18n';
 
 export default function SessionHistory() {
-  const [sessions, setSessions] = useLocalStorage<StudySession[]>('studorama-sessions', []);
+  const [sessions] = useLocalStorage<StudySession[]>('studorama-sessions', []);
   const { t, language } = useLanguage();
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const sortedSessions = [...sessions].sort((a, b) => 
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
-
-  const handleDeleteAllSessions = async () => {
-    setIsDeleting(true);
-    
-    // Add a small delay for better UX
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    setSessions([]);
-    setShowDeleteModal(false);
-    setIsDeleting(false);
-    
-    // Show success message
-    alert(t.sessionsDeleted);
-  };
 
   if (sessions.length === 0) {
     return (
@@ -60,13 +44,6 @@ export default function SessionHistory() {
           <p className="text-gray-600">{t.reviewProgress}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={() => setShowDeleteModal(true)}
-            className="inline-flex items-center justify-center bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            {t.deleteAllSessions}
-          </button>
           <Link
             to="/study"
             className="inline-flex items-center justify-center bg-orange-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-700 transition-colors"
@@ -204,59 +181,6 @@ export default function SessionHistory() {
           ))}
         </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                  <AlertTriangle className="w-6 h-6 text-red-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {t.deleteAllSessions}
-                </h3>
-              </div>
-              
-              <div className="mb-6">
-                <p className="text-gray-700 mb-3">
-                  {t.deleteAllSessionsConfirm}
-                </p>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-red-800 text-sm font-medium">
-                    ⚠️ {t.deleteAllSessionsWarning}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  disabled={isDeleting}
-                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors disabled:opacity-50"
-                >
-                  {t.cancel}
-                </button>
-                <button
-                  onClick={handleDeleteAllSessions}
-                  disabled={isDeleting}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {isDeleting ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      {t.delete}
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

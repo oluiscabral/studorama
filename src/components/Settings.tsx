@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Key, Save, Eye, EyeOff, ExternalLink, Bot, MessageSquare, Github, Linkedin, Brain, Globe, RefreshCw, Cloud, CheckCircle, X } from 'lucide-react';
+import { Key, Save, Eye, EyeOff, ExternalLink, Bot, MessageSquare, Github, Linkedin, Brain, Globe, RefreshCw, Cloud, CheckCircle, X, Trash2, AlertTriangle, Database } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
 import { Language, LearningTechniquesPreference, LearningSettings } from '../types';
@@ -60,16 +60,20 @@ export default function Settings() {
   });
 
   const [learningPreference, setLearningPreference] = useLocalStorage<LearningTechniquesPreference>('studorama-learning-preference', DEFAULT_LEARNING_PREFERENCE);
+  const [sessions, setSessions] = useLocalStorage('studorama-sessions', []);
 
   const [showApiKey, setShowApiKey] = useState(false);
   const [tempApiKey, setTempApiKey] = useState(apiSettings.openaiApiKey);
   const [tempModel, setTempModel] = useState(apiSettings.model || 'gpt-4o-mini');
   const [tempPrompts, setTempPrompts] = useState(apiSettings.customPrompts || getDefaultPrompts(language));
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'language' | 'about'>('api');
+  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'language' | 'data' | 'about'>('api');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [pendingLanguage, setPendingLanguage] = useState<Language | null>(null);
   const [preferencesReset, setPreferencesReset] = useState(false);
+  const [showDeleteSessionsModal, setShowDeleteSessionsModal] = useState(false);
+  const [showDeleteAllDataModal, setShowDeleteAllDataModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSave = () => {
     setApiSettings({ 
@@ -145,6 +149,44 @@ export default function Settings() {
     setLearningPreference(prev => ({ ...prev, ...updates }));
   };
 
+  const handleDeleteAllSessions = async () => {
+    setIsDeleting(true);
+    
+    // Add a small delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    setSessions([]);
+    setShowDeleteSessionsModal(false);
+    setIsDeleting(false);
+    
+    // Show success message
+    alert(t.sessionsDeleted);
+  };
+
+  const handleDeleteAllData = async () => {
+    setIsDeleting(true);
+    
+    // Add a small delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Clear all Studorama data from localStorage
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('studorama-')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    setShowDeleteAllDataModal(false);
+    setIsDeleting(false);
+    
+    // Show success message and reload page
+    alert(t.allDataDeleted);
+    window.location.reload();
+  };
+
   const getLearningTechniqueLabel = (key: string): string => {
     const labels: Record<string, { en: string; pt: string }> = {
       spacedRepetition: { en: 'Spaced Repetition', pt: 'Repetição Espaçada' },
@@ -181,6 +223,7 @@ export default function Settings() {
               { id: 'prompts', label: t.aiPrompts, icon: MessageSquare },
               { id: 'learning', label: t.learningTechniquesTab, icon: Brain },
               { id: 'language', label: t.language, icon: Globe },
+              { id: 'data', label: t.dataManagement, icon: Database },
               { id: 'about', label: t.about, icon: Bot }
             ].map(({ id, label, icon: Icon }) => (
               <button
@@ -579,6 +622,89 @@ export default function Settings() {
             </div>
           )}
 
+          {/* Data Management Tab */}
+          {activeTab === 'data' && (
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <Database className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">{t.dataManagement}</h2>
+                  <p className="text-sm text-gray-600">{t.manageYourData}</p>
+                </div>
+              </div>
+
+              {/* Delete All Sessions */}
+              <div className="bg-white border border-red-200 rounded-lg p-6">
+                <div className="flex items-start space-x-4">
+                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Trash2 className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{t.deleteAllSessions}</h3>
+                    <p className="text-gray-600 mb-4">
+                      {language === 'pt-BR' 
+                        ? 'Excluir permanentemente todas as suas sessões de estudo e progresso'
+                        : 'Permanently delete all your study sessions and progress'
+                      }
+                    </p>
+                    <button
+                      onClick={() => setShowDeleteSessionsModal(true)}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {t.deleteAllSessions}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Delete All Data */}
+              <div className="bg-white border border-red-300 rounded-lg p-6">
+                <div className="flex items-start space-x-4">
+                  <div className="w-10 h-10 bg-red-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="w-5 h-5 text-red-700" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{t.deleteAllData}</h3>
+                    <p className="text-gray-600 mb-4">
+                      {t.deleteAllDataDesc}
+                    </p>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                      <p className="text-red-800 text-sm font-medium">
+                        ⚠️ {language === 'pt-BR' 
+                          ? 'Esta ação excluirá TODOS os dados do Studorama, incluindo sessões, configurações, chaves da API e preferências.'
+                          : 'This action will delete ALL Studorama data including sessions, settings, API keys, and preferences.'
+                        }
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowDeleteAllDataModal(true)}
+                      className="bg-red-700 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-800 transition-colors flex items-center"
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      {t.deleteAllData}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Privacy Notice */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-blue-900 mb-2">
+                  {language === 'pt-BR' ? 'Privacidade dos Dados' : 'Data Privacy'}
+                </h3>
+                <p className="text-sm text-blue-700">
+                  {language === 'pt-BR' 
+                    ? 'Todos os seus dados são armazenados localmente no seu navegador. Nenhum dado é enviado para nossos servidores. Quando você exclui dados, eles são removidos permanentemente do seu dispositivo.'
+                    : 'All your data is stored locally in your browser. No data is sent to our servers. When you delete data, it is permanently removed from your device.'
+                  }
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* About Tab */}
           {activeTab === 'about' && (
             <div className="space-y-6">
@@ -779,6 +905,112 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Delete Sessions Confirmation Modal */}
+      {showDeleteSessionsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {t.deleteAllSessions}
+                </h3>
+              </div>
+              
+              <div className="mb-6">
+                <p className="text-gray-700 mb-3">
+                  {t.deleteAllSessionsConfirm}
+                </p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-800 text-sm font-medium">
+                    ⚠️ {t.deleteAllSessionsWarning}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => setShowDeleteSessionsModal(false)}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  onClick={handleDeleteAllSessions}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {isDeleting ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {t.delete}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Data Confirmation Modal */}
+      {showDeleteAllDataModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {t.deleteAllData}
+                </h3>
+              </div>
+              
+              <div className="mb-6">
+                <p className="text-gray-700 mb-3">
+                  {t.deleteAllDataConfirm}
+                </p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-800 text-sm font-medium">
+                    ⚠️ {t.deleteAllDataWarning}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => setShowDeleteAllDataModal(false)}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  onClick={handleDeleteAllData}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {isDeleting ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      {t.delete}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Language Switch Modal */}
       <LanguageSwitchModal

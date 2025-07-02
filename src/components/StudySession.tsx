@@ -6,6 +6,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { StudySession, Question, LearningSettings, LearningTechniquesPreference } from '../types';
 import { generateQuestion, generateDissertativeQuestion, evaluateAnswer, generateElaborativeQuestion, generateRetrievalQuestion } from '../utils/openai';
 import { calculateNextReview, shouldReviewQuestion } from '../utils/spacedRepetition';
+import { getRandomModifierPlaceholder } from '../utils/i18n';
 
 const DEFAULT_LEARNING_SETTINGS: LearningSettings = {
   spacedRepetition: true,
@@ -118,9 +119,7 @@ export default function StudySessionComponent() {
   };
 
   const removeModifier = (index: number) => {
-    if (subjectModifiers.length > 1) {
-      setSubjectModifiers(subjectModifiers.filter((_, i) => i !== index));
-    }
+    setSubjectModifiers(subjectModifiers.filter((_, i) => i !== index));
   };
 
   const updateModifier = (index: number, value: string) => {
@@ -456,7 +455,7 @@ export default function StudySessionComponent() {
               />
             </div>
 
-            {/* Subject Modifiers - Only show when user wants to add them */}
+            {/* Subject Modifiers */}
             {subjectModifiers.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -469,7 +468,7 @@ export default function StudySessionComponent() {
                         type="text"
                         value={modifier}
                         onChange={(e) => updateModifier(index, e.target.value)}
-                        placeholder={t.subjectModifiersPlaceholder}
+                        placeholder={getRandomModifierPlaceholder(language)}
                         className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
                       />
                       <button

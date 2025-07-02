@@ -210,6 +210,15 @@ export interface Translations {
   ready: string;
   requiresApiKey: string;
   
+  // Data Management
+  dataManagement: string;
+  manageYourData: string;
+  deleteAllData: string;
+  deleteAllDataConfirm: string;
+  deleteAllDataWarning: string;
+  allDataDeleted: string;
+  deleteAllDataDesc: string;
+  
   // Language Switch Modal
   languageChange: string;
   resetPromptsOption: string;
@@ -322,6 +331,49 @@ export interface Translations {
   yes: string;
   no: string;
   save: string;
+}
+
+// Random modifier placeholders
+const MODIFIER_PLACEHOLDERS = {
+  'en-US': [
+    'Introduction to Computer Science by David J. Malan',
+    'Chapter 3: Data Structures',
+    'MIT OpenCourseWare 6.006',
+    'Algorithms by Robert Sedgewick',
+    'Section 2.1: Elementary Sorts',
+    'Khan Academy: Linear Algebra',
+    'Calculus: Early Transcendentals by James Stewart',
+    'Physics for Scientists and Engineers by Serway',
+    'Organic Chemistry by Paula Bruice',
+    'Microeconomics by Paul Krugman',
+    'The Art of Computer Programming by Donald Knuth',
+    'Database Systems by Ramez Elmasri',
+    'Operating System Concepts by Abraham Silberschatz',
+    'Computer Networks by Andrew Tanenbaum',
+    'Artificial Intelligence: A Modern Approach by Stuart Russell'
+  ],
+  'pt-BR': [
+    'Introdução à Ciência da Computação por David J. Malan',
+    'Capítulo 3: Estruturas de Dados',
+    'MIT OpenCourseWare 6.006',
+    'Algoritmos por Robert Sedgewick',
+    'Seção 2.1: Ordenações Elementares',
+    'Khan Academy: Álgebra Linear',
+    'Cálculo: Transcendentais Iniciais por James Stewart',
+    'Física para Cientistas e Engenheiros por Serway',
+    'Química Orgânica por Paula Bruice',
+    'Microeconomia por Paul Krugman',
+    'A Arte da Programação de Computadores por Donald Knuth',
+    'Sistemas de Banco de Dados por Ramez Elmasri',
+    'Conceitos de Sistemas Operacionais por Abraham Silberschatz',
+    'Redes de Computadores por Andrew Tanenbaum',
+    'Inteligência Artificial: Uma Abordagem Moderna por Stuart Russell'
+  ]
+};
+
+export function getRandomModifierPlaceholder(language: Language): string {
+  const placeholders = MODIFIER_PLACEHOLDERS[language] || MODIFIER_PLACEHOLDERS['en-US'];
+  return placeholders[Math.floor(Math.random() * placeholders.length)];
 }
 
 const translations: Record<Language, Translations> = {
@@ -534,6 +586,15 @@ const translations: Record<Language, Translations> = {
     enhancedStudyMode: 'Enhanced Study Mode',
     ready: 'Ready',
     requiresApiKey: 'Requires API Key',
+    
+    // Data Management
+    dataManagement: 'Data Management',
+    manageYourData: 'Manage your Studorama data and privacy',
+    deleteAllData: 'Delete All Data',
+    deleteAllDataConfirm: 'Are you sure you want to delete ALL your Studorama data? This includes sessions, settings, API keys, and preferences.',
+    deleteAllDataWarning: 'This will permanently delete everything and reset Studorama to its initial state. This action cannot be undone.',
+    allDataDeleted: 'All data has been deleted successfully. Studorama has been reset.',
+    deleteAllDataDesc: 'Permanently delete all your study sessions, settings, API keys, and preferences',
     
     // Language Switch Modal
     languageChange: 'Language Change',
@@ -858,6 +919,15 @@ const translations: Record<Language, Translations> = {
     enhancedStudyMode: 'Modo de Estudo Aprimorado',
     ready: 'Pronto',
     requiresApiKey: 'Requer Chave da API',
+    
+    // Data Management
+    dataManagement: 'Gerenciamento de Dados',
+    manageYourData: 'Gerencie seus dados do Studorama e privacidade',
+    deleteAllData: 'Excluir Todos os Dados',
+    deleteAllDataConfirm: 'Tem certeza de que deseja excluir TODOS os seus dados do Studorama? Isso inclui sessões, configurações, chaves da API e preferências.',
+    deleteAllDataWarning: 'Isso excluirá permanentemente tudo e redefinirá o Studorama ao seu estado inicial. Esta ação não pode ser desfeita.',
+    allDataDeleted: 'Todos os dados foram excluídos com sucesso. O Studorama foi redefinido.',
+    deleteAllDataDesc: 'Excluir permanentemente todas as suas sessões de estudo, configurações, chaves da API e preferências',
     
     // Language Switch Modal
     languageChange: 'Alteração de Idioma',

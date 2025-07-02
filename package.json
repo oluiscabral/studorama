@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "dropbox": "^10.34.0",
+    "katex": "^0.16.9",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-katex": "^3.0.1",
     "react-router-dom": "^6.26.1"
   },
   "devDependencies": {

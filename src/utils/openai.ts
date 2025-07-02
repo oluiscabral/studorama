@@ -282,3 +282,67 @@ export async function generateRetrievalQuestion(subject: string, previousQuestio
     throw new Error('Failed to parse OpenAI response. Please try again.');
   }
 }
+
+export async function generateModifierSuggestions(subject: string, apiKey: string, model: string = 'gpt-4o-mini', language: string = 'en-US'): Promise<string[]> {
+  if (!apiKey) {
+    throw new Error('OpenAI API key is required');
+  }
+
+  const languageInstruction = language === 'pt-BR' 
+    ? 'Responda em português brasileiro.' 
+    : 'Respond in English.';
+
+  const systemMessage = language === 'pt-BR'
+    ? `Você é um assistente de estudos que sugere contextos específicos para matérias de estudo. ${languageInstruction} Para a matéria fornecida, sugira contextos específicos como livros, capítulos, cursos, ou tópicos específicos que ajudariam a focar o estudo. Retorne APENAS um array JSON de strings com 3-5 sugestões específicas e úteis.`
+    : `You are a study assistant that suggests specific contexts for study subjects. For the given subject, suggest specific contexts like books, chapters, courses, or specific topics that would help focus the study. Return ONLY a JSON array of strings with 3-5 specific and useful suggestions.`;
+
+  const userMessage = language === 'pt-BR'
+    ? `Sugira contextos específicos para estudar: ${subject}`
+    : `Suggest specific contexts for studying: ${subject}`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [
+        {
+          role: 'system',
+          content: systemMessage
+        },
+        {
+          role: 'user',
+          content: userMessage
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 300,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`OpenAI API error: ${response.statusText}. ${errorData.error?.message || ''}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices[0].message.content;
+  
+  try {
+    // Try to extract JSON array from the response
+    const arrayMatch = content.match(/\[[\s\S]*\]/);
+    if (arrayMatch) {
+      return JSON.parse(arrayMatch[0]);
+    }
+    
+    // Fallback: try to parse the entire content
+    return JSON.parse(content);
+  } catch (e) {
+    console.error('Failed to parse modifier suggestions:', content);
+    // Return a fallback suggestion based on the subject
+    return [language === 'pt-BR' ? `Fundamentos de ${subject}` : `Fundamentals of ${subject}`];
+  }
+}

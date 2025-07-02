@@ -4,9 +4,9 @@ import { CheckCircle, XCircle, RefreshCw, ArrowRight, BookOpen, FileText, List, 
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
 import { StudySession, Question, LearningSettings, LearningTechniquesPreference } from '../types';
-import { generateQuestion, generateDissertativeQuestion, evaluateAnswer, generateElaborativeQuestion, generateRetrievalQuestion } from '../utils/openai';
+import { generateQuestion, generateDissertativeQuestion, evaluateAnswer, generateElaborativeQuestion, generateRetrievalQuestion, generateModifierSuggestions } from '../utils/openai';
 import { calculateNextReview, shouldReviewQuestion } from '../utils/spacedRepetition';
-import { getRandomModifierPlaceholder } from '../utils/i18n';
+import LaTeXRenderer from './LaTeXRenderer';
 
 const DEFAULT_LEARNING_SETTINGS: LearningSettings = {
   spacedRepetition: true,
@@ -54,11 +54,12 @@ export default function StudySessionComponent() {
   const [sessionStarted, setSessionStarted] = useState(false);
   const [learningSettings, setLearningSettings] = useState<LearningSettings>(learningPreference.defaultSettings);
   const [rememberChoice, setRememberChoice] = useState(learningPreference.rememberChoice);
-  const [confidenceLevel, setConfidenceLevel] = useState<number>(3); // Changed back to 3 (middle)
+  const [confidenceLevel, setConfidenceLevel] = useState<number>(3); // Always start at middle
   const [showElaborativePrompt, setShowElaborativePrompt] = useState(false);
   const [elaborativeResponse, setElaborativeResponse] = useState('');
   const [showSelfExplanation, setShowSelfExplanation] = useState(false);
   const [selfExplanation, setSelfExplanation] = useState('');
+  const [loadingModifierSuggestions, setLoadingModifierSuggestions] = useState(false);
 
   // Learning techniques labels translation
   const getLearningTechniqueLabel = (key: string): string => {
@@ -128,6 +129,29 @@ export default function StudySessionComponent() {
     setSubjectModifiers(newModifiers);
   };
 
+  const generateModifierSuggestion = async (index: number) => {
+    if (!subject.trim() || !apiSettings.openaiApiKey) return;
+
+    setLoadingModifierSuggestions(true);
+    try {
+      const suggestions = await generateModifierSuggestions(
+        subject.trim(),
+        apiSettings.openaiApiKey,
+        apiSettings.model || 'gpt-4o-mini',
+        language
+      );
+      
+      if (suggestions && suggestions.length > 0) {
+        // Use the first suggestion
+        updateModifier(index, suggestions[0]);
+      }
+    } catch (error) {
+      console.error('Error generating modifier suggestion:', error);
+    } finally {
+      setLoadingModifierSuggestions(false);
+    }
+  };
+
   const buildSubjectContext = () => {
     const validModifiers = subjectModifiers.filter(m => m.trim());
     if (validModifiers.length === 0) {
@@ -185,7 +209,7 @@ export default function StudySessionComponent() {
     setShowSelfExplanation(false);
     setElaborativeResponse('');
     setSelfExplanation('');
-    setConfidenceLevel(3); // Reset to 3 (middle)
+    setConfidenceLevel(3); // Always reset to middle
 
     try {
       // Check for spaced repetition questions first
@@ -227,7 +251,7 @@ export default function StudySessionComponent() {
           type: 'dissertative',
           difficulty: 'medium',
           reviewCount: 0,
-          confidence: 3, // Changed back to 3
+          confidence: 3, // Always start at middle
           retrievalStrength: 0.5
         };
 
@@ -258,7 +282,7 @@ export default function StudySessionComponent() {
           type: 'multiple-choice',
           difficulty: difficultyModifier ? 'hard' : 'medium',
           reviewCount: 0,
-          confidence: 3, // Changed back to 3
+          confidence: 3, // Always start at middle
           retrievalStrength: 0.5
         };
 
@@ -469,9 +493,21 @@ export default function StudySessionComponent() {
                         type="text"
                         value={modifier}
                         onChange={(e) => updateModifier(index, e.target.value)}
-                        placeholder={getRandomModifierPlaceholder(language)}
+                        placeholder={language === 'pt-BR' ? 'Digite um contexto específico...' : 'Enter specific context...'}
                         className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
                       />
+                      <button
+                        onClick={() => generateModifierSuggestion(index)}
+                        disabled={!subject.trim() || !apiSettings.openaiApiKey || loadingModifierSuggestions}
+                        className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={language === 'pt-BR' ? 'Gerar sugestão com IA' : 'Generate AI suggestion'}
+                      >
+                        {loadingModifierSuggestions ? (
+                          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Lightbulb className="w-5 h-5" />
+                        )}
+                      </button>
                       <button
                         onClick={() => removeModifier(index)}
                         className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
@@ -747,9 +783,9 @@ export default function StudySessionComponent() {
       {/* Question Card */}
       <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-6 sm:p-8">
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-medium text-gray-900 mb-6 break-words">
-            {currentQuestion.question}
-          </h2>
+          <div className="text-lg sm:text-xl font-medium text-gray-900 mb-6">
+            <LaTeXRenderer content={currentQuestion.question} />
+          </div>
 
           {currentQuestion.type === 'multiple-choice' && currentQuestion.options ? (
             <div className="space-y-3">
@@ -787,7 +823,9 @@ export default function StudySessionComponent() {
                         <div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div>
                       )}
                     </div>
-                    <span className="text-gray-900 break-words flex-1">{option}</span>
+                    <div className="text-gray-900 break-words flex-1">
+                      <LaTeXRenderer content={option} />
+                    </div>
                     {showFeedback && index === currentQuestion.correctAnswer && (
                       <CheckCircle className="w-5 h-5 text-green-600 ml-auto flex-shrink-0" />
                     )}
@@ -810,8 +848,8 @@ export default function StudySessionComponent() {
               />
               <p className="text-sm text-gray-500">
                 {language === 'pt-BR' 
-                  ? 'Forneça uma resposta abrangente explicando seu raciocínio e pontos-chave.'
-                  : 'Provide a comprehensive answer explaining your reasoning and key points.'
+                  ? 'Forneça uma resposta abrangente explicando seu raciocínio e pontos-chave. Use LaTeX para equações matemáticas (ex: $x^2 + y^2 = z^2$ ou $$\\int_0^1 x dx$$).'
+                  : 'Provide a comprehensive answer explaining your reasoning and key points. Use LaTeX for mathematical equations (e.g., $x^2 + y^2 = z^2$ or $$\\int_0^1 x dx$$).'
                 }
               </p>
             </div>
@@ -865,11 +903,11 @@ export default function StudySessionComponent() {
             </div>
             
             {currentQuestion.type === 'multiple-choice' && currentQuestion.feedback && (
-              <p className={`text-sm break-words ${
+              <div className={`text-sm break-words ${
                 currentQuestion.isCorrect ? 'text-green-700' : 'text-red-700'
               }`}>
-                {currentQuestion.feedback}
-              </p>
+                <LaTeXRenderer content={currentQuestion.feedback} />
+              </div>
             )}
 
             {currentQuestion.type === 'dissertative' && (
@@ -877,13 +915,17 @@ export default function StudySessionComponent() {
                 {currentQuestion.aiEvaluation && (
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-1">{t.aiEvaluation}</h4>
-                    <p className="text-sm text-gray-600 break-words">{currentQuestion.aiEvaluation}</p>
+                    <div className="text-sm text-gray-600 break-words">
+                      <LaTeXRenderer content={currentQuestion.aiEvaluation} />
+                    </div>
                   </div>
                 )}
                 {currentQuestion.correctAnswerText && (
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-1">{t.modelAnswer}</h4>
-                    <p className="text-sm text-gray-600 break-words">{currentQuestion.correctAnswerText}</p>
+                    <div className="text-sm text-gray-600 break-words">
+                      <LaTeXRenderer content={currentQuestion.correctAnswerText} />
+                    </div>
                   </div>
                 )}
               </div>
@@ -964,7 +1006,7 @@ export default function StudySessionComponent() {
                     onClick={() => {
                       setSelectedAnswer(null);
                       setShowFeedback(false);
-                      setConfidenceLevel(3); // Reset to 3 (middle)
+                      setConfidenceLevel(3); // Reset to middle
                     }}
                     className="bg-gray-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors flex items-center justify-center"
                   >

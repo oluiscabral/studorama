@@ -1,14 +1,4 @@
-// custom-types.d.ts
-import 'react';
-
-declare module 'react' {
-  interface CSSProperties {
-    [key: `--${string}`]: string | number;
-  }
-  interface HTMLAttributes<T> {
-    inline?: boolean;
-  }
-}
+import { TimerSettings, SessionTimer, QuestionTimer } from './timer.types';
 
 export interface StudySession {
   id: string;
@@ -77,36 +67,6 @@ export interface LearningSettingsHistoryEntry {
   changedAt: string;
 }
 
-export interface TimerSettings {
-  sessionTimerEnabled: boolean;
-  sessionTimerDuration?: number; // in minutes
-  questionTimerEnabled: boolean;
-  questionTimerDuration?: number; // in seconds
-  accumulateQuestionTime: boolean;
-  showTimerWarnings: boolean;
-  autoSubmitOnTimeout: boolean;
-  soundEnabled?: boolean;
-  vibrationEnabled?: boolean;
-}
-
-export interface SessionTimer {
-  startTime: string;
-  endTime?: string;
-  pausedTime?: number; // accumulated paused time in ms
-  isPaused: boolean;
-  totalElapsed?: number; // in ms
-}
-
-export interface QuestionTimer {
-  questionId: string;
-  startTime: string;
-  endTime?: string;
-  pausedTime?: number;
-  timeSpent: number; // in ms
-  accumulatedTime?: number; // from previous questions if accumulating
-  timedOut: boolean;
-}
-
 export interface Question {
   id: string;
   question: string;
@@ -154,47 +114,4 @@ export interface SpacedRepetitionData {
   currentInterval: number;
   easeFactor: number;
   reviewCount: number;
-}
-
-export interface APISettings {
-  openaiApiKey: string;
-  model: string;
-  customPrompts: {
-    multipleChoice: string;
-    dissertative: string;
-    evaluation: string;
-    elaborativePrompt: string;
-    retrievalPrompt: string;
-  };
-  preloadQuestions?: number; // Number of questions to preload
-}
-
-export interface PreloadingSettings {
-  preloadQuestions: number;
-  enableBackgroundLoading: boolean;
-}
-
-export type Language = 'en-US' | 'pt-BR';
-
-export interface LanguageSettings {
-  language: Language;
-}
-
-export interface LanguageSwitchPreference {
-  rememberChoice: boolean;
-  autoResetPrompts: boolean;
-}
-
-// Timer preferences stored globally with auto-save
-export interface TimerPreferences {
-  rememberChoice: boolean;
-  defaultSessionTimerEnabled: boolean;
-  defaultSessionTimer: number; // in minutes
-  defaultQuestionTimerEnabled: boolean;
-  defaultQuestionTimer: number; // in seconds
-  defaultAccumulateTime: boolean;
-  defaultShowWarnings: boolean;
-  defaultAutoSubmit: boolean;
-  soundEnabled: boolean;
-  vibrationEnabled: boolean;
 }

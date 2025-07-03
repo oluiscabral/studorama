@@ -186,7 +186,7 @@ export default function SessionDetails() {
                       <div className="bg-gray-50 rounded-lg p-4">
                         <h4 className="text-sm font-medium text-gray-700 mb-2">{t.yourAnswer}:</h4>
                         <div className="text-gray-900 break-words">
-                          <MarkdownRenderer content={question.userAnswer || (language === 'pt-BR' ? 'Nenhuma resposta fornecida' : 'No answer provided')} />
+                          <MarkdownRenderer content={question.userAnswer?.toString() || (language === 'pt-BR' ? 'Nenhuma resposta fornecida' : 'No answer provided')} />
                         </div>
                       </div>
                       {question.correctAnswerText && (

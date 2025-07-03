@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { 
   handleVersionMigration, 
-  getVersionInfo, 
-  CURRENT_VERSION 
-} from '../utils/versionControl';
+  getVersionInfo 
+} from '../core/services/version/versionControl';
+import { APP_VERSION } from '../core/config/constants';
 
 /**
  * Hook to manage version control and migration
@@ -36,7 +36,7 @@ export function useVersionControl() {
   }, []);
 
   return {
-    currentVersion: CURRENT_VERSION,
+    currentVersion: APP_VERSION,
     migrationPerformed,
     isReady,
     versionInfo: getVersionInfo(),

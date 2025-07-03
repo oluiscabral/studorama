@@ -1,24 +1,17 @@
 import { useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { useLanguage } from './useLanguage';
+import { APISettings } from '../core/types';
+import { showNotification } from '../core/services/notification';
+import { STORAGE_KEYS, DEFAULTS, API } from '../core/config/constants';
 
-interface ApiSettings {
-  openaiApiKey: string;
-  model: string;
-  customPrompts: {
-    multipleChoice: string;
-    dissertative: string;
-    evaluation: string;
-    elaborativePrompt: string;
-    retrievalPrompt: string;
-  };
-  preloadQuestions?: number;
-}
-
+/**
+ * Hook to extract and use API key from URL parameters
+ */
 export function useApiKeyFromUrl() {
-  const [apiSettings, setApiSettings] = useLocalStorage<ApiSettings>('studorama-api-settings', {
+  const [apiSettings, setApiSettings] = useLocalStorage<APISettings>(STORAGE_KEYS.API_SETTINGS, {
     openaiApiKey: '',
-    model: 'gpt-4o-mini',
+    model: DEFAULTS.MODEL,
     customPrompts: {
       multipleChoice: '',
       dissertative: '',
@@ -26,8 +19,9 @@ export function useApiKeyFromUrl() {
       elaborativePrompt: '',
       retrievalPrompt: ''
     },
-    preloadQuestions: 3
+    preloadQuestions: DEFAULTS.PRELOAD_QUESTIONS
   });
+  
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -41,7 +35,7 @@ export function useApiKeyFromUrl() {
       
       if (apiKeyFromUrl) {
         // Validate API key format (basic validation)
-        if (apiKeyFromUrl.startsWith('sk-') && apiKeyFromUrl.length > 20) {
+        if (apiKeyFromUrl.startsWith(API.OPENAI_KEY_PREFIX) && apiKeyFromUrl.length > 20) {
           // Only update if the API key is different from the current one
           if (apiKeyFromUrl !== apiSettings.openaiApiKey) {
             const updatedSettings = {
@@ -93,111 +87,4 @@ export function useApiKeyFromUrl() {
     apiSettings,
     hasApiKey: !!apiSettings.openaiApiKey
   };
-}
-
-// Enhanced notification system with translations support
-function showNotification({ 
-  type, 
-  title, 
-  message, 
-  duration = 5000 
-}: {
-  type: 'success' | 'error' | 'info' | 'warning';
-  title: string;
-  message: string;
-  duration?: number;
-}) {
-  try {
-    // Color schemes for different notification types
-    const colorSchemes = {
-      success: {
-        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-        icon: '✓'
-      },
-      error: {
-        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-        icon: '⚠'
-      },
-      info: {
-        background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-        icon: 'ℹ'
-      },
-      warning: {
-        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-        icon: '⚠'
-      }
-    };
-
-    const scheme = colorSchemes[type];
-    
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: ${scheme.background};
-      color: white;
-      padding: 16px 20px;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-      z-index: 10000;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      max-width: 350px;
-      animation: slideIn 0.3s ease-out;
-      cursor: pointer;
-      user-select: none;
-    `;
-    
-    // Add animation keyframes if not already present
-    if (!document.querySelector('#notification-styles')) {
-      const style = document.createElement('style');
-      style.id = 'notification-styles';
-      style.textContent = `
-        @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-          from { transform: translateX(0); opacity: 1; }
-          to { transform: translateX(100%); opacity: 0; }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-    
-    notification.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <div style="width: 20px; height: 20px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-          ${scheme.icon}
-        </div>
-        <div>
-          <div style="font-weight: 600; margin-bottom: 2px;">${title}</div>
-          <div style="opacity: 0.9; font-size: 12px; line-height: 1.4;">${message}</div>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Auto-remove notification after specified duration
-    const removeNotification = () => {
-      notification.style.animation = 'slideOut 0.3s ease-in forwards';
-      setTimeout(() => {
-        if (notification.parentNode) {
-          notification.parentNode.removeChild(notification);
-        }
-      }, 300);
-    };
-    
-    setTimeout(removeNotification, duration);
-    
-    // Allow manual dismissal by clicking
-    notification.addEventListener('click', removeNotification);
-    
-  } catch (error) {
-    console.error('Error showing notification:', error);
-  }
 }

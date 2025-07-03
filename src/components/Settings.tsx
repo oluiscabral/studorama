@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Key, Globe, Info, Trash2, RefreshCw, Settings as SettingsIcon, Palette, Timer, Clock, Volume2, Vibrate, Share, Copy, ExternalLink } from 'lucide-react';
+import { Save, Key, Globe, Info, Trash2, RefreshCw, Settings as SettingsIcon, Palette, Timer, Clock, Volume2, Vibrate } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
 import { Language, TimerPreferences } from '../types';
 import LanguageSwitchModal from './LanguageSwitchModal';
 import ThemeSelector from './ThemeSelector';
-import { getVersionInfo, forceMigration } from '../utils/versionControl';
 
 const DEFAULT_PROMPTS = {
   multipleChoice: '',
@@ -40,11 +39,9 @@ export default function Settings() {
   });
   const [timerPreferences, setTimerPreferences] = useLocalStorage<TimerPreferences>('studorama-timer-preferences', DEFAULT_TIMER_PREFERENCES);
   const [showSaved, setShowSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'api' | 'appearance' | 'language' | 'timers' | 'sharing' | 'data' | 'version'>('api');
+  const [activeTab, setActiveTab] = useState<'api' | 'appearance' | 'language' | 'timers' | 'data'>('api');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [pendingLanguage, setPendingLanguage] = useState<Language | null>(null);
-  const [shareableUrl, setShareableUrl] = useState('');
-  const [copySuccess, setCopySuccess] = useState(false);
 
   // Auto-save timer preferences
   useEffect(() => {
@@ -113,40 +110,6 @@ export default function Settings() {
     setTimerPreferences(DEFAULT_TIMER_PREFERENCES);
   };
 
-  const generateShareableUrl = () => {
-    if (!apiSettings.openaiApiKey) return;
-    
-    const baseUrl = window.location.origin;
-    const url = new URL(baseUrl);
-    url.searchParams.set('apikey', apiSettings.openaiApiKey);
-    if (apiSettings.model && apiSettings.model !== 'gpt-4o-mini') {
-      url.searchParams.set('model', apiSettings.model);
-    }
-    
-    setShareableUrl(url.toString());
-  };
-
-  const copyShareableUrl = async () => {
-    if (!shareableUrl) return;
-    
-    try {
-      await navigator.clipboard.writeText(shareableUrl);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy URL:', error);
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = shareableUrl;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    }
-  };
-
   const deleteAllData = () => {
     const confirmMessage = t.deleteAllDataConfirm;
     const warningMessage = t.deleteAllDataWarning;
@@ -170,17 +133,12 @@ export default function Settings() {
     }
   };
 
-  // Get version information
-  const versionInfo = getVersionInfo();
-
   const tabs = [
     { id: 'api' as const, label: t.apiConfiguration, icon: Key },
     { id: 'timers' as const, label: language === 'pt-BR' ? 'Timers' : 'Timers', icon: Timer },
     { id: 'appearance' as const, label: t.appearance, icon: Palette },
     { id: 'language' as const, label: t.language, icon: Globe },
-    { id: 'sharing' as const, label: language === 'pt-BR' ? 'Compartilhamento' : 'Sharing', icon: Share },
     { id: 'data' as const, label: t.dataManagement, icon: Trash2 },
-    { id: 'version' as const, label: language === 'pt-BR' ? 'Versão' : 'Version', icon: Info },
   ];
 
   return (
@@ -892,130 +850,6 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Sharing Tab */}
-          {activeTab === 'sharing' && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-4" style={{ color: themeConfig.colors.text }}>
-                  {language === 'pt-BR' ? 'Compartilhamento de API' : 'API Sharing'}
-                </h3>
-                <p className="mb-6" style={{ color: themeConfig.colors.textSecondary }}>
-                  {language === 'pt-BR' 
-                    ? 'Gere um link que configura automaticamente a chave da API para outros usuários.'
-                    : 'Generate a link that automatically configures the API key for other users.'
-                  }
-                </p>
-                
-                {apiSettings.openaiApiKey ? (
-                  <div className="space-y-4">
-                    <button
-                      onClick={generateShareableUrl}
-                      className="px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
-                      style={{
-                        backgroundColor: themeConfig.colors.primary,
-                        color: '#ffffff'
-                      }}
-                    >
-                      <Share className="w-4 h-4" />
-                      <span>
-                        {language === 'pt-BR' ? 'Gerar Link Compartilhável' : 'Generate Shareable Link'}
-                      </span>
-                    </button>
-                    
-                    {shareableUrl && (
-                      <div 
-                        className="border rounded-lg p-4"
-                        style={{
-                          backgroundColor: themeConfig.colors.background,
-                          borderColor: themeConfig.colors.border
-                        }}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium" style={{ color: themeConfig.colors.text }}>
-                            {language === 'pt-BR' ? 'Link Compartilhável' : 'Shareable Link'}
-                          </h4>
-                          <button
-                            onClick={copyShareableUrl}
-                            className="px-3 py-1 text-sm rounded-lg transition-colors flex items-center space-x-1"
-                            style={{
-                              backgroundColor: copySuccess ? themeConfig.colors.success : themeConfig.colors.primary,
-                              color: '#ffffff'
-                            }}
-                          >
-                            <Copy className="w-3 h-3" />
-                            <span>
-                              {copySuccess 
-                                ? (language === 'pt-BR' ? 'Copiado!' : 'Copied!') 
-                                : (language === 'pt-BR' ? 'Copiar' : 'Copy')
-                              }
-                            </span>
-                          </button>
-                        </div>
-                        <div 
-                          className="p-3 rounded border text-sm font-mono break-all"
-                          style={{
-                            backgroundColor: themeConfig.colors.surface,
-                            borderColor: themeConfig.colors.border,
-                            color: themeConfig.colors.text
-                          }}
-                        >
-                          {shareableUrl}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div 
-                    className="border rounded-lg p-4"
-                    style={{
-                      backgroundColor: themeConfig.colors.warning + '10',
-                      borderColor: themeConfig.colors.warning + '30'
-                    }}
-                  >
-                    <p style={{ color: themeConfig.colors.warning }}>
-                      {language === 'pt-BR' 
-                        ? 'Configure sua chave da API primeiro para gerar links compartilháveis.'
-                        : 'Configure your API key first to generate shareable links.'
-                      }
-                    </p>
-                  </div>
-                )}
-                
-                <div 
-                  className="border rounded-lg p-4"
-                  style={{
-                    backgroundColor: themeConfig.colors.error + '10',
-                    borderColor: themeConfig.colors.error + '30'
-                  }}
-                >
-                  <h4 className="font-medium mb-2" style={{ color: themeConfig.colors.error }}>
-                    ⚠️ {language === 'pt-BR' ? 'Aviso de Segurança' : 'Security Warning'}
-                  </h4>
-                  <ul className="text-sm space-y-1 list-disc list-inside" style={{ color: themeConfig.colors.error }}>
-                    <li>
-                      {language === 'pt-BR' 
-                        ? 'Compartilhe apenas com pessoas confiáveis'
-                        : 'Only share with trusted individuals'
-                      }
-                    </li>
-                    <li>
-                      {language === 'pt-BR' 
-                        ? 'A chave da API dá acesso à sua conta OpenAI'
-                        : 'The API key provides access to your OpenAI account'
-                      }
-                    </li>
-                    <li>
-                      {language === 'pt-BR' 
-                        ? 'Monitore o uso da sua API no painel da OpenAI'
-                        : 'Monitor your API usage in the OpenAI dashboard'
-                      }
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Data Management Tab */}
           {activeTab === 'data' && (
             <div className="space-y-6">
@@ -1050,195 +884,6 @@ export default function Settings() {
                   >
                     {t.deleteAllData}
                   </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Version Tab */}
-          {activeTab === 'version' && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-4" style={{ color: themeConfig.colors.text }}>
-                  {language === 'pt-BR' ? 'Informações da Versão' : 'Version Information'}
-                </h3>
-                
-                <div className="space-y-4">
-                  {/* Current Version */}
-                  <div 
-                    className="border rounded-lg p-4"
-                    style={{
-                      backgroundColor: themeConfig.colors.surface,
-                      borderColor: themeConfig.colors.border
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium" style={{ color: themeConfig.colors.text }}>
-                          {language === 'pt-BR' ? 'Versão Atual' : 'Current Version'}
-                        </h4>
-                        <p className="text-sm" style={{ color: themeConfig.colors.textSecondary }}>
-                          {language === 'pt-BR' ? 'Versão do aplicativo em execução' : 'Currently running application version'}
-                        </p>
-                      </div>
-                      <span 
-                        className="px-3 py-1 rounded-full text-sm font-medium"
-                        style={{
-                          backgroundColor: themeConfig.colors.primary + '20',
-                          color: themeConfig.colors.primary
-                        }}
-                      >
-                        v{versionInfo.currentVersion}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Stored Version */}
-                  <div 
-                    className="border rounded-lg p-4"
-                    style={{
-                      backgroundColor: themeConfig.colors.surface,
-                      borderColor: themeConfig.colors.border
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium" style={{ color: themeConfig.colors.text }}>
-                          {language === 'pt-BR' ? 'Versão Armazenada' : 'Stored Version'}
-                        </h4>
-                        <p className="text-sm" style={{ color: themeConfig.colors.textSecondary }}>
-                          {language === 'pt-BR' ? 'Última versão conhecida pelo navegador' : 'Last version known by the browser'}
-                        </p>
-                      </div>
-                      <span 
-                        className="px-3 py-1 rounded-full text-sm font-medium"
-                        style={{
-                          backgroundColor: versionInfo.storedVersion === versionInfo.currentVersion 
-                            ? themeConfig.colors.success + '20' 
-                            : themeConfig.colors.warning + '20',
-                          color: versionInfo.storedVersion === versionInfo.currentVersion 
-                            ? themeConfig.colors.success 
-                            : themeConfig.colors.warning
-                        }}
-                      >
-                        {versionInfo.storedVersion ? `v${versionInfo.storedVersion}` : (language === 'pt-BR' ? 'Nenhuma' : 'None')}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Version Status */}
-                  <div 
-                    className="border rounded-lg p-4"
-                    style={{
-                      backgroundColor: versionInfo.isVersionChanged 
-                        ? themeConfig.colors.warning + '10' 
-                        : versionInfo.isFreshInstallation 
-                        ? themeConfig.colors.info + '10'
-                        : themeConfig.colors.success + '10',
-                      borderColor: versionInfo.isVersionChanged 
-                        ? themeConfig.colors.warning + '30' 
-                        : versionInfo.isFreshInstallation 
-                        ? themeConfig.colors.info + '30'
-                        : themeConfig.colors.success + '30'
-                    }}
-                  >
-                    <h4 className="font-medium mb-2" style={{ 
-                      color: versionInfo.isVersionChanged 
-                        ? themeConfig.colors.warning 
-                        : versionInfo.isFreshInstallation 
-                        ? themeConfig.colors.info
-                        : themeConfig.colors.success 
-                    }}>
-                      {versionInfo.isFreshInstallation 
-                        ? (language === 'pt-BR' ? '🆕 Instalação Nova' : '🆕 Fresh Installation')
-                        : versionInfo.isVersionChanged 
-                        ? (language === 'pt-BR' ? '🔄 Versão Atualizada' : '🔄 Version Updated')
-                        : (language === 'pt-BR' ? '✅ Versão Atual' : '✅ Up to Date')
-                      }
-                    </h4>
-                    <p className="text-sm" style={{ 
-                      color: versionInfo.isVersionChanged 
-                        ? themeConfig.colors.warning 
-                        : versionInfo.isFreshInstallation 
-                        ? themeConfig.colors.info
-                        : themeConfig.colors.success 
-                    }}>
-                      {versionInfo.isFreshInstallation 
-                        ? (language === 'pt-BR' 
-                          ? 'Esta é uma nova instalação do Studorama.'
-                          : 'This is a fresh installation of Studorama.')
-                        : versionInfo.isVersionChanged 
-                        ? (language === 'pt-BR' 
-                          ? 'A versão foi atualizada. Dados foram limpos automaticamente (exceto chave da API).'
-                          : 'Version was updated. Data was automatically cleared (except API key).')
-                        : (language === 'pt-BR' 
-                          ? 'Você está executando a versão mais recente.'
-                          : 'You are running the latest version.')
-                      }
-                    </p>
-                  </div>
-
-                  {/* Data Preservation Info */}
-                  <div 
-                    className="border rounded-lg p-4"
-                    style={{
-                      backgroundColor: themeConfig.colors.info + '10',
-                      borderColor: themeConfig.colors.info + '30'
-                    }}
-                  >
-                    <h4 className="font-medium mb-2" style={{ color: themeConfig.colors.info }}>
-                      🔒 {language === 'pt-BR' ? 'Dados Preservados' : 'Preserved Data'}
-                    </h4>
-                    <p className="text-sm mb-2" style={{ color: themeConfig.colors.info }}>
-                      {language === 'pt-BR' 
-                        ? 'Os seguintes dados são preservados durante atualizações de versão:'
-                        : 'The following data is preserved during version updates:'
-                      }
-                    </p>
-                    <ul className="text-sm space-y-1 list-disc list-inside" style={{ color: themeConfig.colors.info }}>
-                      {versionInfo.preservedKeys.map((key) => (
-                        <li key={key}>
-                          {key === 'studorama-api-settings' 
-                            ? (language === 'pt-BR' ? 'Configurações da API (chave, modelo, etc.)' : 'API Settings (key, model, etc.)')
-                            : key === 'studorama-app-version'
-                            ? (language === 'pt-BR' ? 'Informações da versão' : 'Version information')
-                            : key
-                          }
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Debug Actions */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <div 
-                      className="border rounded-lg p-4"
-                      style={{
-                        backgroundColor: themeConfig.colors.textMuted + '10',
-                        borderColor: themeConfig.colors.textMuted + '30'
-                      }}
-                    >
-                      <h4 className="font-medium mb-2" style={{ color: themeConfig.colors.textMuted }}>
-                        🔧 {language === 'pt-BR' ? 'Ações de Debug' : 'Debug Actions'}
-                      </h4>
-                      <p className="text-sm mb-3" style={{ color: themeConfig.colors.textMuted }}>
-                        {language === 'pt-BR' 
-                          ? 'Disponível apenas em modo de desenvolvimento'
-                          : 'Available only in development mode'
-                        }
-                      </p>
-                      <button
-                        onClick={forceMigration}
-                        className="px-3 py-1 text-sm rounded-lg transition-colors"
-                        style={{
-                          backgroundColor: themeConfig.colors.textMuted,
-                          color: '#ffffff'
-                        }}
-                      >
-                        {language === 'pt-BR' ? 'Forçar Migração' : 'Force Migration'}
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { CSSProperties, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -167,8 +167,6 @@ export default function MarkdownRenderer({
   className = '',
   darkMode = false,
 }: MarkdownRendererProps) {
-  if (!content) return null;
-
   // Process mathematical expressions in the content before rendering
   const processedContent = useMemo(() => {
     let processed = content.trim();
@@ -181,6 +179,7 @@ export default function MarkdownRenderer({
     return processed;
   }, [content]);
 
+  if (!content) return null;
   return (
     <div className={`markdown-renderer ${className}`}>      
       <ReactMarkdown
@@ -206,8 +205,8 @@ export default function MarkdownRenderer({
                   </span>
                 );
               } else {
-                return (
-                  <div 
+                  // @ts-ignore
+                  return <div 
                     className="my-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center"
                     {...props}
                   >
@@ -215,7 +214,6 @@ export default function MarkdownRenderer({
                       {processedMath}
                     </div>
                   </div>
-                );
               }
             }
 
@@ -233,7 +231,8 @@ export default function MarkdownRenderer({
               <div className="relative my-4">
                 <SyntaxHighlighter
                   language={lang}
-                  style={darkMode ? materialDark : materialLight}
+                  ref={props.ref as any}
+                  style={darkMode ? materialDark : materialLight as any}
                   showLineNumbers
                   PreTag="div"
                   className="rounded-lg"

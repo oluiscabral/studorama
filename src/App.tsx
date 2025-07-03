@@ -1,20 +1,19 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout';
-import Dashboard from './components/Dashboard';
+import Layout from './components/layout/Layout';
+import Dashboard from './components/pages/Dashboard';
 import StudySessionPage from './components/StudySession';
-import SessionHistory from './components/SessionHistory';
-import SessionDetails from './components/SessionDetails';
-import Settings from './components/Settings';
-import PricingPage from './components/pricing/PricingPage';
-import SuccessPage from './components/success/SuccessPage';
-import { useApiKeyFromUrl } from './hooks/useApiKeyFromUrl';
-import { useVersionControl } from './hooks/useVersionControl';
+import SessionHistory from './components/pages/SessionHistory';
 import LoadingScreen from './components/LoadingScreen';
+import { useApiKeyFromUrl, useVersionControl } from './hooks';
+import PricingPage from './components/pricing/PricingPage';
+import SessionDetails from './components/SessionDetails';
+import SuccessPage from './components/success/SuccessPage';
+import Settings from './components/Settings';
 
 function App() {
   // Initialize version control first
-  const { isReady, migrationPerformed, currentVersion } = useVersionControl();
+  const { isReady } = useVersionControl();
   
   // Initialize API key from URL if present (after version control)
   useApiKeyFromUrl();

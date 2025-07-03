@@ -1,6 +1,6 @@
 import React from 'react';
-import Logo from './Logo';
-import { useLanguage } from '../hooks/useLanguage';
+import Logo from './ui/Logo';
+import { useLanguage } from '../hooks';
 
 export default function LoadingScreen() {
   const { language } = useLanguage();

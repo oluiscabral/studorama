@@ -163,7 +163,7 @@ export default function StudySessionPage() {
         }
       }
     }
-  }, [sessionIdFromState, sessions]);
+  }, [sessionIdFromState]);
 
   // Timer effects
   useEffect(() => {
@@ -222,34 +222,34 @@ export default function StudySessionPage() {
 
   // Auto-save session state
   useEffect(() => {
-    if (currentSession && sessionStarted) {
-      const sessionState = {
-        currentUserAnswer: userAnswer,
-        currentConfidence: confidence,
-        showFeedback,
-        showElaborative,
-        showSelfExplanation,
-        elaborativeQuestion,
-        elaborativeAnswer,
-        selfExplanationAnswer,
-        isEvaluating,
-        lastSavedAt: new Date().toISOString()
-      };
+    const interval = setInterval(() => {
+      if (currentSession && sessionStarted) {
+        const sessionState = {
+          currentUserAnswer: userAnswer,
+          currentConfidence: confidence,
+          showFeedback,
+          showElaborative,
+          showSelfExplanation,
+          elaborativeQuestion,
+          elaborativeAnswer,
+          selfExplanationAnswer,
+          isEvaluating,
+          lastSavedAt: new Date().toISOString(),
+        };
 
-      const updatedSession = {
-        ...currentSession,
-        sessionState,
-        sessionTimer,
-        timerSettings
-      };
+        const updatedSession = {
+          ...currentSession,
+          sessionState,
+          sessionTimer,
+          timerSettings,
+        };
+        // @ts-ignore
+        setSessions((prev) => prev.map((s) => (s.id === currentSession.id ? updatedSession : s)));
+      }
+    }, 1000);
 
-      setSessions(prev => prev.map(s => s.id === currentSession.id ? updatedSession : s));
-    }
-  }, [
-    currentSession, sessionStarted, userAnswer, confidence, showFeedback, 
-    showElaborative, showSelfExplanation, elaborativeQuestion, elaborativeAnswer, 
-    selfExplanationAnswer, isEvaluating, sessionTimer, timerSettings, setSessions
-  ]);
+    return () => clearInterval(interval);
+  }, []);
 
   // Preload questions in the background
   const preloadQuestions = useCallback(async (session: StudySession, count: number = 3) => {

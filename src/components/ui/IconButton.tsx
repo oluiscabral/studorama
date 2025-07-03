@@ -1,9 +1,9 @@
 import React from 'react';
 import { DivideIcon as LucideIcon } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from '../../hooks';
 
 export interface IconButtonProps {
-  icon: LucideIcon;
+  icon: typeof LucideIcon;
   onClick?: () => void;
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'warning' | 'info';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';

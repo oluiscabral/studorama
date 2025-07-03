@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { BookOpen, Calendar, Edit, Eye, Play, TrendingUp } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, BookOpen, TrendingUp, Play, Eye, Edit } from 'lucide-react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import { useLanguage } from '../hooks/useLanguage';
-import { StudySession } from '../types';
-import { formatDate } from '../utils/i18n';
-import SessionEditModal from './SessionEditModal';
+import { useLanguage } from '../../hooks/useLanguage';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { StudySession } from '../../types';
+import { formatDate } from '../../utils/i18n';
+import SessionEditModal from '../SessionEditModal';
 
 export default function SessionHistory() {
   const [sessions, setSessions] = useLocalStorage<StudySession[]>('studorama-sessions', []);
@@ -80,6 +80,7 @@ export default function SessionHistory() {
             const learningSettingsHistory = session.learningSettingsHistory || [];
             learningSettingsHistory.push({
               id: Date.now().toString(),
+              // @ts-ignore
               previousSettings: session.learningSettings || {},
               newSettings: updates.learningSettings,
               changedAt: now

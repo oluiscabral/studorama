@@ -1,25 +1,37 @@
-import { useState, useEffect } from 'react';
-import { Language, LanguageSwitchPreference } from '../types';
-import { detectBrowserLanguage, getTranslations } from '../utils/i18n';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
+import { Language, LanguageSwitchPreference } from '../core/types';
+import { detectBrowserLanguage, getTranslations } from '../core/services/i18n';
+import { STORAGE_KEYS } from '../core/config/constants';
 
+/**
+ * Hook for managing application language and translations
+ */
 export function useLanguage() {
-  const [languageSettings, setLanguageSettings] = useLocalStorage<{ language: Language }>('studorama-language', {
-    language: detectBrowserLanguage()
-  });
+  // Load language settings from localStorage
+  const [languageSettings, setLanguageSettings] = useLocalStorage<{ language: Language }>(
+    STORAGE_KEYS.LANGUAGE,
+    { language: detectBrowserLanguage() }
+  );
 
-  const [languageSwitchPreference, setLanguageSwitchPreference] = useLocalStorage<LanguageSwitchPreference>('studorama-language-switch-preference', {
-    rememberChoice: false,
-    autoResetPrompts: true
-  });
+  // Load language switch preferences from localStorage
+  const [languageSwitchPreference, setLanguageSwitchPreference] = useLocalStorage<LanguageSwitchPreference>(
+    STORAGE_KEYS.LANGUAGE_SWITCH_PREFERENCE,
+    { rememberChoice: false, autoResetPrompts: true }
+  );
 
+  // Local state for current language
   const [currentLanguage, setCurrentLanguage] = useState<Language>(languageSettings.language);
 
+  // Update local state when localStorage changes
   useEffect(() => {
     setCurrentLanguage(languageSettings.language);
   }, [languageSettings.language]);
 
-  const changeLanguage = (newLanguage: Language) => {
+  /**
+   * Change the application language
+   */
+  const changeLanguage = useCallback((newLanguage: Language) => {
     // Update the language setting
     setLanguageSettings({ language: newLanguage });
     setCurrentLanguage(newLanguage);
@@ -51,19 +63,26 @@ export function useLanguage() {
         }
       }
     }, 200); // Longer delay to ensure localStorage is fully updated
-  };
+  }, [setLanguageSettings]);
 
-  const updateLanguageSwitchPreference = (preference: Partial<LanguageSwitchPreference>) => {
+  /**
+   * Update language switch preferences
+   */
+  const updateLanguageSwitchPreference = useCallback((preference: Partial<LanguageSwitchPreference>) => {
     setLanguageSwitchPreference(prev => ({ ...prev, ...preference }));
-  };
+  }, [setLanguageSwitchPreference]);
 
-  const resetLanguageSwitchPreference = () => {
+  /**
+   * Reset language switch preferences to defaults
+   */
+  const resetLanguageSwitchPreference = useCallback(() => {
     setLanguageSwitchPreference({
       rememberChoice: false,
       autoResetPrompts: true
     });
-  };
+  }, [setLanguageSwitchPreference]);
 
+  // Get translations for current language
   const t = getTranslations(currentLanguage);
 
   return {

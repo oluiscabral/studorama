@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
     
     <!-- Primary Meta Tags -->
     <title>Studorama - Free AI-Powered Study Sessions | Smart Learning Platform</title>
     <meta name="title" content="Studorama - Free AI-Powered Study Sessions | Smart Learning Platform" />
     <meta name="description" content="Transform your learning with Studorama's free AI-powered study sessions. Generate personalized questions, track progress, and master any subject with intelligent feedback. No account required - start studying instantly!" />
-    <meta name="keywords" content="AI study app, free learning platform, study sessions, OpenAI education, quiz generator, personalized learning, study assistant, spaced repetition, learning techniques, make it stick, retrieval practice, no account required, privacy first learning" />
+    <meta name="keywords" content="AI study app, free learning platform, study sessions, OpenAI education, quiz generator, personalized learning, study assistant, spaced repetition, learning techniques, make it stick, retrieval practice, no account required, privacy first learning, estudo com IA, plataforma de aprendizado gratuita, sessões de estudo, educação OpenAI, gerador de quiz, aprendizado personalizado, assistente de estudo, repetição espaçada, técnicas de aprendizado" />
     <meta name="author" content="oluiscabral" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="language" content="English" />
@@ -21,6 +21,8 @@
     <!-- Geo Tags -->
     <meta name="geo.region" content="US" />
     <meta name="geo.placename" content="United States" />
+    <meta name="geo.region" content="BR" />
+    <meta name="geo.placename" content="Brazil" />
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -52,6 +54,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Studorama" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Studorama" />
     
     <!-- Preconnect to external domains -->
     <link rel="preconnect" href="https://api.openai.com" />
@@ -61,6 +65,11 @@
     <!-- DNS Prefetch -->
     <link rel="dns-prefetch" href="//api.openai.com" />
     <link rel="dns-prefetch" href="//www.google-analytics.com" />
+    
+    <!-- Alternate Language Pages -->
+    <link rel="alternate" hreflang="en" href="https://www.studorama.com/" />
+    <link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/?lang=pt-BR" />
+    <link rel="alternate" hreflang="x-default" href="https://www.studorama.com/" />
     
     <!-- Structured Data - Organization -->
     <script type="application/ld+json">
@@ -80,7 +89,12 @@
       "sameAs": [
         "https://github.com/oluiscabral/studorama",
         "https://www.linkedin.com/in/oluiscabral"
-      ]
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer service",
+        "availableLanguage": ["English", "Portuguese"]
+      }
     }
     </script>
     
@@ -123,10 +137,15 @@
         "Learning progress tracking",
         "No account required",
         "Privacy-first design",
-        "Multilingual support",
+        "Multilingual support (English, Portuguese)",
         "Open source",
-        "Free forever"
-      ]
+        "Free forever",
+        "Mobile responsive design",
+        "Offline capable",
+        "Mathematical expression support"
+      ],
+      "inLanguage": ["en", "pt-BR"],
+      "availableOnDevice": ["Desktop", "Mobile", "Tablet"]
     }
     </script>
     
@@ -143,7 +162,12 @@
         "@type": "EducationalOccupationalCredential",
         "name": "Learning Progress Certificate",
         "description": "Track your learning progress across multiple subjects"
-      }
+      },
+      "teaches": [
+        "JavaScript", "Python", "Mathematics", "Physics", "Chemistry", "Biology",
+        "History", "Literature", "Computer Science", "Engineering", "Medicine",
+        "Business", "Economics", "Psychology", "Philosophy", "Languages"
+      ]
     }
     </script>
     
@@ -171,7 +195,11 @@
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD"
-      }
+      },
+      "downloadUrl": "https://www.studorama.com",
+      "installUrl": "https://www.studorama.com",
+      "memoryRequirements": "512MB",
+      "storageRequirements": "10MB"
     }
     </script>
     
@@ -220,6 +248,22 @@
             "@type": "Answer",
             "text": "Absolutely! Your API key and study data are stored locally in your browser and never transmitted to our servers. Only you have access to your study sessions and progress."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Studorama work on mobile devices?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes! Studorama is fully responsive and works perfectly on all devices including smartphones, tablets, and desktop computers. The interface adapts to your screen size for optimal usability."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What languages does Studorama support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Studorama supports English and Portuguese (Brazil). You can switch languages anytime in the settings, and the AI will generate questions in your preferred language."
+          }
         }
       ]
     }
@@ -258,9 +302,98 @@
       ]
     }
     </script>
+
+    <!-- Performance and Accessibility -->
+    <link rel="preload" href="/src/main.tsx" as="script" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <!-- PWA Support -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    
+    <!-- Critical CSS for above-the-fold content -->
+    <style>
+      /* Critical CSS for immediate rendering */
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background: linear-gradient(135deg, #fff7ed 0%, #ffffff 50%, #fff7ed 100%);
+        min-height: 100vh;
+      }
+      
+      #root {
+        min-height: 100vh;
+      }
+      
+      /* Loading state */
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #ea580c;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Responsive utilities */
+      @media (max-width: 640px) {
+        body {
+          font-size: 14px;
+        }
+      }
+      
+      /* High contrast mode support */
+      @media (prefers-contrast: high) {
+        body {
+          background: #ffffff;
+        }
+      }
+      
+      /* Reduced motion support */
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Loading fallback -->
+      <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column;">
+        <div class="loading-spinner"></div>
+        <p style="margin-top: 16px; color: #6b7280;">Loading Studorama...</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('SW registered: ', registration);
+            })
+            .catch(function(registrationError) {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

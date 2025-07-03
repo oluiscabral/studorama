@@ -2,7 +2,9 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, History, Settings, BookOpen, Menu, X, Heart } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
+import { useTheme } from '../hooks/useTheme';
 import Logo from './Logo';
+import ThemeSelector from './ThemeSelector';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,6 +13,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { t, language } = useLanguage();
+  const { themeConfig } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const navItems = [
@@ -31,14 +34,49 @@ export default function Layout({ children }: LayoutProps) {
     return location.pathname.startsWith(path);
   };
 
+  // Close mobile menu when route changes
+  React.useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
-      <nav className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+    <div 
+      className="min-h-screen"
+      style={{ background: themeConfig.gradients.background }}
+    >
+      {/* Skip to main content link for accessibility */}
+      <a 
+        href="#main-content" 
+        className="skip-link"
+        onFocus={(e) => e.currentTarget.classList.add('not-sr-only')}
+        onBlur={(e) => e.currentTarget.classList.remove('not-sr-only')}
+      >
+        Skip to main content
+      </a>
+
+      <nav 
+        className="sticky top-0 z-50 safe-top"
+        style={{ 
+          backgroundColor: themeConfig.colors.surface + 'CC',
+          backdropFilter: themeConfig.effects.blur,
+          borderBottom: `1px solid ${themeConfig.colors.border}`,
+        }}
+        role="navigation" 
+        aria-label="Main navigation"
+      >
+        <div className="container-responsive">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            {/* Logo and brand */}
+            <Link 
+              to="/" 
+              className="flex items-center space-x-2 sm:space-x-3 hover:opacity-80 transition-opacity focus-ring rounded-lg p-1"
+              aria-label="Studorama home"
+            >
               <Logo size="sm" />
-              <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-orange-700 bg-clip-text text-transparent">
+              <span 
+                className="text-lg sm:text-xl font-bold bg-clip-text text-transparent"
+                style={{ backgroundImage: themeConfig.gradients.primary }}
+              >
                 Studorama
               </span>
             </Link>
@@ -49,45 +87,76 @@ export default function Layout({ children }: LayoutProps) {
                 <Link
                   key={path}
                   to={path}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive(path)
-                      ? 'bg-orange-100 text-orange-700 shadow-sm'
-                      : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
+                  className={`nav-link ${
+                    isActive(path) ? 'nav-link-active' : 'nav-link-inactive'
                   }`}
+                  aria-current={isActive(path) ? 'page' : undefined}
+                  style={isActive(path) ? {
+                    backgroundColor: themeConfig.colors.primary + '20',
+                    color: themeConfig.colors.primary,
+                  } : {
+                    color: themeConfig.colors.textSecondary,
+                  }}
                 >
-                  <Icon size={18} />
+                  <Icon size={18} aria-hidden="true" />
                   <span>{label}</span>
                 </Link>
               ))}
               
-              <div className="w-px h-6 bg-gray-300 mx-2"></div>
+              <div 
+                className="w-px h-6 mx-2" 
+                style={{ backgroundColor: themeConfig.colors.border }}
+                aria-hidden="true"
+              />
               
               {supportItems.map(({ path, icon: Icon, label }) => (
                 <Link
                   key={path}
                   to={path}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive(path)
-                      ? 'bg-orange-100 text-orange-700 shadow-sm'
-                      : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
+                  className={`nav-link ${
+                    isActive(path) ? 'nav-link-active' : 'nav-link-inactive'
                   }`}
+                  aria-current={isActive(path) ? 'page' : undefined}
+                  style={isActive(path) ? {
+                    backgroundColor: themeConfig.colors.primary + '20',
+                    color: themeConfig.colors.primary,
+                  } : {
+                    color: themeConfig.colors.textSecondary,
+                  }}
                 >
-                  <Icon size={18} />
+                  <Icon size={18} aria-hidden="true" />
                   <span>{label}</span>
                 </Link>
               ))}
             </div>
 
-            {/* Free Badge & Mobile menu button */}
-            <div className="flex items-center space-x-4">
-              <div className="hidden md:flex items-center space-x-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                <Heart className="w-4 h-4" />
+            {/* Theme Selector & Free Badge & Mobile menu button */}
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* Theme Selector - Desktop */}
+              <div className="hidden md:block">
+                <ThemeSelector showLabel={false} />
+              </div>
+              
+              <div 
+                className="hidden md:flex items-center space-x-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium"
+                style={{
+                  backgroundColor: themeConfig.colors.success + '20',
+                  color: themeConfig.colors.success,
+                }}
+              >
+                <Heart className="w-3 h-3 sm:w-4 sm:h-4" aria-hidden="true" />
                 <span>{language === 'pt-BR' ? '100% Gratuito' : '100% Free'}</span>
               </div>
               
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-lg text-gray-600 hover:text-orange-600 hover:bg-orange-50 transition-colors"
+                className="lg:hidden p-2 rounded-lg transition-colors focus-ring touch-target"
+                style={{
+                  color: themeConfig.colors.textSecondary,
+                }}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu"
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               >
                 {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
@@ -95,55 +164,86 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Mobile Navigation */}
-          {mobileMenuOpen && (
-            <div className="lg:hidden border-t border-orange-100 py-4">
-              <div className="space-y-1 mb-4">
-                {navItems.map(({ path, icon: Icon, label }) => (
-                  <Link
-                    key={path}
-                    to={path}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center space-x-3 px-3 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
-                      isActive(path)
-                        ? 'bg-orange-100 text-orange-700 shadow-sm'
-                        : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
-                    }`}
-                  >
-                    <Icon size={20} />
-                    <span>{label}</span>
-                  </Link>
-                ))}
+          <div 
+            id="mobile-menu"
+            className={`lg:hidden transition-all duration-300 ease-in-out ${
+              mobileMenuOpen 
+                ? 'max-h-screen opacity-100 py-3 sm:py-4' 
+                : 'max-h-0 opacity-0 overflow-hidden'
+            }`}
+            style={{
+              borderTop: mobileMenuOpen ? `1px solid ${themeConfig.colors.border}` : 'none',
+            }}
+            aria-hidden={!mobileMenuOpen}
+          >
+            <div className="space-y-1 mb-3 sm:mb-4">
+              {navItems.map(({ path, icon: Icon, label }) => (
+                <Link
+                  key={path}
+                  to={path}
+                  className="nav-link text-base"
+                  aria-current={isActive(path) ? 'page' : undefined}
+                  style={isActive(path) ? {
+                    backgroundColor: themeConfig.colors.primary + '20',
+                    color: themeConfig.colors.primary,
+                  } : {
+                    color: themeConfig.colors.textSecondary,
+                  }}
+                >
+                  <Icon size={20} aria-hidden="true" />
+                  <span>{label}</span>
+                </Link>
+              ))}
+            </div>
+            
+            <div 
+              className="border-t pt-3 sm:pt-4"
+              style={{ borderColor: themeConfig.colors.border }}
+            >
+              {/* Theme Selector - Mobile */}
+              <div className="px-3 py-2 mb-2">
+                <ThemeSelector />
               </div>
               
-              <div className="border-t border-gray-200 pt-4">
-                <div className="px-3 py-2 mb-2">
-                  <div className="flex items-center space-x-2 bg-green-100 text-green-800 px-3 py-2 rounded-lg text-sm font-medium">
-                    <Heart className="w-4 h-4" />
-                    <span>{language === 'pt-BR' ? '100% Gratuito Para Sempre' : '100% Free Forever'}</span>
-                  </div>
+              <div className="px-3 py-2 mb-2">
+                <div 
+                  className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium"
+                  style={{
+                    backgroundColor: themeConfig.colors.success + '20',
+                    color: themeConfig.colors.success,
+                  }}
+                >
+                  <Heart className="w-4 h-4" aria-hidden="true" />
+                  <span>{language === 'pt-BR' ? '100% Gratuito Para Sempre' : '100% Free Forever'}</span>
                 </div>
-                {supportItems.map(({ path, icon: Icon, label }) => (
-                  <Link
-                    key={path}
-                    to={path}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center space-x-3 px-3 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
-                      isActive(path)
-                        ? 'bg-orange-100 text-orange-700 shadow-sm'
-                        : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
-                    }`}
-                  >
-                    <Icon size={20} />
-                    <span>{label}</span>
-                  </Link>
-                ))}
               </div>
+              {supportItems.map(({ path, icon: Icon, label }) => (
+                <Link
+                  key={path}
+                  to={path}
+                  className="nav-link text-base"
+                  aria-current={isActive(path) ? 'page' : undefined}
+                  style={isActive(path) ? {
+                    backgroundColor: themeConfig.colors.primary + '20',
+                    color: themeConfig.colors.primary,
+                  } : {
+                    color: themeConfig.colors.textSecondary,
+                  }}
+                >
+                  <Icon size={20} aria-hidden="true" />
+                  <span>{label}</span>
+                </Link>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-6 sm:py-8">
+      <main 
+        id="main-content" 
+        className="container-responsive py-4 sm:py-6 lg:py-8 safe-bottom"
+        role="main"
+      >
         {children}
       </main>
     </div>

@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { CheckCircle, XCircle, RefreshCw, ArrowRight, BookOpen, FileText, List, Brain, Target, Clock, Lightbulb, HelpCircle, Settings, Plus, X, FunctionSquare as Function, Code, Loader2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, TrendingUp, Loader2, CheckCircle, XCircle, Brain, Lightbulb, Target, Zap, Plus, X } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
-import { StudySession, Question, LearningSettings, LearningTechniquesPreference } from '../types';
-import { generateQuestion, generateDissertativeQuestion, evaluateAnswer, generateElaborativeQuestion, generateRetrievalQuestion, generateModifierSuggestions } from '../utils/openai';
-import { calculateNextReview, shouldReviewQuestion } from '../utils/spacedRepetition';
-import LaTeXRenderer from './LaTeXRenderer';
+import { useTheme } from '../hooks/useTheme';
+import { StudySession, Question, LearningSettings, APISettings, LearningTechniquesPreference } from '../types';
+import { generateQuestion, generateDissertativeQuestion, evaluateAnswer, generateElaborativeQuestion, generateRetrievalQuestion } from '../utils/openai';
+import { getRandomModifierPlaceholder } from '../utils/i18n';
+import MarkdownRenderer from './MarkdownRenderer';
 
 const DEFAULT_LEARNING_SETTINGS: LearningSettings = {
   spacedRepetition: true,
@@ -18,18 +19,17 @@ const DEFAULT_LEARNING_SETTINGS: LearningSettings = {
   generationEffect: true
 };
 
-const DEFAULT_LEARNING_PREFERENCE: LearningTechniquesPreference = {
-  rememberChoice: false,
-  defaultSettings: DEFAULT_LEARNING_SETTINGS
-};
-
-export default function StudySessionComponent() {
+export default function StudySessionPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t, language } = useLanguage();
+  const { themeConfig } = useTheme();
+  
+  // Get session ID from location state if continuing a session
+  const sessionIdFromState = location.state?.sessionId;
+  
   const [sessions, setSessions] = useLocalStorage<StudySession[]>('studorama-sessions', []);
-  const [learningPreference, setLearningPreference] = useLocalStorage<LearningTechniquesPreference>('studorama-learning-preference', DEFAULT_LEARNING_PREFERENCE);
-  const [apiSettings] = useLocalStorage('studorama-api-settings', { 
+  const [apiSettings] = useLocalStorage<APISettings>('studorama-api-settings', { 
     openaiApiKey: '',
     model: 'gpt-4o-mini',
     customPrompts: {
@@ -41,319 +41,153 @@ export default function StudySessionComponent() {
     },
     preloadQuestions: 3
   });
-  
-  const [currentSession, setCurrentSession] = useState<StudySession | null>(null);
-  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [dissertativeAnswer, setDissertativeAnswer] = useState('');
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [evaluating, setEvaluating] = useState(false);
+  const [learningPreference] = useLocalStorage<LearningTechniquesPreference>('studorama-learning-preference', {
+    rememberChoice: false,
+    defaultSettings: DEFAULT_LEARNING_SETTINGS
+  });
+
+  // Session configuration state
   const [subject, setSubject] = useState('');
   const [subjectModifiers, setSubjectModifiers] = useState<string[]>([]);
+  const [newModifier, setNewModifier] = useState('');
   const [questionType, setQuestionType] = useState<'multiple-choice' | 'dissertative' | 'mixed'>('multiple-choice');
-  const [sessionStarted, setSessionStarted] = useState(false);
   const [learningSettings, setLearningSettings] = useState<LearningSettings>(learningPreference.defaultSettings);
   const [rememberChoice, setRememberChoice] = useState(learningPreference.rememberChoice);
-  const [confidenceLevel, setConfidenceLevel] = useState<number>(3); // Always start at middle
-  const [showElaborativePrompt, setShowElaborativePrompt] = useState(false);
-  const [elaborativeResponse, setElaborativeResponse] = useState('');
+
+  // Session state
+  const [currentSession, setCurrentSession] = useState<StudySession | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [userAnswer, setUserAnswer] = useState<string | number>('');
+  const [confidence, setConfidence] = useState<number>(3);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [elaborativeQuestion, setElaborativeQuestion] = useState<string>('');
+  const [elaborativeAnswer, setElaborativeAnswer] = useState<string>('');
+  const [showElaborative, setShowElaborative] = useState(false);
+  const [selfExplanationAnswer, setSelfExplanationAnswer] = useState<string>('');
   const [showSelfExplanation, setShowSelfExplanation] = useState(false);
-  const [selfExplanation, setSelfExplanation] = useState('');
-  const [loadingModifierSuggestions, setLoadingModifierSuggestions] = useState(false);
-  
-  // New visualization options
-  const [enableLatex, setEnableLatex] = useState(false);
-  const [enableCodeVisualization, setEnableCodeVisualization] = useState(false);
-  
-  // Preloading states
-  const [backgroundLoading, setBackgroundLoading] = useState(false);
-  const [preloadingProgress, setPreloadingProgress] = useState(0);
+  const [sessionStarted, setSessionStarted] = useState(false);
 
-  // Learning techniques labels translation
-  const getLearningTechniqueLabel = (key: string): string => {
-    const labels: Record<string, { en: string; pt: string }> = {
-      spacedRepetition: { en: 'Spaced Repetition', pt: 'Repetição Espaçada' },
-      interleaving: { en: 'Interleaving', pt: 'Intercalação' },
-      elaborativeInterrogation: { en: 'Elaborative Interrogation', pt: 'Interrogação Elaborativa' },
-      selfExplanation: { en: 'Self Explanation', pt: 'Auto-Explicação' },
-      desirableDifficulties: { en: 'Desirable Difficulties', pt: 'Dificuldades Desejáveis' },
-      retrievalPractice: { en: 'Retrieval Practice', pt: 'Prática de Recuperação' },
-      generationEffect: { en: 'Generation Effect', pt: 'Efeito de Geração' }
-    };
-
-    const label = labels[key];
-    if (!label) return key;
-    
-    return language === 'pt-BR' ? label.pt : label.en;
-  };
+  // Preloading state
+  const [preloadedQuestions, setPreloadedQuestions] = useState<Question[]>([]);
+  const [isPreloading, setIsPreloading] = useState(false);
 
   // Check if we're continuing an existing session
   useEffect(() => {
-    const sessionId = location.state?.sessionId;
-    if (sessionId) {
-      const existingSession = sessions.find(s => s.id === sessionId);
-      if (existingSession) {
+    if (sessionIdFromState) {
+      const existingSession = sessions.find(s => s.id === sessionIdFromState);
+      if (existingSession && existingSession.status === 'active') {
         setCurrentSession(existingSession);
-        setSubject(existingSession.subject);
-        setSubjectModifiers(existingSession.subjectModifiers || []);
-        setQuestionType(existingSession.questionType || 'multiple-choice');
-        setLearningSettings(existingSession.learningSettings || DEFAULT_LEARNING_SETTINGS);
-        setEnableLatex(existingSession.enableLatex || false);
-        setEnableCodeVisualization(existingSession.enableCodeVisualization || false);
         setSessionStarted(true);
         
-        // Continue from the last viewed question
-        continueFromLastQuestion(existingSession);
-      }
-    }
-  }, [location.state, sessions]);
-
-  // Background preloading effect
-  useEffect(() => {
-    if (currentSession && sessionStarted && apiSettings.preloadQuestions > 0) {
-      const preloadedCount = currentSession.preloadedQuestions?.length || 0;
-      const targetCount = apiSettings.preloadQuestions;
-      
-      if (preloadedCount < targetCount && !backgroundLoading) {
-        preloadQuestions(currentSession, targetCount - preloadedCount);
-      }
-    }
-  }, [currentSession, sessionStarted, apiSettings.preloadQuestions, backgroundLoading]);
-
-  const continueFromLastQuestion = (session: StudySession) => {
-    // Get the current question index, defaulting to 0 if not set or if no questions exist
-    const currentIndex = session.currentQuestionIndex ?? 0;
-    const questionToShow = session.questions[currentIndex];
-    
-    if (questionToShow) {
-      // Load the specific question the user was on
-      setCurrentQuestion(questionToShow);
-      
-      // Reset UI states first
-      setSelectedAnswer(null);
-      setDissertativeAnswer('');
-      setShowFeedback(false);
-      setShowElaborativePrompt(false);
-      setShowSelfExplanation(false);
-      setElaborativeResponse('');
-      setSelfExplanation('');
-      setConfidenceLevel(questionToShow.confidence || 3);
-      
-      // If this question has a user answer, restore it
-      if (questionToShow.userAnswer !== undefined) {
-        if (questionToShow.type === 'multiple-choice') {
-          setSelectedAnswer(questionToShow.userAnswer as number);
+        // Set the current question based on the session's current question index
+        const questionIndex = existingSession.currentQuestionIndex || 0;
+        if (existingSession.questions[questionIndex]) {
+          setCurrentQuestion(existingSession.questions[questionIndex]);
         } else {
-          setDissertativeAnswer(questionToShow.userAnswer as string);
-        }
-        
-        // If the question was already evaluated, show feedback immediately
-        if (questionToShow.isCorrect !== undefined) {
-          setShowFeedback(true);
-          
-          // Show learning prompts if applicable
-          if (learningSettings.elaborativeInterrogation && !questionToShow.isCorrect) {
-            setShowElaborativePrompt(true);
-          }
-          if (learningSettings.selfExplanation && questionToShow.isCorrect) {
-            setShowSelfExplanation(true);
-          }
+          // Generate next question if we're at the end
+          generateNextQuestion(existingSession);
         }
       }
-    } else {
-      // No questions yet or invalid index, load a new one
-      loadNextQuestion(session);
     }
-  };
+  }, [sessionIdFromState, sessions]);
 
-  const generateSingleQuestion = async (session: StudySession, isPreloaded: boolean = false): Promise<Question> => {
-    const nextType = getNextQuestionType(session);
-    const subjectContext = buildSubjectContext();
-    let questionData;
-    let newQuestion: Question;
+  // Preload questions in the background
+  const preloadQuestions = useCallback(async (session: StudySession, count: number = 3) => {
+    if (!apiSettings.openaiApiKey || count <= 0 || isPreloading) return;
     
-    if (nextType === 'dissertative') {
-      questionData = await generateDissertativeQuestion(
-        subjectContext, 
-        apiSettings.openaiApiKey,
-        apiSettings.model || 'gpt-4o-mini',
-        apiSettings.customPrompts?.dissertative,
-        language,
-        session.enableLatex || false,
-        session.enableCodeVisualization || false
-      );
-      
-      newQuestion = {
-        id: Date.now().toString() + (isPreloaded ? '-preload' : ''),
-        question: questionData.question,
-        correctAnswerText: questionData.sampleAnswer,
-        attempts: 0,
-        type: 'dissertative',
-        difficulty: 'medium',
-        reviewCount: 0,
-        confidence: 3,
-        retrievalStrength: 0.5,
-        isPreloaded
-      };
-    } else {
-      // Apply desirable difficulties - make some questions harder
-      const difficultyModifier = learningSettings.desirableDifficulties && Math.random() < 0.3 
-        ? (language === 'pt-BR' 
-            ? ' Torne esta questão mais desafiadora e que exija pensamento mais profundo.' 
-            : ' Make this question more challenging and require deeper thinking.')
-        : '';
-
-      questionData = await generateQuestion(
-        subjectContext + difficultyModifier, 
-        apiSettings.openaiApiKey,
-        apiSettings.model || 'gpt-4o-mini',
-        apiSettings.customPrompts?.multipleChoice,
-        language,
-        session.enableLatex || false,
-        session.enableCodeVisualization || false
-      );
-      
-      newQuestion = {
-        id: Date.now().toString() + (isPreloaded ? '-preload' : ''),
-        question: questionData.question,
-        options: questionData.options,
-        correctAnswer: questionData.correctAnswer,
-        attempts: 0,
-        feedback: questionData.explanation,
-        type: 'multiple-choice',
-        difficulty: difficultyModifier ? 'hard' : 'medium',
-        reviewCount: 0,
-        confidence: 3,
-        retrievalStrength: 0.5,
-        isPreloaded
-      };
-    }
-
-    return newQuestion;
-  };
-
-  const preloadQuestions = async (session: StudySession, count: number) => {
-    if (!apiSettings.openaiApiKey || count <= 0) return;
-    
-    setBackgroundLoading(true);
-    setPreloadingProgress(0);
+    setIsPreloading(true);
+    const newPreloadedQuestions: Question[] = [];
     
     try {
-      const newPreloadedQuestions: Question[] = [];
-      
       for (let i = 0; i < count; i++) {
-        try {
-          const question = await generateSingleQuestion(session, true);
+        const questionData = await generateQuestionForSession(session);
+        if (questionData) {
+          const question: Question = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            question: questionData.question,
+            type: questionData.type || (session.questionType === 'mixed' 
+              ? (Math.random() > 0.5 ? 'multiple-choice' : 'dissertative')
+              : session.questionType || 'multiple-choice'),
+            options: questionData.options,
+            correctAnswer: questionData.correctAnswer,
+            correctAnswerText: questionData.sampleAnswer || questionData.explanation,
+            attempts: 0,
+            isPreloaded: true
+          };
           newPreloadedQuestions.push(question);
-          setPreloadingProgress(((i + 1) / count) * 100);
-        } catch (error) {
-          console.error(`Error preloading question ${i + 1}:`, error);
-          break; // Stop preloading on error
         }
       }
       
-      if (newPreloadedQuestions.length > 0) {
-        const updatedSession = {
-          ...session,
-          preloadedQuestions: [...(session.preloadedQuestions || []), ...newPreloadedQuestions]
-        };
-        
-        setCurrentSession(updatedSession);
-        saveSessionToStorage(updatedSession);
-      }
+      setPreloadedQuestions(prev => [...prev, ...newPreloadedQuestions]);
     } catch (error) {
       console.error('Error preloading questions:', error);
     } finally {
-      setBackgroundLoading(false);
-      setPreloadingProgress(0);
+      setIsPreloading(false);
     }
-  };
+  }, [apiSettings.openaiApiKey, isPreloading]);
 
-  const getNextQuestionType = (session: StudySession): 'multiple-choice' | 'dissertative' => {
-    if (questionType === 'mixed') {
-      // Implement interleaving - mix question types for better learning
-      if (learningSettings.interleaving) {
-        const lastQuestions = session.questions.slice(-3);
-        const lastTypes = lastQuestions.map(q => q.type);
-        
-        // If last 2 questions were the same type, switch
-        if (lastTypes.length >= 2 && lastTypes[lastTypes.length - 1] === lastTypes[lastTypes.length - 2]) {
-          return lastTypes[lastTypes.length - 1] === 'multiple-choice' ? 'dissertative' : 'multiple-choice';
-        }
-      }
-      
-      // Random selection with slight bias toward multiple choice for variety
-      return Math.random() < 0.6 ? 'multiple-choice' : 'dissertative';
+  const generateQuestionForSession = async (session: StudySession) => {
+    const fullSubject = [session.subject, ...(session.subjectModifiers || [])].join(' - ');
+    const questionTypeToGenerate = session.questionType === 'mixed' 
+      ? (Math.random() > 0.5 ? 'multiple-choice' : 'dissertative')
+      : session.questionType || 'multiple-choice';
+
+    if (questionTypeToGenerate === 'multiple-choice') {
+      return await generateQuestion(
+        fullSubject,
+        apiSettings.openaiApiKey,
+        apiSettings.model,
+        apiSettings.customPrompts.multipleChoice,
+        language
+      );
+    } else {
+      return await generateDissertativeQuestion(
+        fullSubject,
+        apiSettings.openaiApiKey,
+        apiSettings.model,
+        apiSettings.customPrompts.dissertative,
+        language
+      );
     }
-    return questionType;
   };
 
   const addModifier = () => {
-    setSubjectModifiers([...subjectModifiers, '']);
+    if (newModifier.trim() && !subjectModifiers.includes(newModifier.trim())) {
+      setSubjectModifiers([...subjectModifiers, newModifier.trim()]);
+      setNewModifier('');
+    }
   };
 
   const removeModifier = (index: number) => {
     setSubjectModifiers(subjectModifiers.filter((_, i) => i !== index));
   };
 
-  const updateModifier = (index: number, value: string) => {
-    const newModifiers = [...subjectModifiers];
-    newModifiers[index] = value;
-    setSubjectModifiers(newModifiers);
+  const updateLearningSettings = (setting: keyof LearningSettings) => {
+    setLearningSettings(prev => ({
+      ...prev,
+      [setting]: !prev[setting]
+    }));
   };
 
-  const generateModifierSuggestion = async (index: number) => {
-    if (!subject.trim() || !apiSettings.openaiApiKey) return;
-
-    setLoadingModifierSuggestions(true);
-    try {
-      const suggestions = await generateModifierSuggestions(
-        subject.trim(),
-        apiSettings.openaiApiKey,
-        apiSettings.model || 'gpt-4o-mini',
-        language
-      );
-      
-      if (suggestions && suggestions.length > 0) {
-        // Use the first suggestion
-        updateModifier(index, suggestions[0]);
-      }
-    } catch (error) {
-      console.error('Error generating modifier suggestion:', error);
-    } finally {
-      setLoadingModifierSuggestions(false);
-    }
-  };
-
-  const buildSubjectContext = () => {
-    const validModifiers = subjectModifiers.filter(m => m.trim());
-    if (validModifiers.length === 0) {
-      return subject.trim();
-    }
-    return `${subject.trim()}. Context: ${validModifiers.join('. ')}`;
-  };
-
-  const startNewSession = async () => {
+  const startSession = async () => {
     if (!subject.trim()) return;
     if (!apiSettings.openaiApiKey) {
       alert(t.configureApiKeyFirst);
+      navigate('/settings');
       return;
     }
 
-    // Save learning preference if remember choice is checked
-    if (rememberChoice !== learningPreference.rememberChoice || 
-        JSON.stringify(learningSettings) !== JSON.stringify(learningPreference.defaultSettings)) {
-      setLearningPreference({
-        rememberChoice,
-        defaultSettings: learningSettings
-      });
+    // Update learning preference if remember choice is enabled
+    if (rememberChoice) {
+      // This would typically update the stored preference
     }
 
     const newSession: StudySession = {
       id: Date.now().toString(),
       subject: subject.trim(),
-      subjectModifiers: subjectModifiers.filter(m => m.trim()),
+      subjectModifiers: subjectModifiers.length > 0 ? subjectModifiers : undefined,
       createdAt: new Date().toISOString(),
       questions: [],
       status: 'active',
@@ -361,986 +195,913 @@ export default function StudySessionComponent() {
       totalQuestions: 0,
       questionType,
       learningSettings,
-      currentQuestionIndex: 0,
-      enableLatex,
-      enableCodeVisualization,
-      preloadedQuestions: [],
-      spacedRepetition: {
-        reviewIntervals: [1, 3, 7, 14, 30],
-        currentInterval: 0,
-        easeFactor: 2.5,
-        reviewCount: 0
-      }
+      currentQuestionIndex: 0
     };
 
     setCurrentSession(newSession);
     setSessionStarted(true);
-    loadNextQuestion(newSession);
+    
+    // Save session immediately
+    setSessions(prev => [...prev, newSession]);
+    
+    // Generate first question and start preloading
+    await generateNextQuestion(newSession);
+    
+    // Start preloading questions in background
+    if (apiSettings.preloadQuestions && apiSettings.preloadQuestions > 0) {
+      preloadQuestions(newSession, apiSettings.preloadQuestions);
+    }
   };
 
-  // Helper function to save session to localStorage
-  const saveSessionToStorage = (session: StudySession) => {
-    setSessions(prev => {
-      const existingIndex = prev.findIndex(s => s.id === session.id);
-      if (existingIndex >= 0) {
-        const updated = [...prev];
-        updated[existingIndex] = session;
-        return updated;
-      } else {
-        return [...prev, session];
-      }
-    });
-  };
-
-  const loadNextQuestion = async (session: StudySession) => {
-    setLoading(true);
-    setSelectedAnswer(null);
-    setDissertativeAnswer('');
+  const generateNextQuestion = async (session: StudySession) => {
+    setIsLoading(true);
     setShowFeedback(false);
-    setShowElaborativePrompt(false);
+    setShowElaborative(false);
     setShowSelfExplanation(false);
-    setElaborativeResponse('');
-    setSelfExplanation('');
-    setConfidenceLevel(3); // Always reset to middle
+    setUserAnswer('');
+    setConfidence(3);
+    setElaborativeAnswer('');
+    setSelfExplanationAnswer('');
 
     try {
-      let newQuestion: Question;
+      let question: Question;
       
-      // Check if we have preloaded questions available
-      if (session.preloadedQuestions && session.preloadedQuestions.length > 0) {
-        // Use the first preloaded question
-        const preloadedQuestion = session.preloadedQuestions[0];
-        newQuestion = {
+      // Use preloaded question if available
+      if (preloadedQuestions.length > 0) {
+        const preloadedQuestion = preloadedQuestions[0];
+        setPreloadedQuestions(prev => prev.slice(1));
+        
+        question = {
           ...preloadedQuestion,
-          id: Date.now().toString(), // Give it a new ID
-          isPreloaded: false // Mark as no longer preloaded
+          isPreloaded: false // Mark as no longer preloaded since it's now active
         };
         
-        // Remove the used question from preloaded questions
-        const updatedSession = {
-          ...session,
-          preloadedQuestions: session.preloadedQuestions.slice(1),
-          questions: [...session.questions, newQuestion],
-          currentQuestionIndex: session.questions.length
-        };
-        
-        setCurrentSession(updatedSession);
-        saveSessionToStorage(updatedSession);
-        setCurrentQuestion(newQuestion);
-        setLoading(false);
-        return;
-      }
-
-      // Check for spaced repetition questions first
-      if (learningSettings.spacedRepetition) {
-        const reviewQuestions = session.questions.filter(q => shouldReviewQuestion(q));
-        if (reviewQuestions.length > 0 && Math.random() < 0.3) {
-          // 30% chance to review a previous question
-          const questionToReview = reviewQuestions[Math.floor(Math.random() * reviewQuestions.length)];
-          newQuestion = {
-            ...questionToReview,
-            id: Date.now().toString(), // New ID for tracking
-            attempts: 0,
-            userAnswer: undefined,
-            isCorrect: undefined
-          };
-          
-          setCurrentQuestion(newQuestion);
-          
-          // Save the question immediately to the session
-          const updatedSession = {
-            ...session,
-            questions: [...session.questions, newQuestion],
-            currentQuestionIndex: session.questions.length // Point to the new question
-          };
-          setCurrentSession(updatedSession);
-          saveSessionToStorage(updatedSession);
-          
-          setLoading(false);
-          return;
+        // Preload another question to maintain the buffer
+        if (apiSettings.preloadQuestions && apiSettings.preloadQuestions > 0) {
+          preloadQuestions(session, 1);
         }
+      } else {
+        // Generate question normally if no preloaded questions available
+        const questionData = await generateQuestionForSession(session);
+        
+        question = {
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          question: questionData.question,
+          type: questionData.type || (session.questionType === 'mixed' 
+            ? (Math.random() > 0.5 ? 'multiple-choice' : 'dissertative')
+            : session.questionType || 'multiple-choice'),
+          options: questionData.options,
+          correctAnswer: questionData.correctAnswer,
+          correctAnswerText: questionData.sampleAnswer || questionData.explanation,
+          attempts: 0
+        };
       }
 
-      // Generate a new question
-      newQuestion = await generateSingleQuestion(session, false);
+      setCurrentQuestion(question);
       
-      setCurrentQuestion(newQuestion);
-      
-      // CRITICAL: Save the question immediately to the session
+      // Update session with new question
       const updatedSession = {
         ...session,
-        questions: [...session.questions, newQuestion],
-        currentQuestionIndex: session.questions.length // Point to the new question
+        questions: [...session.questions, question],
+        currentQuestionIndex: session.questions.length
       };
-      setCurrentSession(updatedSession);
-      saveSessionToStorage(updatedSession);
       
-    } catch (error) {
+      setCurrentSession(updatedSession);
+      setSessions(prev => prev.map(s => s.id === session.id ? updatedSession : s));
+      
+    } catch (error: any) {
       console.error('Error generating question:', error);
-      const errorMessage = language === 'pt-BR' 
-        ? 'Falha ao gerar questão. Verifique sua chave da API ou tente novamente.'
-        : 'Failed to generate question. Please check your API key or try again.';
-      alert(errorMessage);
+      alert(`Error generating question: ${error.message}`);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const submitAnswer = async () => {
     if (!currentQuestion || !currentSession) return;
     
-    if (currentQuestion.type === 'multiple-choice' && selectedAnswer === null) return;
-    if (currentQuestion.type === 'dissertative' && !dissertativeAnswer.trim()) return;
-
-    let updatedQuestion: Question;
-
-    if (currentQuestion.type === 'multiple-choice') {
-      const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-      updatedQuestion = {
-        ...currentQuestion,
-        userAnswer: selectedAnswer,
-        isCorrect,
-        attempts: currentQuestion.attempts + 1,
-        confidence: confidenceLevel,
-        retrievalStrength: isCorrect ? Math.min(1, (currentQuestion.retrievalStrength || 0.5) + 0.2) : Math.max(0, (currentQuestion.retrievalStrength || 0.5) - 0.1)
-      };
-    } else {
-      setEvaluating(true);
-      try {
-        const evaluation = await evaluateAnswer(
+    setIsEvaluating(true);
+    
+    try {
+      let isCorrect = false;
+      let feedback = '';
+      let aiEvaluation = '';
+      
+      if (currentQuestion.type === 'multiple-choice') {
+        isCorrect = userAnswer === currentQuestion.correctAnswer;
+        feedback = isCorrect ? t.excellent : currentQuestion.correctAnswerText || '';
+      } else {
+        // For dissertative questions, use AI evaluation
+        const fullSubject = [currentSession.subject, ...(currentSession.subjectModifiers || [])].join(' - ');
+        aiEvaluation = await evaluateAnswer(
           currentQuestion.question,
-          dissertativeAnswer,
+          userAnswer.toString(),
           currentQuestion.correctAnswerText || '',
           apiSettings.openaiApiKey,
-          apiSettings.model || 'gpt-4o-mini',
-          apiSettings.customPrompts?.evaluation,
-          language,
-          currentSession.enableLatex || false,
-          currentSession.enableCodeVisualization || false
+          apiSettings.model,
+          apiSettings.customPrompts.evaluation,
+          language
         );
-
-        // Enhanced scoring based on evaluation
-        const evaluationLower = evaluation.toLowerCase();
-        const positiveWords = language === 'pt-BR' 
-          ? ['excelente', 'bom', 'correto', 'preciso', 'abrangente', 'bem', 'forte', 'claro', 'completo']
-          : ['excellent', 'good', 'correct', 'accurate', 'comprehensive', 'well', 'strong', 'clear', 'thorough'];
-        const negativeWords = language === 'pt-BR'
-          ? ['incorreto', 'faltando', 'incompleto', 'errado', 'pobre', 'fraco', 'pouco claro', 'insuficiente']
-          : ['incorrect', 'missing', 'incomplete', 'wrong', 'poor', 'weak', 'unclear', 'insufficient'];
         
-        const positiveCount = positiveWords.filter(word => evaluationLower.includes(word)).length;
-        const negativeCount = negativeWords.filter(word => evaluationLower.includes(word)).length;
-        
-        const score = Math.max(0, Math.min(1, (positiveCount - negativeCount + 2) / 4));
-        const isCorrect = score >= 0.6;
-
-        updatedQuestion = {
-          ...currentQuestion,
-          userAnswer: dissertativeAnswer,
-          isCorrect,
-          attempts: currentQuestion.attempts + 1,
-          aiEvaluation: evaluation,
-          confidence: confidenceLevel,
-          retrievalStrength: isCorrect ? Math.min(1, (currentQuestion.retrievalStrength || 0.5) + 0.2) : Math.max(0, (currentQuestion.retrievalStrength || 0.5) - 0.1)
-        };
-      } catch (error) {
-        console.error('Error evaluating answer:', error);
-        const errorMessage = language === 'pt-BR'
-          ? 'Erro ao avaliar resposta. Tente novamente.'
-          : 'Error evaluating answer. Please try again.';
-        updatedQuestion = {
-          ...currentQuestion,
-          userAnswer: dissertativeAnswer,
-          isCorrect: false,
-          attempts: currentQuestion.attempts + 1,
-          aiEvaluation: errorMessage,
-          confidence: confidenceLevel,
-          retrievalStrength: Math.max(0, (currentQuestion.retrievalStrength || 0.5) - 0.1)
-        };
-      } finally {
-        setEvaluating(false);
+        // Simple heuristic for correctness based on AI evaluation
+        isCorrect = aiEvaluation.toLowerCase().includes('correct') || 
+                   aiEvaluation.toLowerCase().includes('good') ||
+                   aiEvaluation.toLowerCase().includes('well') ||
+                   aiEvaluation.toLowerCase().includes('excellent');
       }
+      
+      // Update question with answer and feedback
+      const updatedQuestion: Question = {
+        ...currentQuestion,
+        userAnswer,
+        isCorrect,
+        feedback,
+        aiEvaluation,
+        attempts: currentQuestion.attempts + 1,
+        confidence
+      };
+      
+      // Update session
+      const updatedQuestions = currentSession.questions.map(q => 
+        q.id === currentQuestion.id ? updatedQuestion : q
+      );
+      
+      const correctAnswers = updatedQuestions.filter(q => q.isCorrect).length;
+      const totalQuestions = updatedQuestions.length;
+      const score = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+      
+      const updatedSession: StudySession = {
+        ...currentSession,
+        questions: updatedQuestions,
+        score,
+        totalQuestions
+      };
+      
+      setCurrentQuestion(updatedQuestion);
+      setCurrentSession(updatedSession);
+      setSessions(prev => prev.map(s => s.id === currentSession.id ? updatedSession : s));
+      setShowFeedback(true);
+      
+      // Show elaborative interrogation for incorrect answers
+      if (!isCorrect && learningSettings.elaborativeInterrogation) {
+        try {
+          const elaborativeQ = await generateElaborativeQuestion(
+            currentSession.subject,
+            currentQuestion.question,
+            apiSettings.openaiApiKey,
+            apiSettings.model,
+            language
+          );
+          setElaborativeQuestion(elaborativeQ);
+          setShowElaborative(true);
+        } catch (error) {
+          console.error('Error generating elaborative question:', error);
+        }
+      }
+      
+      // Show self-explanation for correct answers
+      if (isCorrect && learningSettings.selfExplanation) {
+        setShowSelfExplanation(true);
+      }
+      
+    } catch (error: any) {
+      console.error('Error evaluating answer:', error);
+      alert(`Error evaluating answer: ${error.message}`);
+    } finally {
+      setIsEvaluating(false);
     }
-
-    // Calculate next review date for spaced repetition
-    if (learningSettings.spacedRepetition) {
-      updatedQuestion.nextReview = calculateNextReview(updatedQuestion, currentSession.spacedRepetition!);
-      updatedQuestion.lastReviewed = new Date().toISOString();
-    }
-
-    setCurrentQuestion(updatedQuestion);
-    setShowFeedback(true);
-
-    // Show elaborative interrogation prompt
-    if (learningSettings.elaborativeInterrogation && !updatedQuestion.isCorrect) {
-      setShowElaborativePrompt(true);
-    }
-
-    // Show self-explanation prompt for correct answers
-    if (learningSettings.selfExplanation && updatedQuestion.isCorrect) {
-      setShowSelfExplanation(true);
-    }
-
-    // Update session with the current question
-    const updatedQuestions = [...currentSession.questions];
-    const existingIndex = updatedQuestions.findIndex(q => q.id === currentQuestion.id);
-    
-    if (existingIndex >= 0) {
-      updatedQuestions[existingIndex] = updatedQuestion;
-    } else {
-      updatedQuestions.push(updatedQuestion);
-    }
-
-    // Update the current question index to track where the user is
-    const currentQuestionIndex = existingIndex >= 0 ? existingIndex : updatedQuestions.length - 1;
-
-    const updatedSession = {
-      ...currentSession,
-      questions: updatedQuestions,
-      currentQuestionIndex,
-      totalQuestions: updatedQuestions.length,
-      score: Math.round((updatedQuestions.filter(q => q.isCorrect).length / updatedQuestions.length) * 100)
-    };
-
-    setCurrentSession(updatedSession);
-
-    // Save to localStorage
-    saveSessionToStorage(updatedSession);
   };
 
   const nextQuestion = () => {
-    if (currentSession) {
-      // Update the current question index to the next question
-      const nextIndex = (currentSession.currentQuestionIndex || 0) + 1;
-      const updatedSession = {
-        ...currentSession,
-        currentQuestionIndex: nextIndex
-      };
-      
-      setCurrentSession(updatedSession);
-      
-      // Save the updated session
-      saveSessionToStorage(updatedSession);
-      
-      loadNextQuestion(updatedSession);
-    }
+    if (!currentSession) return;
+    generateNextQuestion(currentSession);
   };
 
   const endSession = () => {
-    if (currentSession) {
-      const finalSession = {
-        ...currentSession,
-        status: 'completed' as const
-      };
-
-      saveSessionToStorage(finalSession);
-    }
+    if (!currentSession) return;
     
+    const finalSession: StudySession = {
+      ...currentSession,
+      status: 'completed'
+    };
+    
+    setSessions(prev => prev.map(s => s.id === currentSession.id ? finalSession : s));
     navigate('/history');
   };
 
-  // Calculate the current question number based on the session's current question index
-  const getCurrentQuestionNumber = () => {
-    if (!currentSession) return 1;
-    
-    if (showFeedback) {
-      // When showing feedback, show the current question number
-      return (currentSession.currentQuestionIndex || 0) + 1;
-    } else {
-      // When asking a new question, show the next question number
-      return (currentSession.currentQuestionIndex || 0) + 1;
-    }
-  };
-
-  // Render content based on LaTeX setting
-  const renderContent = (content: string) => {
-    if (currentSession?.enableLatex) {
-      return <LaTeXRenderer content={content} />;
-    }
-    return <div className="break-words">{content}</div>;
+  const tryAgain = () => {
+    setUserAnswer('');
+    setConfidence(3);
+    setShowFeedback(false);
+    setShowElaborative(false);
+    setShowSelfExplanation(false);
+    setElaborativeAnswer('');
+    setSelfExplanationAnswer('');
   };
 
   if (!sessionStarted) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-6 sm:p-8">
-          <div className="text-center mb-6 sm:mb-8">
-            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Brain className="w-8 h-8 text-orange-600" />
+      <div className="min-h-screen" style={{ background: themeConfig.gradients.background }}>
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
+          {/* Header - Mobile Optimized */}
+          <div className="flex items-center space-x-3 mb-4 sm:mb-6">
+            <button
+              onClick={() => navigate('/')}
+              className="p-2 rounded-lg transition-colors touch-target"
+              style={{
+                backgroundColor: themeConfig.colors.surface,
+                color: themeConfig.colors.textSecondary
+              }}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold leading-tight" style={{ color: themeConfig.colors.text }}>
+                {t.startNewStudySession}
+              </h1>
+              <p className="text-sm sm:text-base mt-1" style={{ color: themeConfig.colors.textSecondary }}>
+                {t.configureSession}
+              </p>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{t.startNewStudySession}</h1>
-            <p className="text-gray-600">{t.configureSession}</p>
           </div>
 
-          <div className="space-y-6">
-            <div>
-              <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                {t.studySubject} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="subject"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder={t.subjectPlaceholder}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
-                onKeyPress={(e) => e.key === 'Enter' && startNewSession()}
-              />
-            </div>
-
-            {/* Subject Modifiers */}
-            {subjectModifiers.length > 0 && (
+          {/* Configuration Form - Mobile First Design */}
+          <div 
+            className="rounded-xl shadow-sm border p-4 sm:p-6"
+            style={{
+              backgroundColor: themeConfig.colors.surface,
+              borderColor: themeConfig.colors.border
+            }}
+          >
+            <div className="space-y-6">
+              {/* Subject Input - Enhanced Mobile UX */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="subject" className="block text-sm font-medium mb-2" style={{ color: themeConfig.colors.text }}>
+                  {t.studySubject}
+                </label>
+                <input
+                  type="text"
+                  id="subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder={t.subjectPlaceholder}
+                  className="w-full px-3 sm:px-4 py-3 border rounded-lg focus:ring-2 focus:ring-offset-2 outline-none transition-colors text-base"
+                  style={{
+                    backgroundColor: themeConfig.colors.background,
+                    borderColor: themeConfig.colors.border,
+                    color: themeConfig.colors.text,
+                    '--tw-ring-color': themeConfig.colors.primary,
+                  }}
+                />
+              </div>
+
+              {/* Subject Modifiers - Completely Redesigned for Mobile */}
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: themeConfig.colors.text }}>
                   {t.subjectModifiers}
                 </label>
+                
+                {/* Add Modifier Input - Mobile Optimized */}
                 <div className="space-y-3">
-                  {subjectModifiers.map((modifier, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <input
-                        type="text"
-                        value={modifier}
-                        onChange={(e) => updateModifier(index, e.target.value)}
-                        placeholder={language === 'pt-BR' ? 'Digite um contexto específico...' : 'Enter specific context...'}
-                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
-                      />
-                      <button
-                        onClick={() => generateModifierSuggestion(index)}
-                        disabled={!subject.trim() || !apiSettings.openaiApiKey || loadingModifierSuggestions}
-                        className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={language === 'pt-BR' ? 'Gerar sugestão com IA' : 'Generate AI suggestion'}
-                      >
-                        {loadingModifierSuggestions ? (
-                          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Lightbulb className="w-5 h-5" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => removeModifier(index)}
-                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                        title={t.removeModifier}
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      value={newModifier}
+                      onChange={(e) => setNewModifier(e.target.value)}
+                      placeholder={getRandomModifierPlaceholder(language)}
+                      className="flex-1 px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-offset-2 outline-none transition-colors text-sm sm:text-base"
+                      style={{
+                        backgroundColor: themeConfig.colors.background,
+                        borderColor: themeConfig.colors.border,
+                        color: themeConfig.colors.text,
+                        '--tw-ring-color': themeConfig.colors.primary,
+                      }}
+                      onKeyPress={(e) => e.key === 'Enter' && addModifier()}
+                    />
+                    <button
+                      onClick={addModifier}
+                      disabled={!newModifier.trim()}
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base touch-target"
+                      style={{
+                        backgroundColor: themeConfig.colors.primary,
+                        color: '#ffffff'
+                      }}
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>{t.addModifier}</span>
+                    </button>
+                  </div>
+                  
+                  {/* Modifiers List - Mobile Optimized */}
+                  {subjectModifiers.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium" style={{ color: themeConfig.colors.textMuted }}>
+                        {language === 'pt-BR' ? 'Modificadores adicionados:' : 'Added modifiers:'}
+                      </p>
+                      <div className="space-y-2">
+                        {subjectModifiers.map((modifier, index) => (
+                          <div 
+                            key={index} 
+                            className="flex items-center justify-between p-3 rounded-lg border"
+                            style={{
+                              backgroundColor: themeConfig.colors.background,
+                              borderColor: themeConfig.colors.border
+                            }}
+                          >
+                            <span className="text-sm flex-1 mr-2 break-words" style={{ color: themeConfig.colors.text }}>
+                              {modifier}
+                            </span>
+                            <button
+                              onClick={() => removeModifier(index)}
+                              className="w-8 h-8 rounded-lg transition-colors touch-target flex-shrink-0 flex items-center justify-center"
+                              style={{
+                                backgroundColor: themeConfig.colors.error + '20',
+                                color: themeConfig.colors.error
+                              }}
+                              aria-label={`Remove ${modifier}`}
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Question Type - Mobile Optimized Grid */}
+              <div>
+                <label className="block text-sm font-medium mb-3" style={{ color: themeConfig.colors.text }}>
+                  {t.questionType}
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { type: 'multiple-choice', title: t.multipleChoice, desc: t.quickAssessment },
+                    { type: 'dissertative', title: t.dissertative, desc: t.deepAnalysis },
+                    { type: 'mixed', title: t.mixed, desc: t.interleavedPractice }
+                  ].map(({ type, title, desc }) => (
+                    <button
+                      key={type}
+                      onClick={() => setQuestionType(type as any)}
+                      className={`p-4 border-2 rounded-lg transition-all text-left touch-target ${
+                        questionType === type ? 'shadow-sm' : ''
+                      }`}
+                      style={{
+                        borderColor: questionType === type ? themeConfig.colors.primary : themeConfig.colors.border,
+                        backgroundColor: questionType === type ? themeConfig.colors.primary + '10' : themeConfig.colors.surface,
+                      }}
+                    >
+                      <h3 className="font-medium mb-1 text-sm sm:text-base" style={{ color: themeConfig.colors.text }}>
+                        {title}
+                      </h3>
+                      <p className="text-xs sm:text-sm" style={{ color: themeConfig.colors.textSecondary }}>
+                        {desc}
+                      </p>
+                    </button>
                   ))}
                 </div>
               </div>
-            )}
-            
-            {/* Add Modifier Button */}
-            <button
-              onClick={addModifier}
-              className="flex items-center space-x-2 text-orange-600 hover:text-orange-700 font-medium"
-            >
-              <Plus className="w-4 h-4" />
-              <span>{t.addModifier}</span>
-            </button>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                {t.questionType}
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <button
-                  onClick={() => setQuestionType('multiple-choice')}
-                  className={`p-4 border-2 rounded-lg transition-all duration-200 ${
-                    questionType === 'multiple-choice'
-                      ? 'border-orange-500 bg-orange-50'
-                      : 'border-gray-200 hover:border-orange-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-center mb-2">
-                    <List className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <h3 className="font-medium text-gray-900">{t.multipleChoice}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{t.quickAssessment}</p>
-                </button>
-
-                <button
-                  onClick={() => setQuestionType('dissertative')}
-                  className={`p-4 border-2 rounded-lg transition-all duration-200 ${
-                    questionType === 'dissertative'
-                      ? 'border-orange-500 bg-orange-50'
-                      : 'border-gray-200 hover:border-orange-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-center mb-2">
-                    <FileText className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <h3 className="font-medium text-gray-900">{t.dissertative}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{t.deepAnalysis}</p>
-                </button>
-
-                <button
-                  onClick={() => setQuestionType('mixed')}
-                  className={`p-4 border-2 rounded-lg transition-all duration-200 ${
-                    questionType === 'mixed'
-                      ? 'border-orange-500 bg-orange-50'
-                      : 'border-gray-200 hover:border-orange-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-center mb-2">
-                    <Brain className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <h3 className="font-medium text-gray-900">{t.mixed}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{t.interleavedPractice}</p>
-                </button>
-              </div>
-            </div>
-
-            {/* Visualization Options */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-medium text-blue-900 mb-4 flex items-center">
-                <Settings className="w-5 h-5 mr-2 flex-shrink-0" />
-                <span className="break-words">
-                  {language === 'pt-BR' ? 'Opções de Visualização' : 'Visualization Options'}
-                </span>
-              </h3>
-              <div className="space-y-4">
-                <label className="flex items-start space-x-3">
-                  <input
-                    type="checkbox"
-                    checked={enableLatex}
-                    onChange={(e) => setEnableLatex(e.target.checked)}
-                    className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 mt-0.5 flex-shrink-0"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <Function className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                      <span className="font-medium text-blue-900">
-                        {language === 'pt-BR' ? 'Visualização LaTeX' : 'LaTeX Visualization'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-blue-700">
-                      {language === 'pt-BR' 
-                        ? 'Renderizar equações matemáticas e fórmulas científicas com formatação LaTeX'
-                        : 'Render mathematical equations and scientific formulas with LaTeX formatting'
-                      }
-                    </p>
-                  </div>
-                </label>
-
-                <label className="flex items-start space-x-3">
-                  <input
-                    type="checkbox"
-                    checked={enableCodeVisualization}
-                    onChange={(e) => setEnableCodeVisualization(e.target.checked)}
-                    className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 mt-0.5 flex-shrink-0"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <Code className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                      <span className="font-medium text-blue-900">
-                        {language === 'pt-BR' ? 'Visualização de Código' : 'Code Visualization'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-blue-700">
-                      {language === 'pt-BR' 
-                        ? 'Incluir exemplos de código e sintaxe de programação quando relevante'
-                        : 'Include code examples and programming syntax when relevant'
-                      }
-                    </p>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            {/* Learning Techniques Settings - Only show if not remembered */}
-            {!learningPreference.rememberChoice && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
-                <h3 className="text-base sm:text-lg font-medium text-blue-900 mb-4 flex items-center">
-                  <Lightbulb className="w-5 h-5 mr-2 flex-shrink-0" />
-                  <span className="break-words">{t.learningTechniques}</span>
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  {Object.entries(learningSettings).map(([key, value]) => (
-                    <label key={key} className="flex items-center space-x-3">
+              {/* Learning Techniques - Simplified for Mobile */}
+              <div>
+                <div className="flex items-center space-x-2 mb-3">
+                  <Brain className="w-5 h-5" style={{ color: themeConfig.colors.primary }} />
+                  <label className="text-sm font-medium" style={{ color: themeConfig.colors.text }}>
+                    {t.learningTechniques}
+                  </label>
+                  <span 
+                    className="text-xs px-2 py-1 rounded-full"
+                    style={{
+                      backgroundColor: themeConfig.colors.success + '20',
+                      color: themeConfig.colors.success
+                    }}
+                  >
+                    {t.makeItStickBased}
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { key: 'spacedRepetition', label: t.spacedRepetition, desc: t.spacedRepetitionDesc },
+                    { key: 'interleaving', label: t.interleaving, desc: t.interleavingDesc },
+                    { key: 'elaborativeInterrogation', label: t.elaborativeInterrogation, desc: t.elaborativeInterrogationDesc },
+                    { key: 'retrievalPractice', label: t.retrievalPractice, desc: t.retrievalPracticeDesc }
+                  ].map(({ key, label, desc }) => (
+                    <label 
+                      key={key}
+                      className="flex items-start space-x-3 p-3 border rounded-lg cursor-pointer transition-colors touch-target"
+                      style={{
+                        borderColor: themeConfig.colors.border,
+                        backgroundColor: themeConfig.colors.background
+                      }}
+                    >
                       <input
                         type="checkbox"
-                        checked={value}
-                        onChange={(e) => setLearningSettings(prev => ({
-                          ...prev,
-                          [key]: e.target.checked
-                        }))}
-                        className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 flex-shrink-0"
+                        checked={learningSettings[key as keyof LearningSettings]}
+                        onChange={() => updateLearningSettings(key as keyof LearningSettings)}
+                        className="w-4 h-4 rounded focus:ring-2 mt-0.5 flex-shrink-0"
+                        style={{
+                          accentColor: themeConfig.colors.primary,
+                          '--tw-ring-color': themeConfig.colors.primary,
+                        }}
                       />
-                      <span className="text-sm text-blue-800 break-words">
-                        {getLearningTechniqueLabel(key)}
-                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-sm" style={{ color: themeConfig.colors.text }}>
+                          {label}
+                        </div>
+                        <div className="text-xs mt-1 leading-relaxed" style={{ color: themeConfig.colors.textSecondary }}>
+                          {desc}
+                        </div>
+                      </div>
                     </label>
                   ))}
                 </div>
-                <div className="mt-4 text-sm text-blue-700 space-y-1">
-                  <p><strong>{t.spacedRepetition}:</strong> {t.spacedRepetitionDesc}</p>
-                  <p><strong>{t.interleaving}:</strong> {t.interleavingDesc}</p>
-                  <p><strong>{t.elaborativeInterrogation}:</strong> {t.elaborativeInterrogationDesc}</p>
-                  <p><strong>{t.retrievalPractice}:</strong> {t.retrievalPracticeDesc}</p>
-                </div>
 
-                {/* Remember Choice Option */}
-                <div className="mt-4 pt-4 border-t border-blue-200">
-                  <label className="flex items-start space-x-3">
+                {/* Remember Choice - Mobile Optimized */}
+                <div 
+                  className="mt-4 p-3 border rounded-lg"
+                  style={{
+                    backgroundColor: themeConfig.colors.info + '10',
+                    borderColor: themeConfig.colors.info + '30'
+                  }}
+                >
+                  <label className="flex items-start space-x-3 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={rememberChoice}
                       onChange={(e) => setRememberChoice(e.target.checked)}
-                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 mt-0.5 flex-shrink-0"
+                      className="w-4 h-4 rounded focus:ring-2 mt-0.5 flex-shrink-0"
+                      style={{
+                        accentColor: themeConfig.colors.info,
+                        '--tw-ring-color': themeConfig.colors.info,
+                      }}
                     />
-                    <div>
-                      <span className="text-sm font-medium text-blue-900">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-sm" style={{ color: themeConfig.colors.info }}>
                         {t.rememberMyChoice}
-                      </span>
-                      <p className="text-xs text-blue-700 mt-1">
+                      </div>
+                      <div className="text-xs mt-1 leading-relaxed" style={{ color: themeConfig.colors.info }}>
                         {t.rememberLearningTechniques}
-                      </p>
+                      </div>
                     </div>
                   </label>
                 </div>
               </div>
-            )}
 
-            {/* Show current learning techniques if remembered */}
-            {learningPreference.rememberChoice && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base sm:text-lg font-medium text-green-900 flex items-center">
-                    <Lightbulb className="w-5 h-5 mr-2 flex-shrink-0" />
-                    <span className="break-words">{t.learningTechniques}</span>
-                  </h3>
+              {/* Start Button - Mobile Optimized */}
+              <div className="pt-4">
+                {apiSettings.openaiApiKey ? (
                   <button
-                    onClick={() => navigate('/settings')}
-                    className="text-green-700 hover:text-green-800 p-1 rounded-lg hover:bg-green-100 transition-colors"
-                    title={language === 'pt-BR' ? 'Gerenciar nas Configurações' : 'Manage in Settings'}
+                    onClick={startSession}
+                    disabled={!subject.trim()}
+                    className="w-full py-4 px-6 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center space-x-2 text-base touch-target"
+                    style={{
+                      background: themeConfig.gradients.primary,
+                      color: '#ffffff'
+                    }}
                   >
-                    <Settings className="w-4 h-4" />
+                    <Target className="w-5 h-5" />
+                    <span>{t.startEnhancedSession}</span>
                   </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {Object.entries(learningSettings).filter(([_, value]) => value).map(([key]) => (
-                    <div key={key} className="flex items-center space-x-2">
-                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      <span className="text-sm text-green-800">
-                        {getLearningTechniqueLabel(key)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-green-700 mt-3">
-                  {language === 'pt-BR' 
-                    ? 'Suas técnicas de aprendizado salvas serão usadas. Você pode alterá-las nas Configurações.'
-                    : 'Your saved learning techniques will be used. You can change them in Settings.'
-                  }
-                </p>
+                ) : (
+                  <div className="text-center">
+                    <p className="mb-4 text-sm" style={{ color: themeConfig.colors.textSecondary }}>
+                      {t.configureApiKeyFirst}
+                    </p>
+                    <button
+                      onClick={() => navigate('/settings')}
+                      className="px-6 py-3 rounded-lg font-medium transition-colors text-white"
+                      style={{ backgroundColor: themeConfig.colors.textSecondary }}
+                    >
+                      {t.settings}
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-
-            {apiSettings.model && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-sm text-green-800">
-                  <strong>{t.readyToLearn}</strong> {t.using} {apiSettings.model} {language === 'pt-BR' ? 'com técnicas de aprendizado comprovadas' : 'with proven learning techniques'}
-                </p>
-              </div>
-            )}
-
-            <button
-              onClick={startNewSession}
-              disabled={!subject.trim() || !apiSettings.openaiApiKey}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              <Brain className="w-5 h-5 mr-2 flex-shrink-0" />
-              <span className="break-words">{t.startEnhancedSession}</span>
-            </button>
-
-            {!apiSettings.openaiApiKey && (
-              <p className="text-center text-sm text-red-600">
-                {t.configureApiKeyFirst}
-              </p>
-            )}
+            </div>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-8">
-          <div className="text-center">
-            <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">{t.generatingQuestion}</p>
-            {apiSettings.model && (
-              <p className="text-sm text-gray-500 mt-2">{t.using} {apiSettings.model}</p>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!currentQuestion) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-8 text-center">
-          <p className="text-gray-600">{language === 'pt-BR' ? 'Falha ao carregar questão. Tente novamente.' : 'Failed to load question. Please try again.'}</p>
-          <button
-            onClick={() => currentSession && loadNextQuestion(currentSession)}
-            className="mt-4 bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 transition-colors"
-          >
-            {t.retry}
-          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
-      {/* Background Loading Indicator */}
-      {backgroundLoading && (
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-          <div className="flex items-center space-x-3">
-            <Loader2 className="w-4 h-4 text-purple-600 animate-spin flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm text-purple-800">
-                {language === 'pt-BR' 
-                  ? 'Carregando questões em segundo plano...'
-                  : 'Loading questions in background...'
-                }
-              </p>
-              <div className="w-full bg-purple-200 rounded-full h-1.5 mt-1">
-                <div
-                  className="bg-purple-600 h-1.5 rounded-full transition-all duration-300"
-                  style={{ width: `${preloadingProgress}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Session Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
-              {currentSession?.subject}
-            </h1>
-            {currentSession?.subjectModifiers && currentSession.subjectModifiers.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {currentSession.subjectModifiers.map((modifier, index) => (
-                  <p key={index} className="text-sm text-gray-600 truncate">
-                    {modifier}
-                  </p>
-                ))}
-              </div>
-            )}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-600 mt-2">
-              <span>{t.question} {getCurrentQuestionNumber()}</span>
-              <span className="flex items-center">
-                {currentQuestion.type === 'multiple-choice' ? (
-                  <List className="w-4 h-4 mr-1 flex-shrink-0" />
-                ) : (
-                  <FileText className="w-4 h-4 mr-1 flex-shrink-0" />
-                )}
-                <span className="truncate">{currentQuestion.type === 'multiple-choice' ? t.multipleChoice : t.dissertative}</span>
-              </span>
-              {currentQuestion.difficulty && (
-                <span className={`px-2 py-1 rounded-full text-xs ${
-                  currentQuestion.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
-                  currentQuestion.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {t[currentQuestion.difficulty as keyof typeof t] || currentQuestion.difficulty}
-                </span>
-              )}
-              {/* Visualization indicators */}
-              {currentSession?.enableLatex && (
-                <span className="flex items-center text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                  <Function className="w-3 h-3 mr-1" />
-                  LaTeX
-                </span>
-              )}
-              {currentSession?.enableCodeVisualization && (
-                <span className="flex items-center text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                  <Code className="w-3 h-3 mr-1" />
-                  Code
-                </span>
-              )}
-              {/* Preloaded questions indicator */}
-              {(currentSession?.preloadedQuestions?.length || 0) > 0 && (
-                <span className="flex items-center text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
-                  <Loader2 className="w-3 h-3 mr-1" />
-                  {currentSession?.preloadedQuestions?.length} {language === 'pt-BR' ? 'prontas' : 'ready'}
-                </span>
-              )}
-            </div>
-            {apiSettings.model && (
-              <p className="text-xs text-gray-500 mt-1">{t.using} {apiSettings.model}</p>
-            )}
-          </div>
-          <div className="text-left sm:text-right flex-shrink-0">
-            <div className="text-sm text-gray-600">{t.currentScore}</div>
-            <div className="text-xl sm:text-2xl font-bold text-orange-600">{currentSession?.score || 0}%</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Question Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-6 sm:p-8">
-        <div className="mb-6 sm:mb-8">
-          <div className="text-lg sm:text-xl font-medium text-gray-900 mb-6">
-            {renderContent(currentQuestion.question)}
-          </div>
-
-          {currentQuestion.type === 'multiple-choice' && currentQuestion.options ? (
-            <div className="space-y-3">
-              {currentQuestion.options.map((option, index) => (
-                <label
-                  key={index}
-                  className={`block p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                    selectedAnswer === index
-                      ? 'border-orange-500 bg-orange-50'
-                      : 'border-gray-200 hover:border-orange-300 hover:bg-orange-25'
-                  } ${showFeedback && index === currentQuestion.correctAnswer
-                      ? 'border-green-500 bg-green-50'
-                      : ''
-                  } ${showFeedback && selectedAnswer === index && index !== currentQuestion.correctAnswer
-                      ? 'border-red-500 bg-red-50'
-                      : ''
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      name="answer"
-                      value={index}
-                      checked={selectedAnswer === index}
-                      onChange={() => !showFeedback && setSelectedAnswer(index)}
-                      disabled={showFeedback}
-                      className="sr-only"
-                    />
-                    <div className={`w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center flex-shrink-0 ${
-                      selectedAnswer === index
-                        ? 'border-orange-500'
-                        : 'border-gray-300'
-                    }`}>
-                      {selectedAnswer === index && (
-                        <div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div>
-                      )}
+    <div className="min-h-screen" style={{ background: themeConfig.gradients.background }}>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
+        {/* Header - Mobile Optimized */}
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <div className="flex items-center space-x-3 min-w-0 flex-1">
+            <button
+              onClick={() => navigate('/history')}
+              className="p-2 rounded-lg transition-colors touch-target flex-shrink-0"
+              style={{
+                backgroundColor: themeConfig.colors.surface,
+                color: themeConfig.colors.textSecondary
+              }}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg sm:text-xl font-bold truncate" style={{ color: themeConfig.colors.text }}>
+                {currentSession?.subject}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm" style={{ color: themeConfig.colors.textSecondary }}>
+                <span>{t.using} {apiSettings.model}</span>
+                <span>•</span>
+                <span>{t.currentScore}: {currentSession?.score || 0}%</span>
+                {apiSettings.preloadQuestions && apiSettings.preloadQuestions > 0 && (
+                  <>
+                    <span>•</span>
+                    <div className="flex items-center space-x-1">
+                      <Zap className="w-3 h-3" style={{ color: themeConfig.colors.accent }} />
+                      <span style={{ color: themeConfig.colors.accent }}>
+                        {language === 'pt-BR' ? 'Smart' : 'Smart'}
+                      </span>
                     </div>
-                    <div className="text-gray-900 break-words flex-1">
-                      {renderContent(option)}
-                    </div>
-                    {showFeedback && index === currentQuestion.correctAnswer && (
-                      <CheckCircle className="w-5 h-5 text-green-600 ml-auto flex-shrink-0" />
-                    )}
-                    {showFeedback && selectedAnswer === index && index !== currentQuestion.correctAnswer && (
-                      <XCircle className="w-5 h-5 text-red-600 ml-auto flex-shrink-0" />
-                    )}
-                  </div>
-                </label>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <textarea
-                value={dissertativeAnswer}
-                onChange={(e) => setDissertativeAnswer(e.target.value)}
-                placeholder={language === 'pt-BR' ? 'Escreva sua resposta detalhada aqui...' : 'Write your detailed answer here...'}
-                rows={8}
-                disabled={showFeedback}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors resize-none disabled:bg-gray-50"
-              />
-              <p className="text-sm text-gray-500">
-                {language === 'pt-BR' 
-                  ? 'Forneça uma resposta abrangente explicando seu raciocínio e pontos-chave. Foque no seu processo de pensamento e plano de ação.'
-                  : 'Provide a comprehensive answer explaining your reasoning and key points. Focus on your thought process and action plan.'
-                }
-                {currentSession?.enableLatex && (
-                  <span>
-                    {language === 'pt-BR' 
-                      ? ' Use LaTeX para equações matemáticas (ex: $x^2 + y^2 = z^2$ ou $$\\int_0^1 x dx$$).'
-                      : ' Use LaTeX for mathematical equations (e.g., $x^2 + y^2 = z^2$ or $$\\int_0^1 x dx$$).'
-                    }
-                  </span>
-                )}
-              </p>
-            </div>
-          )}
-
-          {/* Confidence Level */}
-          {!showFeedback && (
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                {t.confidenceQuestion}
-              </label>
-              <div className="flex items-center justify-center space-x-2 sm:space-x-4">
-                {[1, 2, 3, 4, 5].map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => setConfidenceLevel(level)}
-                    className={`w-10 h-10 rounded-full border-2 transition-all ${
-                      confidenceLevel === level
-                        ? 'border-orange-500 bg-orange-100 text-orange-700'
-                        : 'border-gray-300 hover:border-orange-300'
-                    }`}
-                  >
-                    {level}
-                  </button>
-                ))}
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-2">
-                <span>{t.notConfident}</span>
-                <span>{t.veryConfident}</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Feedback */}
-        {showFeedback && (
-          <div className={`p-4 rounded-lg mb-6 ${
-            currentQuestion.isCorrect ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-          }`}>
-            <div className="flex items-center mb-2">
-              {currentQuestion.isCorrect ? (
-                <CheckCircle className="w-5 h-5 text-green-600 mr-2 flex-shrink-0" />
-              ) : (
-                <XCircle className="w-5 h-5 text-red-600 mr-2 flex-shrink-0" />
-              )}
-              <span className={`font-medium ${
-                currentQuestion.isCorrect ? 'text-green-800' : 'text-red-800'
-              }`}>
-                {currentQuestion.isCorrect ? t.excellent : t.keepLearning}
-              </span>
-            </div>
-            
-            {currentQuestion.type === 'multiple-choice' && currentQuestion.feedback && (
-              <div className={`text-sm break-words ${
-                currentQuestion.isCorrect ? 'text-green-700' : 'text-red-700'
-              }`}>
-                {renderContent(currentQuestion.feedback)}
-              </div>
-            )}
-
-            {currentQuestion.type === 'dissertative' && (
-              <div className="space-y-3">
-                {currentQuestion.aiEvaluation && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-1">{t.aiEvaluation}</h4>
-                    <div className="text-sm text-gray-600 break-words">
-                      {renderContent(currentQuestion.aiEvaluation)}
-                    </div>
-                  </div>
-                )}
-                {currentQuestion.correctAnswerText && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-1">{t.modelAnswer}</h4>
-                    <div className="text-sm text-gray-600 break-words">
-                      {renderContent(currentQuestion.correctAnswerText)}
-                    </div>
-                  </div>
+                  </>
                 )}
               </div>
-            )}
+            </div>
           </div>
-        )}
-
-        {/* Elaborative Interrogation */}
-        {showElaborativePrompt && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h4 className="text-sm font-medium text-blue-800 mb-2 flex items-start">
-              <HelpCircle className="w-4 h-4 mr-1 mt-0.5 flex-shrink-0" />
-              <span className="break-words">{t.elaborativePrompt}</span>
-            </h4>
-            <textarea
-              value={elaborativeResponse}
-              onChange={(e) => setElaborativeResponse(e.target.value)}
-              placeholder={t.explainReasoning}
-              rows={3}
-              className="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            />
-          </div>
-        )}
-
-        {/* Self-Explanation */}
-        {showSelfExplanation && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <h4 className="text-sm font-medium text-green-800 mb-2 flex items-start">
-              <Lightbulb className="w-4 h-4 mr-1 mt-0.5 flex-shrink-0" />
-              <span className="break-words">{t.selfExplanationPrompt}</span>
-            </h4>
-            <textarea
-              value={selfExplanation}
-              onChange={(e) => setSelfExplanation(e.target.value)}
-              placeholder={t.connectKnowledge}
-              rows={3}
-              className="w-full px-3 py-2 border border-green-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-            />
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
           <button
             onClick={endSession}
-            className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors order-2 sm:order-1"
+            className="px-3 py-2 text-sm rounded-lg transition-colors touch-target flex-shrink-0"
+            style={{ color: themeConfig.colors.textSecondary }}
           >
             {t.endSession}
           </button>
-
-          <div className="flex flex-col sm:flex-row gap-3 order-1 sm:order-2">
-            {!showFeedback ? (
-              <button
-                onClick={submitAnswer}
-                disabled={
-                  (currentQuestion.type === 'multiple-choice' && selectedAnswer === null) ||
-                  (currentQuestion.type === 'dissertative' && !dissertativeAnswer.trim()) ||
-                  evaluating
-                }
-                className="bg-orange-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                {evaluating ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    {t.evaluating}
-                  </>
-                ) : (
-                  <>
-                    <Target className="w-4 h-4 mr-2" />
-                    {t.submitAnswer}
-                  </>
-                )}
-              </button>
-            ) : (
-              <div className="flex flex-col sm:flex-row gap-3">
-                {!currentQuestion.isCorrect && currentQuestion.type === 'multiple-choice' && (
-                  <button
-                    onClick={() => {
-                      setSelectedAnswer(null);
-                      setShowFeedback(false);
-                      setConfidenceLevel(3); // Reset to middle
-                    }}
-                    className="bg-gray-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors flex items-center justify-center"
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    {t.tryAgain}
-                  </button>
-                )}
-                <button
-                  onClick={nextQuestion}
-                  className="bg-orange-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-orange-700 transition-colors flex items-center justify-center"
-                >
-                  <span>{t.nextQuestion}</span>
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </button>
-              </div>
-            )}
-          </div>
         </div>
+
+        {/* Question Card - Mobile Optimized */}
+        <div 
+          className="rounded-xl shadow-sm border p-4 sm:p-6 mb-4 sm:mb-6"
+          style={{
+            backgroundColor: themeConfig.colors.surface,
+            borderColor: themeConfig.colors.border
+          }}
+        >
+          {isLoading ? (
+            <div className="text-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: themeConfig.colors.primary }} />
+              <p style={{ color: themeConfig.colors.textSecondary }}>{t.generatingQuestion}</p>
+            </div>
+          ) : currentQuestion ? (
+            <div className="space-y-6">
+              {/* Question Header - Mobile Optimized */}
+              <div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                  <h2 className="text-lg font-semibold" style={{ color: themeConfig.colors.text }}>
+                    {t.question} {(currentSession?.questions.length || 0)}
+                  </h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {currentQuestion.difficulty && (
+                      <span 
+                        className={`text-xs px-2 py-1 rounded-full font-medium`}
+                        style={{
+                          backgroundColor: currentQuestion.difficulty === 'easy' ? themeConfig.colors.success + '20' :
+                                         currentQuestion.difficulty === 'medium' ? themeConfig.colors.warning + '20' :
+                                         themeConfig.colors.error + '20',
+                          color: currentQuestion.difficulty === 'easy' ? themeConfig.colors.success :
+                                currentQuestion.difficulty === 'medium' ? themeConfig.colors.warning :
+                                themeConfig.colors.error
+                        }}
+                      >
+                        {currentQuestion.difficulty === 'easy' ? t.easy :
+                         currentQuestion.difficulty === 'medium' ? t.medium : t.hard}
+                      </span>
+                    )}
+                    <span 
+                      className="text-xs px-2 py-1 rounded-full font-medium"
+                      style={{
+                        backgroundColor: themeConfig.colors.info + '20',
+                        color: themeConfig.colors.info
+                      }}
+                    >
+                      {currentQuestion.type === 'multiple-choice' ? t.multipleChoice : t.dissertative}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="prose max-w-none">
+                  <MarkdownRenderer content={currentQuestion.question} />
+                </div>
+              </div>
+
+              {/* Answer Input - Mobile Optimized */}
+              {!showFeedback && (
+                <div className="space-y-4">
+                  {currentQuestion.type === 'multiple-choice' && currentQuestion.options ? (
+                    <div className="space-y-3">
+                      {currentQuestion.options.map((option, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setUserAnswer(index)}
+                          className={`w-full p-4 text-left border-2 rounded-lg transition-all duration-200 min-h-[60px] flex items-center justify-center touch-target ${
+                            userAnswer === index ? 'shadow-sm' : ''
+                          }`}
+                          style={{
+                            borderColor: userAnswer === index ? themeConfig.colors.primary : themeConfig.colors.border,
+                            backgroundColor: userAnswer === index ? themeConfig.colors.primary + '10' : themeConfig.colors.background,
+                          }}
+                        >
+                          <div className="flex w-full text-center items-center">
+                            <MarkdownRenderer content={option} />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div>
+                      <textarea
+                        value={userAnswer}
+                        onChange={(e) => setUserAnswer(e.target.value)}
+                        placeholder={language === 'pt-BR' ? 'Digite sua resposta aqui...' : 'Type your answer here...'}
+                        rows={6}
+                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-offset-2 outline-none transition-colors resize-none text-base"
+                        style={{
+                          backgroundColor: themeConfig.colors.background,
+                          borderColor: themeConfig.colors.border,
+                          color: themeConfig.colors.text,
+                          '--tw-ring-color': themeConfig.colors.primary,
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Confidence Scale - Completely Redesigned for Mobile */}
+                  <div>
+                    <label className="block text-sm font-medium mb-3" style={{ color: themeConfig.colors.text }}>
+                      {t.confidenceQuestion}
+                    </label>
+                    
+                    {/* Mobile-First Confidence Scale */}
+                    <div className="space-y-3">
+                      {/* Labels Row - Stacked on Mobile */}
+                      <div className="flex justify-between items-center text-xs">
+                        <span style={{ color: themeConfig.colors.textSecondary }}>
+                          {t.notConfident}
+                        </span>
+                        <span style={{ color: themeConfig.colors.textSecondary }}>
+                          {t.veryConfident}
+                        </span>
+                      </div>
+                      
+                      {/* Buttons Row - Responsive Sizing */}
+                      <div className="flex justify-center">
+                        <div className="flex space-x-1 sm:space-x-2">
+                          {[1, 2, 3, 4, 5].map((level) => (
+                            <button
+                              key={level}
+                              onClick={() => setConfidence(level)}
+                              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 transition-all touch-target text-sm sm:text-base font-medium ${
+                                confidence === level ? 'text-white' : ''
+                              }`}
+                              style={{
+                                borderColor: confidence === level ? themeConfig.colors.primary : themeConfig.colors.border,
+                                backgroundColor: confidence === level ? themeConfig.colors.primary : 'transparent',
+                                color: confidence === level ? '#ffffff' : themeConfig.colors.textSecondary,
+                                minWidth: '32px', // Ensure minimum touch target
+                                minHeight: '32px'
+                              }}
+                            >
+                              {level}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Submit Button - Mobile Optimized */}
+                  <button
+                    onClick={submitAnswer}
+                    disabled={isEvaluating || (currentQuestion.type === 'multiple-choice' ? userAnswer === '' : !userAnswer.toString().trim())}
+                    className="w-full py-4 px-6 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-base touch-target"
+                    style={{
+                      backgroundColor: themeConfig.colors.primary,
+                      color: '#ffffff'
+                    }}
+                  >
+                    {isEvaluating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>{t.evaluating}</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-5 h-5" />
+                        <span>{t.submitAnswer}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Feedback - Mobile Optimized */}
+              {showFeedback && currentQuestion && (
+                <div className="space-y-4">
+                  {/* Result */}
+                  <div 
+                    className={`p-4 rounded-lg border-2`}
+                    style={{
+                      borderColor: currentQuestion.isCorrect ? themeConfig.colors.success : themeConfig.colors.error,
+                      backgroundColor: currentQuestion.isCorrect ? themeConfig.colors.success + '10' : themeConfig.colors.error + '10',
+                    }}
+                  >
+                    <div className="flex items-center space-x-3">
+                      {currentQuestion.isCorrect ? (
+                        <CheckCircle className="w-6 h-6" style={{ color: themeConfig.colors.success }} />
+                      ) : (
+                        <XCircle className="w-6 h-6" style={{ color: themeConfig.colors.error }} />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <h3 
+                          className={`font-semibold`}
+                          style={{
+                            color: currentQuestion.isCorrect ? themeConfig.colors.success : themeConfig.colors.error
+                          }}
+                        >
+                          {currentQuestion.isCorrect ? t.excellent : t.keepLearning}
+                        </h3>
+                        {currentQuestion.feedback && (
+                          <div 
+                            className={`mt-2`}
+                            style={{
+                              color: currentQuestion.isCorrect ? themeConfig.colors.success : themeConfig.colors.error
+                            }}
+                          >
+                            <MarkdownRenderer content={currentQuestion.feedback} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* AI Evaluation for dissertative questions */}
+                  {currentQuestion.aiEvaluation && (
+                    <div 
+                      className="border rounded-lg p-4"
+                      style={{
+                        backgroundColor: themeConfig.colors.info + '10',
+                        borderColor: themeConfig.colors.info + '30'
+                      }}
+                    >
+                      <h4 className="font-medium mb-2" style={{ color: themeConfig.colors.info }}>
+                        {t.aiEvaluation}
+                      </h4>
+                      <div style={{ color: themeConfig.colors.info }}>
+                        <MarkdownRenderer content={currentQuestion.aiEvaluation} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Model Answer for dissertative questions */}
+                  {currentQuestion.type === 'dissertative' && currentQuestion.correctAnswerText && (
+                    <div 
+                      className="border rounded-lg p-4"
+                      style={{
+                        backgroundColor: themeConfig.colors.success + '10',
+                        borderColor: themeConfig.colors.success + '30'
+                      }}
+                    >
+                      <h4 className="font-medium mb-2" style={{ color: themeConfig.colors.success }}>
+                        {t.modelAnswer}
+                      </h4>
+                      <div style={{ color: themeConfig.colors.success }}>
+                        <MarkdownRenderer content={currentQuestion.correctAnswerText} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Elaborative Interrogation */}
+                  {showElaborative && elaborativeQuestion && (
+                    <div 
+                      className="border rounded-lg p-4"
+                      style={{
+                        backgroundColor: themeConfig.colors.warning + '10',
+                        borderColor: themeConfig.colors.warning + '30'
+                      }}
+                    >
+                      <h4 className="font-medium mb-2" style={{ color: themeConfig.colors.warning }}>
+                        {t.elaborativePrompt}
+                      </h4>
+                      <div className="mb-3" style={{ color: themeConfig.colors.warning }}>
+                        <MarkdownRenderer content={elaborativeQuestion} />
+                      </div>
+                      <textarea
+                        value={elaborativeAnswer}
+                        onChange={(e) => setElaborativeAnswer(e.target.value)}
+                        placeholder={t.explainReasoning}
+                        rows={3}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-offset-2 outline-none transition-colors resize-none text-sm"
+                        style={{
+                          backgroundColor: themeConfig.colors.background,
+                          borderColor: themeConfig.colors.warning + '50',
+                          color: themeConfig.colors.text,
+                          '--tw-ring-color': themeConfig.colors.warning,
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Self-Explanation */}
+                  {showSelfExplanation && (
+                    <div 
+                      className="border rounded-lg p-4"
+                      style={{
+                        backgroundColor: themeConfig.colors.accent + '10',
+                        borderColor: themeConfig.colors.accent + '30'
+                      }}
+                    >
+                      <h4 className="font-medium mb-2" style={{ color: themeConfig.colors.accent }}>
+                        {t.selfExplanationPrompt}
+                      </h4>
+                      <textarea
+                        value={selfExplanationAnswer}
+                        onChange={(e) => setSelfExplanationAnswer(e.target.value)}
+                        placeholder={t.connectKnowledge}
+                        rows={3}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-offset-2 outline-none transition-colors resize-none text-sm"
+                        style={{
+                          backgroundColor: themeConfig.colors.background,
+                          borderColor: themeConfig.colors.accent + '50',
+                          color: themeConfig.colors.text,
+                          '--tw-ring-color': themeConfig.colors.accent,
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Action Buttons - Mobile Optimized */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {!currentQuestion.isCorrect && (
+                      <button
+                        onClick={tryAgain}
+                        className="flex-1 py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 text-base touch-target"
+                        style={{
+                          backgroundColor: themeConfig.colors.textSecondary,
+                          color: '#ffffff'
+                        }}
+                      >
+                        <XCircle className="w-5 h-5" />
+                        <span>{t.tryAgain}</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={nextQuestion}
+                      className="flex-1 py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 text-base touch-target"
+                      style={{
+                        backgroundColor: themeConfig.colors.primary,
+                        color: '#ffffff'
+                      }}
+                    >
+                      <BookOpen className="w-5 h-5" />
+                      <span>{t.nextQuestion}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <BookOpen className="w-12 h-12 mx-auto mb-4" style={{ color: themeConfig.colors.textMuted }} />
+              <p style={{ color: themeConfig.colors.textSecondary }}>{t.readyToLearn}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Progress Indicator - Mobile Optimized */}
+        {currentSession && currentSession.questions.length > 0 && (
+          <div 
+            className="rounded-lg shadow-sm border p-4"
+            style={{
+              backgroundColor: themeConfig.colors.surface,
+              borderColor: themeConfig.colors.border
+            }}
+          >
+            <div className="flex items-center justify-between text-sm mb-2" style={{ color: themeConfig.colors.textSecondary }}>
+              <span>{t.currentScore}</span>
+              <span>{currentSession.score}%</span>
+            </div>
+            <div 
+              className="w-full rounded-full h-2"
+              style={{ backgroundColor: themeConfig.colors.border }}
+            >
+              <div
+                className="h-2 rounded-full transition-all duration-300"
+                style={{ 
+                  width: `${currentSession.score}%`,
+                  background: themeConfig.gradients.primary
+                }}
+              ></div>
+            </div>
+            <div className="flex items-center justify-between text-xs mt-2" style={{ color: themeConfig.colors.textMuted }}>
+              <span>{currentSession.questions.filter(q => q.isCorrect).length} {t.correctAnswers}</span>
+              <span>{currentSession.questions.length} {t.questions}</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

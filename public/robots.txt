@@ -39,5 +39,23 @@ Allow: /
 User-agent: LinkedInBot
 Allow: /
 
+# Portuguese content
+User-agent: *
+Allow: /?lang=pt-BR
+
 # Host directive
 Host: https://www.studorama.com
+
+# Additional crawling instructions
+User-agent: *
+Crawl-delay: 1
+Request-rate: 1/1s
+
+# Allow crawling of all educational content
+Allow: /study
+Allow: /history
+Allow: /settings
+Allow: /pricing
+
+# Encourage indexing of multilingual content
+Allow: /*?lang=*

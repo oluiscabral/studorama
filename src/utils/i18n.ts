@@ -292,6 +292,14 @@ export interface Translations {
   standardDesc: string;
   basicDesc: string;
   
+  // Theme Support
+  theme: string;
+  themes: string;
+  appearance: string;
+  selectTheme: string;
+  themeSettings: string;
+  customizeAppearance: string;
+  
   // Common
   loading: string;
   error: string;
@@ -390,7 +398,7 @@ const translations: Record<Language, Translations> = {
     deepAnalysis: 'Deep analysis questions',
     mixed: 'Mixed',
     interleavedPractice: 'Interleaved practice',
-    learningTechniques: 'Learning Techniques (Based on "Make It Stick")',
+    learningTechniques: 'Learning Techniques',
     makeItStickBased: 'Based on "Make It Stick"',
     spacedRepetitionDesc: 'Review questions at increasing intervals',
     interleavingDesc: 'Mix different question types for better retention',
@@ -640,6 +648,14 @@ const translations: Record<Language, Translations> = {
     standardDesc: 'Show your appreciation with a monthly contribution. Every bit helps us keep Studorama free and accessible.',
     basicDesc: 'Buy us a coffee each month! A small gesture that makes a big difference in supporting our mission.',
     
+    // Theme Support
+    theme: 'Theme',
+    themes: 'Themes',
+    appearance: 'Appearance',
+    selectTheme: 'Select Theme',
+    themeSettings: 'Theme Settings',
+    customizeAppearance: 'Customize the appearance of Studorama',
+    
     // Common
     loading: 'Loading...',
     error: 'Error',
@@ -694,7 +710,7 @@ const translations: Record<Language, Translations> = {
     deepAnalysis: 'Questões de análise profunda',
     mixed: 'Misto',
     interleavedPractice: 'Prática intercalada',
-    learningTechniques: 'Técnicas de Aprendizado (Baseado em "Make It Stick")',
+    learningTechniques: 'Técnicas de Aprendizado',
     makeItStickBased: 'Baseado em "Make It Stick"',
     spacedRepetitionDesc: 'Revisar questões em intervalos crescentes',
     interleavingDesc: 'Misturar diferentes tipos de questões para melhor retenção',
@@ -943,6 +959,14 @@ const translations: Record<Language, Translations> = {
     advancedDesc: 'Apoie o desenvolvimento do Studorama com uma contribuição mensal generosa. Nos ajude a manter e melhorar a plataforma para todos.',
     standardDesc: 'Mostre seu apreço com uma contribuição mensal. Cada bit nos ajuda a manter o Studorama gratuito e acessível.',
     basicDesc: 'Nos compre um café todo mês! Um pequeno gesto que faz uma grande diferença no apoio à nossa missão.',
+    
+    // Theme Support
+    theme: 'Tema',
+    themes: 'Temas',
+    appearance: 'Aparência',
+    selectTheme: 'Selecionar Tema',
+    themeSettings: 'Configurações de Tema',
+    customizeAppearance: 'Personalize a aparência do Studorama',
     
     // Common
     loading: 'Carregando...',

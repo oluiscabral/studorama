@@ -67,8 +67,31 @@ export function useTheme() {
    */
   const changeTheme = useCallback((newTheme: Theme) => {
     setCurrentTheme(newTheme);
-    // For theme changes, we don't need to refresh the page
-    // The useEffect above will handle the theme application
+    
+    // Use a more reliable refresh method for theme changes too
+    setTimeout(() => {
+      try {
+        // For theme changes, we can use a gentler approach
+        if (typeof window !== 'undefined' && window.location) {
+          // Add cache-busting parameter
+          const currentUrl = window.location.href;
+          const url = new URL(currentUrl);
+          url.searchParams.set('_theme_refresh', Date.now().toString());
+          
+          // Use location.replace for consistency
+          window.location.replace(url.toString());
+        }
+      } catch (error) {
+        console.error('Error during theme change refresh:', error);
+        
+        // Fallback to standard reload
+        try {
+          window.location.reload();
+        } catch (fallbackError) {
+          console.error('Theme change fallback refresh failed:', fallbackError);
+        }
+      }
+    }, 100);
   }, [setCurrentTheme]);
 
   return {

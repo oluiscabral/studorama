@@ -227,7 +227,6 @@ export interface Translations {
   resetPromptsOption: string;
   resetPromptsDescription: string;
   rememberChoice: string;
-  rememberChoiceDescription: string;
   confirmChange: string;
   cancel: string;
   languageSwitchPreferences: string;
@@ -586,7 +585,6 @@ const translations: Record<Language, Translations> = {
     resetPromptsOption: 'Reset AI prompts for the new language',
     resetPromptsDescription: 'Recommended: Automatically updates all AI prompts to match the selected language, ensuring questions and evaluations are generated in the correct language.',
     rememberChoice: 'Remember my choice',
-    rememberChoiceDescription: 'Don\'t show this dialog again when switching languages. You can change this preference in settings.',
     confirmChange: 'Confirm Change',
     cancel: 'Cancel',
     languageSwitchPreferences: 'Language Switch Preferences',
@@ -901,7 +899,6 @@ const translations: Record<Language, Translations> = {
     resetPromptsOption: 'Redefinir prompts da IA para o novo idioma',
     resetPromptsDescription: 'Recomendado: Atualiza automaticamente todos os prompts da IA para corresponder ao idioma selecionado, garantindo que as questões e avaliações sejam geradas no idioma correto.',
     rememberChoice: 'Lembrar minha escolha',
-    rememberChoiceDescription: 'Não mostrar este diálogo novamente ao trocar de idioma. Você pode alterar esta preferência nas configurações.',
     confirmChange: 'Confirmar Alteração',
     cancel: 'Cancelar',
     languageSwitchPreferences: 'Preferências de Troca de Idioma',

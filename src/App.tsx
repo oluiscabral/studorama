@@ -8,8 +8,22 @@ import SessionDetails from './components/SessionDetails';
 import Settings from './components/Settings';
 import PricingPage from './components/pricing/PricingPage';
 import SuccessPage from './components/success/SuccessPage';
+import { useApiKeyFromUrl } from './hooks/useApiKeyFromUrl';
+import { useVersionControl } from './hooks/useVersionControl';
+import LoadingScreen from './components/LoadingScreen';
 
 function App() {
+  // Initialize version control first
+  const { isReady, migrationPerformed, currentVersion } = useVersionControl();
+  
+  // Initialize API key from URL if present (after version control)
+  useApiKeyFromUrl();
+
+  // Show loading screen while version control is initializing
+  if (!isReady) {
+    return <LoadingScreen />;
+  }
+
   return (
     <Router>
       <Layout>

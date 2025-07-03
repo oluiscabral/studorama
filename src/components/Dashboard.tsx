@@ -1,8 +1,7 @@
-import React from 'react';
+import { BookOpen, ExternalLink, Heart, History, Star, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { BookOpen, History, Settings, TrendingUp, Heart, Star, ExternalLink } from 'lucide-react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useTheme } from '../hooks/useTheme';
 import { StudySession } from '../types';
 import { formatDate } from '../utils/i18n';

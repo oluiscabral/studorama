@@ -223,3 +223,13 @@ export function getVersionInfo() {
     preservedKeys: PRESERVED_STORAGE_KEYS,
   };
 }
+
+/**
+ * Force a version migration (useful for testing)
+ */
+export function forceMigration(): void {
+  console.log('Forcing version migration...');
+  clearStorageExceptPreserved();
+  setStoredVersion(APP_VERSION);
+  showMigrationNotification('0.0.0', APP_VERSION);
+}

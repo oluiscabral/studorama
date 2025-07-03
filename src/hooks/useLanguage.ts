@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
-import { Language, LanguageSwitchPreference } from '../core/types';
+import { Language } from '../core/types';
 import { detectBrowserLanguage, getTranslations } from '../core/services/i18n';
 import { STORAGE_KEYS } from '../core/config/constants';
 
@@ -12,12 +12,6 @@ export function useLanguage() {
   const [languageSettings, setLanguageSettings] = useLocalStorage<{ language: Language }>(
     STORAGE_KEYS.LANGUAGE,
     { language: detectBrowserLanguage() }
-  );
-
-  // Load language switch preferences from localStorage
-  const [languageSwitchPreference, setLanguageSwitchPreference] = useLocalStorage<LanguageSwitchPreference>(
-    STORAGE_KEYS.LANGUAGE_SWITCH_PREFERENCE,
-    { rememberChoice: false, autoResetPrompts: true }
   );
 
   // Local state for current language
@@ -65,32 +59,12 @@ export function useLanguage() {
     }, 200); // Longer delay to ensure localStorage is fully updated
   }, [setLanguageSettings]);
 
-  /**
-   * Update language switch preferences
-   */
-  const updateLanguageSwitchPreference = useCallback((preference: Partial<LanguageSwitchPreference>) => {
-    setLanguageSwitchPreference(prev => ({ ...prev, ...preference }));
-  }, [setLanguageSwitchPreference]);
-
-  /**
-   * Reset language switch preferences to defaults
-   */
-  const resetLanguageSwitchPreference = useCallback(() => {
-    setLanguageSwitchPreference({
-      rememberChoice: false,
-      autoResetPrompts: true
-    });
-  }, [setLanguageSwitchPreference]);
-
   // Get translations for current language
   const t = getTranslations(currentLanguage);
 
   return {
     language: currentLanguage,
     changeLanguage,
-    languageSwitchPreference,
-    updateLanguageSwitchPreference,
-    resetLanguageSwitchPreference,
     t
   };
 }

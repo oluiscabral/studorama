@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { X, Save, Clock, Timer, AlertTriangle, Zap } from 'lucide-react';
-import { TimerSettings } from '../types';
+import { AlertTriangle, Clock, Save, Timer, X, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
+import { TimerSettings } from '../types';
 
 interface TimerSettingsModalProps {
   timerSettings: TimerSettings;

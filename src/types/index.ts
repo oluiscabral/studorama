@@ -180,11 +180,6 @@ export interface LanguageSettings {
   language: Language;
 }
 
-export interface LanguageSwitchPreference {
-  rememberChoice: boolean;
-  autoResetPrompts: boolean;
-}
-
 // Timer preferences stored globally with auto-save
 export interface TimerPreferences {
   rememberChoice: boolean;

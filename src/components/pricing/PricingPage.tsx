@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Heart, Loader2, Crown, Coffee, BookOpen, Star, ExternalLink } from 'lucide-react';
+import { BookOpen, Coffee, Crown, ExternalLink, Heart, Loader2, Star } from 'lucide-react';
+import { useState } from 'react';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useTheme } from '../../hooks/useTheme';
 import { products } from '../../stripe-config';
@@ -9,7 +9,7 @@ export default function PricingPage() {
   const { themeConfig } = useTheme();
   const [loading, setLoading] = useState<string | null>(null);
 
-  const handleSponsor = async (priceId: string, mode: 'payment' | 'subscription') => {
+  const handleSponsor = async (priceId: string, _mode: 'payment' | 'subscription') => {
     setLoading(priceId);
     
     try {

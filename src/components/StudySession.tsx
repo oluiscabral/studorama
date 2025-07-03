@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, TrendingUp, Loader2, CheckCircle, XCircle, Brain, Lightbulb, Target, Zap, Plus, X, Play, Pause, Edit, Timer, Clock } from 'lucide-react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { ArrowLeft, BookOpen, Brain, CheckCircle, Clock, Edit, Loader2, Pause, Play, Plus, Target, Timer, X, XCircle, Zap } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useTheme } from '../hooks/useTheme';
-import { StudySession, Question, LearningSettings, APISettings, LearningTechniquesPreference, TimerSettings, TimerPreferences, SessionTimer, QuestionTimer } from '../types';
-import { generateQuestion, generateDissertativeQuestion, evaluateAnswer, generateElaborativeQuestion, generateRetrievalQuestion } from '../utils/openai';
+import { APISettings, LearningSettings, LearningTechniquesPreference, Question, QuestionTimer, SessionTimer, StudySession, TimerPreferences, TimerSettings } from '../types';
 import { getRandomModifierPlaceholder } from '../utils/i18n';
+import { evaluateAnswer, generateDissertativeQuestion, generateElaborativeQuestion, generateQuestion } from '../utils/openai';
 import MarkdownRenderer from './MarkdownRenderer';
 import SessionEditModal from './SessionEditModal';
 import TimerSettingsModal from './TimerSettingsModal';
@@ -474,8 +474,8 @@ export default function StudySessionPage() {
         isCorrect = userAnswer === currentQuestion.correctAnswer;
         feedback = isCorrect ? t.excellent : currentQuestion.correctAnswerText || '';
       } else {
+        // const fullSubject = [currentSession.subject, ...(currentSession.subjectModifiers || [])].join(' - ');
         // For dissertative questions, use AI evaluation
-        const fullSubject = [currentSession.subject, ...(currentSession.subjectModifiers || [])].join(' - ');
         aiEvaluation = await evaluateAnswer(
           currentQuestion.question,
           userAnswer.toString(),
@@ -495,16 +495,16 @@ export default function StudySessionPage() {
 
       // Complete question timer if enabled
       if (currentQuestionTimer) {
-        const endTime = new Date().toISOString();
-        const startTime = new Date(currentQuestionTimer.startTime).getTime();
-        const endTimeMs = new Date(endTime).getTime();
-        const timeSpent = endTimeMs - startTime - (currentQuestionTimer.pausedTime || 0);
+        // const endTime = new Date().toISOString();
+        // const startTime = new Date(currentQuestionTimer.startTime).getTime();
+        // const endTimeMs = new Date(endTime).getTime();
+        // const timeSpent = endTimeMs - startTime - (currentQuestionTimer.pausedTime || 0);
         
-        const completedTimer = {
-          ...currentQuestionTimer,
-          endTime,
-          timeSpent
-        };
+        // const completedTimer = {
+        //   ...currentQuestionTimer,
+        //   endTime,
+        //   timeSpent
+        // };
         
         setCurrentQuestionTimer(null);
         setQuestionTimeLeft(null);
@@ -615,7 +615,6 @@ export default function StudySessionPage() {
   const pauseSession = () => {
     if (!sessionTimer) return;
     
-    const now = new Date().toISOString();
     setIsSessionPaused(true);
     
     const updatedTimer = {

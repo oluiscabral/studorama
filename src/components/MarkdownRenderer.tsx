@@ -1,12 +1,12 @@
-import React, { CSSProperties, useMemo } from 'react';
+import 'highlight.js/styles/github.css';
+import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkBreaks from 'remark-breaks';
-import remarkMath from 'remark-math';
-import rehypeHighlight from 'rehype-highlight';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { materialDark, materialLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import 'highlight.js/styles/github.css';
+import rehypeHighlight from 'rehype-highlight';
+import remarkBreaks from 'remark-breaks';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 
 interface MarkdownRendererProps {
   content: string;
@@ -22,7 +22,7 @@ export function processMathematicalExpressions(text: string): string {
   let processed = text;
 
   // Handle fractions with improved readability
-  processed = processed.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, (match, numerator, denominator) => {
+  processed = processed.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, (_match, numerator, denominator) => {
     // Clean up the numerator and denominator
     const cleanNum = processMathematicalExpressions(numerator.replace(/\\/g, '').trim());
     const cleanDen = processMathematicalExpressions(denominator.replace(/\\/g, '').trim());
@@ -31,28 +31,28 @@ export function processMathematicalExpressions(text: string): string {
   });
 
   // Handle limits with better formatting
-  processed = processed.replace(/\\lim_\{([^}]+)\}/g, (match, subscript) => {
+  processed = processed.replace(/\\lim_\{([^}]+)\}/g, (_match, subscript) => {
     const cleanSub = subscript.replace(/\\/g, '').replace(/to/g, '→').trim();
     return `lim (${cleanSub})`;
   });
 
   // Handle integrals
-  processed = processed.replace(/\\int_\{([^}]+)\}\^\{([^}]+)\}/g, (match, lower, upper) => {
+  processed = processed.replace(/\\int_\{([^}]+)\}\^\{([^}]+)\}/g, (_match, lower, upper) => {
     return `∫ from ${lower} to ${upper}`;
   });
 
   // Handle summations
-  processed = processed.replace(/\\sum_\{([^}]+)\}\^\{([^}]+)\}/g, (match, lower, upper) => {
+  processed = processed.replace(/\\sum_\{([^}]+)\}\^\{([^}]+)\}/g, (_match, lower, upper) => {
     return `Σ (${lower} to ${upper})`;
   });
 
   // Handle square roots
-  processed = processed.replace(/\\sqrt\{([^}]+)\}/g, (match, content) => {
+  processed = processed.replace(/\\sqrt\{([^}]+)\}/g, (_match, content) => {
     return `√(${content})`;
   });
 
   // Handle powers/exponents with better formatting
-  processed = processed.replace(/\^(\d+)/g, (match, exp) => {
+  processed = processed.replace(/\^(\d+)/g, (_match, exp) => {
     const superscripts = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'];
     if (exp.length === 1 && parseInt(exp) < 10) {
       return superscripts[parseInt(exp)];
@@ -61,17 +61,17 @@ export function processMathematicalExpressions(text: string): string {
   });
 
   // Handle complex exponents
-  processed = processed.replace(/\^\{([^}]+)\}/g, (match, exp) => {
+  processed = processed.replace(/\^\{([^}]+)\}/g, (_match, exp) => {
     return `^(${exp})`;
   });
 
   // Handle subscripts
-  processed = processed.replace(/_\{([^}]+)\}/g, (match, sub) => {
+  processed = processed.replace(/_\{([^}]+)\}/g, (_match, sub) => {
     return `₍${sub}₎`;
   });
 
   // Handle simple subscripts
-  processed = processed.replace(/_(\d+)/g, (match, sub) => {
+  processed = processed.replace(/_(\d+)/g, (_match, sub) => {
     const subscripts = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
     if (sub.length === 1 && parseInt(sub) < 10) {
       return subscripts[parseInt(sub)];

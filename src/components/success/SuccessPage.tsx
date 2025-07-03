@@ -1,6 +1,5 @@
-import React from 'react';
+import { ArrowRight, CheckCircle, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, ArrowRight, Home } from 'lucide-react';
 
 export default function SuccessPage() {
   return (

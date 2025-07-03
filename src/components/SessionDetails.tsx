@@ -1,8 +1,7 @@
-import React from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, BookOpen, TrendingUp, CheckCircle, XCircle, Clock, Target } from 'lucide-react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { ArrowLeft, BookOpen, Calendar, CheckCircle, Clock, Target, TrendingUp, XCircle } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import { StudySession } from '../types';
 import { formatDate } from '../utils/i18n';
 import MarkdownRenderer from './MarkdownRenderer';

@@ -1,15 +1,14 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import Layout from './components/layout/Layout';
-import Dashboard from './components/pages/Dashboard';
-import StudySessionPage from './components/StudySession';
-import SessionHistory from './components/pages/SessionHistory';
 import LoadingScreen from './components/LoadingScreen';
-import { useApiKeyFromUrl, useVersionControl } from './hooks';
+import Dashboard from './components/pages/Dashboard';
+import SessionHistory from './components/pages/SessionHistory';
 import PricingPage from './components/pricing/PricingPage';
 import SessionDetails from './components/SessionDetails';
-import SuccessPage from './components/success/SuccessPage';
 import Settings from './components/Settings';
+import StudySessionPage from './components/StudySession';
+import SuccessPage from './components/success/SuccessPage';
+import { useApiKeyFromUrl, useVersionControl } from './hooks';
 
 function App() {
   // Initialize version control first

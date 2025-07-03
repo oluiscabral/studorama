@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2, Brain, Clock, History } from 'lucide-react';
-import { StudySession, LearningSettings, TimerSettings } from '../types';
+import { Brain, History, Plus, Save, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
+import { LearningSettings, StudySession, TimerSettings } from '../types';
 import { getRandomModifierPlaceholder } from '../utils/i18n';
 import IconButton from './ui/IconButton';
 

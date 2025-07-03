@@ -1,9 +1,8 @@
-import React from 'react';
+import { BookOpen, ExternalLink, Heart, History, Star, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { BookOpen, History, Settings, TrendingUp, Heart, Star, ExternalLink } from 'lucide-react';
-import { useLocalStorage, useLanguage, useTheme } from '../../hooks';
-import { StudySession } from '../../core/types';
 import { formatDate } from '../../core/services/i18n';
+import { StudySession } from '../../core/types';
+import { useLanguage, useLocalStorage, useTheme } from '../../hooks';
 import Logo from '../ui/Logo';
 
 export default function Dashboard() {

@@ -1,7 +1,7 @@
+import { Check, Focus, Palette, Sun, Waves, X, Zap } from 'lucide-react';
 import React, { useState } from 'react';
-import { Palette, Check, Sun, Moon, Focus, Zap, Waves, Heart, X } from 'lucide-react';
-import { useTheme, Theme, ThemeConfig } from '../hooks/useTheme';
 import { useLanguage } from '../hooks/useLanguage';
+import { Theme, ThemeConfig, useTheme } from '../hooks/useTheme';
 import IconButton from './ui/IconButton';
 
 interface ThemeSelectorProps {

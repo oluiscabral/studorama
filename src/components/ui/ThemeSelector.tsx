@@ -1,10 +1,10 @@
+import { Check, Focus, Palette, Sun, Waves, X, Zap } from 'lucide-react';
 import React, { useState } from 'react';
-import { Palette, Check, Sun, Moon, Focus, Zap, Waves, X } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
-import { useLanguage } from '../../hooks/useLanguage';
-import IconButton from './IconButton';
+import { getLocalizedCategoryName, getLocalizedThemeDescription, getLocalizedThemeName } from '../../core/services/theme/themeRegistry';
 import { ThemeCategory, ThemeConfig } from '../../core/types';
-import { getLocalizedThemeName, getLocalizedThemeDescription, getLocalizedCategoryName } from '../../core/services/theme/themeRegistry';
+import { useLanguage } from '../../hooks/useLanguage';
+import { useTheme } from '../../hooks/useTheme';
+import IconButton from './IconButton';
 
 interface ThemeSelectorProps {
   className?: string;

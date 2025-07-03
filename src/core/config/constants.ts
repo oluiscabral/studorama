@@ -3,7 +3,7 @@
  */
 
 // Current application version
-export const APP_VERSION = '1.0.6';
+export const APP_VERSION = '1.2.0';
 
 // Local storage keys
 export const STORAGE_KEYS = {

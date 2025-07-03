@@ -4,11 +4,6 @@ export interface LanguageSettings {
   language: Language;
 }
 
-export interface LanguageSwitchPreference {
-  rememberChoice: boolean;
-  autoResetPrompts: boolean;
-}
-
 export interface Translations {
   // Navigation
   dashboard: string;

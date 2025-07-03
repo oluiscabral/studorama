@@ -3,7 +3,7 @@
  */
 
 // Current application version
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.0.6';
 
 // Local storage keys
 export const STORAGE_KEYS = {
@@ -40,9 +40,9 @@ export const THEME_CATEGORIES = ['standard', 'focus', 'energy', 'calm'] as const
 
 // Cache names for service worker
 export const CACHE_NAMES = {
-  STATIC: 'studorama-static-v1.0.0',
-  DYNAMIC: 'studorama-dynamic-v1.0.0',
-  MAIN: 'studorama-v1.0.0'
+  STATIC: `studorama-static-v${APP_VERSION}`,
+  DYNAMIC: `studorama-dynamic-v${APP_VERSION}`,
+  MAIN: `studorama-v${APP_VERSION}`
 };
 
 // Static files to cache

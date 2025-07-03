@@ -1,40 +1,18 @@
-import React, { useState } from 'react';
-import { Key, Save, Eye, EyeOff, ExternalLink, Bot, MessageSquare, Github, Linkedin, Brain, Globe, RefreshCw, Cloud, CheckCircle, X, Trash2, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Save, Key, Bot, Globe, Info, Trash2, RefreshCw, BookOpen, Brain, Lightbulb, Settings as SettingsIcon, Download, Upload, Cloud } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
-import { Language, LearningTechniquesPreference, LearningSettings } from '../types';
+import { Language, LearningSettings, LearningTechniquesPreference } from '../types';
 import LanguageSwitchModal from './LanguageSwitchModal';
+import DropboxSyncSettings from './dropbox/DropboxSyncSettings';
 
-const OPENAI_MODELS = [
-  { value: 'gpt-4o', label: 'gpt4oRecommended', description: 'latestMostCapable' },
-  { value: 'gpt-4o-mini', label: 'gpt4oMini', description: 'fasterCostEffective' },
-  { value: 'gpt-4-turbo', label: 'gpt4Turbo', description: 'highPerformance' },
-  { value: 'gpt-4', label: 'gpt4', description: 'previousGeneration' },
-  { value: 'gpt-3.5-turbo', label: 'gpt35Turbo', description: 'fastEconomical' },
-];
-
-const LANGUAGES: { value: Language; label: string; flag: string }[] = [
-  { value: 'en-US', label: 'English (US)', flag: '🇺🇸' },
-  { value: 'pt-BR', label: 'Português (Brasil)', flag: '🇧🇷' },
-];
-
-const getDefaultPrompts = (language: Language) => ({
-  multipleChoice: language === 'pt-BR' 
-    ? `Você é um assistente de estudos que cria questões de múltipla escolha sobre {subject}. Crie uma questão desafiadora mas justa com 4 opções. Retorne um objeto JSON com: question (string), options (array de 4 strings), correctAnswer (número 0-3), e explanation (string explicando por que a resposta correta está certa).`
-    : `You are a study assistant that creates multiple choice questions about {subject}. Create a challenging but fair question with 4 options. Return a JSON object with: question (string), options (array of 4 strings), correctAnswer (number 0-3), and explanation (string explaining why the correct answer is right).`,
-  dissertative: language === 'pt-BR'
-    ? `Você é um assistente de estudos que cria questões dissertativas sobre {subject}. Crie uma questão aberta que requer análise reflexiva e explicação. Retorne um objeto JSON com: question (string), sampleAnswer (string com uma resposta modelo abrangente), e evaluationCriteria (array de strings descrevendo o que torna uma boa resposta).`
-    : `You are a study assistant that creates dissertative questions about {subject}. Create an open-ended question that requires thoughtful analysis and explanation. Return a JSON object with: question (string), sampleAnswer (string with a comprehensive model answer), and evaluationCriteria (array of strings describing what makes a good answer).`,
-  evaluation: language === 'pt-BR'
-    ? `Você está avaliando a resposta de um estudante para uma questão dissertativa. Questão: {question}. Resposta do estudante: {userAnswer}. Resposta modelo: {modelAnswer}. Forneça feedback construtivo focando na precisão, completude e compreensão. Avalie a resposta e sugira melhorias. Seja encorajador mas honesto.`
-    : `You are evaluating a student's answer to a dissertative question. Question: {question}. Student's answer: {userAnswer}. Model answer: {modelAnswer}. Provide constructive feedback focusing on accuracy, completeness, and understanding. Rate the answer and suggest improvements. Be encouraging but honest.`,
-  elaborativePrompt: language === 'pt-BR'
-    ? `Gere uma questão de interrogação elaborativa que pergunta "por que" para ajudar o estudante a entender o raciocínio mais profundo por trás do conceito em {subject}. Foque em ajudá-los a conectar ideias e entender princípios subjacentes.`
-    : `Generate an elaborative interrogation question that asks "why" to help the student understand the deeper reasoning behind the concept in {subject}. Focus on helping them connect ideas and understand underlying principles.`,
-  retrievalPrompt: language === 'pt-BR'
-    ? `Crie uma questão de prática de recuperação sobre {subject} que teste a recordação de conceitos importantes. Isso deve ajudar a fortalecer a memória através da recordação ativa. Retorne um objeto JSON com formato apropriado para o tipo de questão.`
-    : `Create a retrieval practice question about {subject} that tests recall of important concepts. This should help strengthen memory through active recall. Return a JSON object with appropriate format for the question type.`
-});
+const DEFAULT_PROMPTS = {
+  multipleChoice: '',
+  dissertative: '',
+  evaluation: '',
+  elaborativePrompt: '',
+  retrievalPrompt: ''
+};
 
 const DEFAULT_LEARNING_SETTINGS: LearningSettings = {
   spacedRepetition: true,
@@ -53,58 +31,44 @@ const DEFAULT_LEARNING_PREFERENCE: LearningTechniquesPreference = {
 
 export default function Settings() {
   const { t, language, changeLanguage, languageSwitchPreference, updateLanguageSwitchPreference, resetLanguageSwitchPreference } = useLanguage();
-  const [apiSettings, setApiSettings] = useLocalStorage('studorama-api-settings', {
+  const [apiSettings, setApiSettings] = useLocalStorage('studorama-api-settings', { 
     openaiApiKey: '',
     model: 'gpt-4o-mini',
-    customPrompts: getDefaultPrompts(language)
+    customPrompts: DEFAULT_PROMPTS
   });
-
   const [learningPreference, setLearningPreference] = useLocalStorage<LearningTechniquesPreference>('studorama-learning-preference', DEFAULT_LEARNING_PREFERENCE);
-
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [tempApiKey, setTempApiKey] = useState(apiSettings.openaiApiKey);
-  const [tempModel, setTempModel] = useState(apiSettings.model || 'gpt-4o-mini');
-  const [tempPrompts, setTempPrompts] = useState(apiSettings.customPrompts || getDefaultPrompts(language));
-  const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'language' | 'data' | 'about'>('api');
+  const [showSaved, setShowSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'language' | 'sync' | 'about'>('api');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [pendingLanguage, setPendingLanguage] = useState<Language | null>(null);
-  const [preferencesReset, setPreferencesReset] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSave = () => {
-    setApiSettings({ 
-      openaiApiKey: tempApiKey,
-      model: tempModel,
-      customPrompts: tempPrompts
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setApiSettings(apiSettings);
+    setShowSaved(true);
+    setTimeout(() => setShowSaved(false), 2000);
   };
 
   const resetPrompts = () => {
-    const defaultPrompts = getDefaultPrompts(language);
-    setTempPrompts(defaultPrompts);
+    setApiSettings(prev => ({
+      ...prev,
+      customPrompts: DEFAULT_PROMPTS
+    }));
   };
 
   const handleLanguageChange = (newLanguage: Language) => {
     if (newLanguage === language) return;
-
-    // Check if user has remembered their choice
+    
     if (languageSwitchPreference.rememberChoice) {
-      // Apply the remembered preference
+      // Auto-reset prompts if remembered
       if (languageSwitchPreference.autoResetPrompts) {
-        const defaultPrompts = getDefaultPrompts(newLanguage);
-        setTempPrompts(defaultPrompts);
         setApiSettings(prev => ({
           ...prev,
-          customPrompts: defaultPrompts
+          customPrompts: DEFAULT_PROMPTS
         }));
       }
       changeLanguage(newLanguage);
     } else {
-      // Show modal for user to choose
+      // Show modal for user choice
       setPendingLanguage(newLanguage);
       setShowLanguageModal(true);
     }
@@ -113,64 +77,67 @@ export default function Settings() {
   const handleLanguageModalConfirm = (resetPrompts: boolean, rememberChoice: boolean) => {
     if (!pendingLanguage) return;
 
-    // Update language switch preferences if user chose to remember
-    if (rememberChoice) {
-      updateLanguageSwitchPreference({
-        rememberChoice: true,
-        autoResetPrompts: resetPrompts
-      });
-    }
-
-    // Apply language change
-    changeLanguage(pendingLanguage);
+    // Update language switch preference
+    updateLanguageSwitchPreference({
+      rememberChoice,
+      autoResetPrompts: resetPrompts
+    });
 
     // Reset prompts if requested
     if (resetPrompts) {
-      const defaultPrompts = getDefaultPrompts(pendingLanguage);
-      setTempPrompts(defaultPrompts);
       setApiSettings(prev => ({
         ...prev,
-        customPrompts: defaultPrompts
+        customPrompts: DEFAULT_PROMPTS
       }));
     }
 
+    // Change language
+    changeLanguage(pendingLanguage);
     setPendingLanguage(null);
   };
 
-  const handleResetLanguagePreferences = () => {
-    resetLanguageSwitchPreference();
-    setPreferencesReset(true);
-    setTimeout(() => setPreferencesReset(false), 3000);
+  const updateLearningSettings = (newSettings: Partial<LearningSettings>) => {
+    setLearningPreference(prev => ({
+      ...prev,
+      defaultSettings: { ...prev.defaultSettings, ...newSettings }
+    }));
   };
 
-  const updateLearningPreference = (updates: Partial<LearningTechniquesPreference>) => {
-    setLearningPreference(prev => ({ ...prev, ...updates }));
+  const toggleRememberChoice = () => {
+    setLearningPreference(prev => ({
+      ...prev,
+      rememberChoice: !prev.rememberChoice
+    }));
   };
 
-  const handleDeleteAllData = async () => {
-    setIsDeleting(true);
+  const unsetRememberChoice = () => {
+    setLearningPreference(prev => ({
+      ...prev,
+      rememberChoice: false
+    }));
+  };
+
+  const deleteAllData = () => {
+    const confirmMessage = t.deleteAllDataConfirm;
+    const warningMessage = t.deleteAllDataWarning;
     
-    // Add a small delay for better UX
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Clear all localStorage data that starts with 'studorama-'
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith('studorama-')) {
-        keysToRemove.push(key);
+    if (confirm(`${confirmMessage}\n\n${warningMessage}`)) {
+      // Clear all localStorage data that starts with 'studorama-'
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith('studorama-')) {
+          keysToRemove.push(key);
+        }
       }
+      
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      alert(t.allDataDeleted);
+      
+      // Reload the page to reset the application state
+      window.location.reload();
     }
-    keysToRemove.forEach(key => localStorage.removeItem(key));
-    
-    setShowDeleteModal(false);
-    setIsDeleting(false);
-    
-    // Show success message
-    alert(t.allDataDeleted);
-    
-    // Refresh page to reset all state
-    window.location.reload();
   };
 
   const getLearningTechniqueLabel = (key: string): string => {
@@ -190,39 +157,42 @@ export default function Settings() {
     return language === 'pt-BR' ? label.pt : label.en;
   };
 
-  const isValid = tempApiKey.trim().length > 0;
+  const tabs = [
+    { id: 'api' as const, label: t.apiConfiguration, icon: Key },
+    { id: 'prompts' as const, label: t.aiPrompts, icon: Bot },
+    { id: 'learning' as const, label: t.learningTechniquesTab, icon: Brain },
+    { id: 'language' as const, label: t.language, icon: Globe },
+    { id: 'sync' as const, label: 'Sync', icon: Cloud },
+    { id: 'about' as const, label: t.about, icon: Info },
+  ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-6xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">{t.settingsTitle}</h1>
+      <div className="text-center">
+        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <SettingsIcon className="w-8 h-8 text-orange-600" />
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{t.settingsTitle}</h1>
         <p className="text-gray-600">{t.configurePreferences}</p>
       </div>
 
       {/* Tabs */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6 overflow-x-auto">
-            {[
-              { id: 'api', label: t.apiConfiguration, icon: Key },
-              { id: 'prompts', label: t.aiPrompts, icon: MessageSquare },
-              { id: 'learning', label: t.learningTechniquesTab, icon: Brain },
-              { id: 'language', label: t.language, icon: Globe },
-              { id: 'data', label: t.dataManagement, icon: Trash2 },
-              { id: 'about', label: t.about, icon: Bot }
-            ].map(({ id, label, icon: Icon }) => (
+        <div className="border-b border-gray-100">
+          <nav className="flex space-x-1 p-1">
+            {tabs.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
-                onClick={() => setActiveTab(id as any)}
-                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                onClick={() => setActiveTab(id)}
+                className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   activeTab === id
-                    ? 'border-orange-500 text-orange-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'bg-orange-100 text-orange-700'
+                    : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                <span>{label}</span>
+                <span className="hidden sm:inline">{label}</span>
               </button>
             ))}
           </nav>
@@ -232,78 +202,96 @@ export default function Settings() {
           {/* API Configuration Tab */}
           {activeTab === 'api' && (
             <div className="space-y-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <Key className="w-5 h-5 text-orange-600" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{t.apiConfiguration}</h2>
-                  <p className="text-sm text-gray-600">{t.openaiApiConfig}</p>
-                </div>
-              </div>
-
-              {/* API Key */}
               <div>
-                <label htmlFor="api-key" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.openaiApiKey}
-                </label>
-                <div className="relative">
-                  <input
-                    type={showApiKey ? 'text' : 'password'}
-                    id="api-key"
-                    value={tempApiKey}
-                    onChange={(e) => setTempApiKey(e.target.value)}
-                    placeholder="sk-..."
-                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    {showApiKey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t.openaiApiConfig}</h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t.openaiApiKey}
+                    </label>
+                    <input
+                      type="password"
+                      id="apiKey"
+                      value={apiSettings.openaiApiKey}
+                      onChange={(e) => setApiSettings(prev => ({ ...prev, openaiApiKey: e.target.value }))}
+                      placeholder="sk-..."
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
+                    />
+                    <p className="text-sm text-gray-600 mt-2">{t.apiKeyStored}</p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t.openaiModel}
+                    </label>
+                    <select
+                      id="model"
+                      value={apiSettings.model}
+                      onChange={(e) => setApiSettings(prev => ({ ...prev, model: e.target.value }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
+                    >
+                      <option value="gpt-4o">{t.gpt4oRecommended}</option>
+                      <option value="gpt-4o-mini">{t.gpt4oMini}</option>
+                      <option value="gpt-4-turbo">{t.gpt4Turbo}</option>
+                      <option value="gpt-4">{t.gpt4}</option>
+                      <option value="gpt-3.5-turbo">{t.gpt35Turbo}</option>
+                    </select>
+                    <div className="mt-2 text-sm text-gray-600">
+                      {apiSettings.model === 'gpt-4o' && t.latestMostCapable}
+                      {apiSettings.model === 'gpt-4o-mini' && t.fasterCostEffective}
+                      {apiSettings.model === 'gpt-4-turbo' && t.highPerformance}
+                      {apiSettings.model === 'gpt-4' && t.previousGeneration}
+                      {apiSettings.model === 'gpt-3.5-turbo' && t.fastEconomical}
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  {t.apiKeyStored}
-                </p>
-              </div>
 
-              {/* Model Selection */}
-              <div>
-                <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.openaiModel}
-                </label>
-                <select
-                  id="model"
-                  value={tempModel}
-                  onChange={(e) => setTempModel(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors bg-white"
-                >
-                  {OPENAI_MODELS.map((model) => (
-                    <option key={model.value} value={model.value}>
-                      {t[model.label as keyof typeof t] || model.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-2">
-                  {(() => {
-                    const selectedModel = OPENAI_MODELS.find(m => m.value === tempModel);
-                    return selectedModel ? t[selectedModel.description as keyof typeof t] || selectedModel.description : '';
-                  })()}
-                </p>
-              </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                  <h4 className="font-medium text-blue-900 mb-2">{t.howToGetApiKey}</h4>
+                  <ol className="text-blue-800 text-sm space-y-1 list-decimal list-inside">
+                    <li>
+                      {t.openaiPlatform}{' '}
+                      <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">
+                        platform.openai.com
+                      </a>
+                    </li>
+                    <li>{t.signInOrCreate}</li>
+                    <li>{t.createSecretKey}</li>
+                    <li>{t.copyPasteKey}</li>
+                  </ol>
+                </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-blue-900 mb-2">{t.howToGetApiKey}</h3>
-                <ol className="text-sm text-blue-800 space-y-1">
-                  <li>1. {t.openaiPlatform} <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:no-underline inline-flex items-center">
-                    OpenAI Platform <ExternalLink className="w-3 h-3 ml-1" />
-                  </a></li>
-                  <li>2. {t.signInOrCreate}</li>
-                  <li>3. {t.createSecretKey}</li>
-                  <li>4. {t.copyPasteKey}</li>
-                </ol>
+                {/* Configuration Status */}
+                <div className="bg-gray-50 rounded-lg p-4 mt-6">
+                  <h4 className="font-medium text-gray-900 mb-3">{t.configurationStatus}</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">{t.openaiApiKey}</span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        apiSettings.openaiApiKey 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {apiSettings.openaiApiKey ? t.configured : t.notConfigured}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">{t.selectedModel}</span>
+                      <span className="text-sm font-medium text-gray-900">{apiSettings.model}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">{t.enhancedStudyMode}</span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        apiSettings.openaiApiKey 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-orange-100 text-orange-800'
+                      }`}>
+                        {apiSettings.openaiApiKey ? t.ready : t.requiresApiKey}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -311,107 +299,70 @@ export default function Settings() {
           {/* AI Prompts Tab */}
           {activeTab === 'prompts' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <MessageSquare className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">{t.aiPromptsCustomization}</h2>
-                    <p className="text-sm text-gray-600">{t.customizeGeneration}</p>
-                  </div>
-                </div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">{t.aiPromptsCustomization}</h3>
                 <button
                   onClick={resetPrompts}
-                  className="text-sm text-gray-600 hover:text-gray-800 underline"
+                  className="flex items-center space-x-2 text-gray-600 hover:text-orange-600 transition-colors"
                 >
-                  {t.resetToDefaults}
+                  <RefreshCw className="w-4 h-4" />
+                  <span>{t.resetToDefaults}</span>
                 </button>
               </div>
+              
+              <p className="text-gray-600">{t.customizeGeneration}</p>
 
-              {/* Multiple Choice Prompt */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.multipleChoicePrompt}
-                </label>
-                <textarea
-                  value={tempPrompts.multipleChoice}
-                  onChange={(e) => setTempPrompts(prev => ({ ...prev, multipleChoice: e.target.value }))}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors resize-none"
-                  placeholder="Enter the prompt for generating multiple choice questions..."
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {t.subjectPlaceholder2}
-                </p>
-              </div>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.multipleChoicePrompt}
+                  </label>
+                  <textarea
+                    value={apiSettings.customPrompts.multipleChoice}
+                    onChange={(e) => setApiSettings(prev => ({
+                      ...prev,
+                      customPrompts: { ...prev.customPrompts, multipleChoice: e.target.value }
+                    }))}
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors resize-none"
+                    placeholder={language === 'pt-BR' ? 'Deixe em branco para usar o prompt padrão...' : 'Leave blank to use default prompt...'}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">{t.subjectPlaceholder2}</p>
+                </div>
 
-              {/* Dissertative Prompt */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.dissertativePrompt}
-                </label>
-                <textarea
-                  value={tempPrompts.dissertative}
-                  onChange={(e) => setTempPrompts(prev => ({ ...prev, dissertative: e.target.value }))}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors resize-none"
-                  placeholder="Enter the prompt for generating dissertative questions..."
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {t.subjectPlaceholder2}
-                </p>
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.dissertativePrompt}
+                  </label>
+                  <textarea
+                    value={apiSettings.customPrompts.dissertative}
+                    onChange={(e) => setApiSettings(prev => ({
+                      ...prev,
+                      customPrompts: { ...prev.customPrompts, dissertative: e.target.value }
+                    }))}
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors resize-none"
+                    placeholder={language === 'pt-BR' ? 'Deixe em branco para usar o prompt padrão...' : 'Leave blank to use default prompt...'}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">{t.subjectPlaceholder2}</p>
+                </div>
 
-              {/* Evaluation Prompt */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.answerEvaluationPrompt}
-                </label>
-                <textarea
-                  value={tempPrompts.evaluation}
-                  onChange={(e) => setTempPrompts(prev => ({ ...prev, evaluation: e.target.value }))}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors resize-none"
-                  placeholder="Enter the prompt for evaluating dissertative answers..."
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {t.questionPlaceholder}{t.userAnswerPlaceholder} {t.modelAnswerPlaceholder}
-                </p>
-              </div>
-
-              {/* Elaborative Prompt */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.elaborativeInterrogationPrompt}
-                </label>
-                <textarea
-                  value={tempPrompts.elaborativePrompt}
-                  onChange={(e) => setTempPrompts(prev => ({ ...prev, elaborativePrompt: e.target.value }))}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors resize-none"
-                  placeholder="Enter the prompt for generating elaborative questions..."
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {t.subjectPlaceholder2}
-                </p>
-              </div>
-
-              {/* Retrieval Prompt */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.retrievalPracticePrompt}
-                </label>
-                <textarea
-                  value={tempPrompts.retrievalPrompt}
-                  onChange={(e) => setTempPrompts(prev => ({ ...prev, retrievalPrompt: e.target.value }))}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors resize-none"
-                  placeholder="Enter the prompt for generating retrieval practice questions..."
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {t.subjectPlaceholder2}
-                </p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.answerEvaluationPrompt}
+                  </label>
+                  <textarea
+                    value={apiSettings.customPrompts.evaluation}
+                    onChange={(e) => setApiSettings(prev => ({
+                      ...prev,
+                      customPrompts: { ...prev.customPrompts, evaluation: e.target.value }
+                    }))}
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors resize-none"
+                    placeholder={language === 'pt-BR' ? 'Deixe em branco para usar o prompt padrão...' : 'Leave blank to use default prompt...'}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">{t.questionPlaceholder}{t.userAnswerPlaceholder}{t.modelAnswerPlaceholder}</p>
+                </div>
               </div>
             </div>
           )}
@@ -419,34 +370,25 @@ export default function Settings() {
           {/* Learning Techniques Tab */}
           {activeTab === 'learning' && (
             <div className="space-y-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{t.learningTechniquesSettings}</h2>
-                  <p className="text-sm text-gray-600">{t.manageLearningTechniques}</p>
-                </div>
-              </div>
+              <h3 className="text-lg font-semibold text-gray-900">{t.learningTechniquesSettings}</h3>
+              <p className="text-gray-600">{t.manageLearningTechniques}</p>
 
               {/* Default Learning Techniques */}
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                <h3 className="text-base font-medium text-gray-900 mb-4">{t.defaultLearningTechniques}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h4 className="text-base font-medium text-blue-900 mb-4 flex items-center">
+                  <Lightbulb className="w-5 h-5 mr-2" />
+                  {t.defaultLearningTechniques}
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {Object.entries(learningPreference.defaultSettings).map(([key, value]) => (
                     <label key={key} className="flex items-center space-x-3">
                       <input
                         type="checkbox"
                         checked={value}
-                        onChange={(e) => updateLearningPreference({
-                          defaultSettings: {
-                            ...learningPreference.defaultSettings,
-                            [key]: e.target.checked
-                          }
-                        })}
-                        className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 flex-shrink-0"
+                        onChange={(e) => updateLearningSettings({ [key]: e.target.checked })}
+                        className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
                       />
-                      <span className="text-sm text-gray-800">
+                      <span className="text-sm text-blue-800">
                         {getLearningTechniqueLabel(key)}
                       </span>
                     </label>
@@ -455,58 +397,75 @@ export default function Settings() {
               </div>
 
               {/* Remember Choice Setting */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-medium text-blue-900">{t.rememberChoiceForSessions}</h3>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={learningPreference.rememberChoice}
-                      onChange={(e) => updateLearningPreference({ rememberChoice: e.target.checked })}
-                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                  <h4 className="text-base font-medium text-gray-900">
+                    {t.rememberChoiceForSessions}
+                  </h4>
+                  <button
+                    onClick={toggleRememberChoice}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      learningPreference.rememberChoice ? 'bg-orange-600' : 'bg-gray-200'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        learningPreference.rememberChoice ? 'translate-x-6' : 'translate-x-1'
+                      }`}
                     />
-                    {learningPreference.rememberChoice && (
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                    )}
-                  </div>
+                  </button>
                 </div>
-                <p className="text-sm text-blue-800 mb-4">
+                <p className="text-sm text-gray-600 mb-4">
                   {t.rememberChoiceDescription}
                 </p>
-                
                 {learningPreference.rememberChoice && (
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-blue-900">
-                        {language === 'pt-BR' ? 'Status: Ativo' : 'Status: Active'}
-                      </span>
-                      <button
-                        onClick={() => updateLearningPreference({ rememberChoice: false })}
-                        className="text-red-600 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors"
-                        title={t.unsetRememberChoice}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <p className="text-xs text-blue-700 mt-2">
-                      {language === 'pt-BR' 
-                        ? 'Novas sessões usarão automaticamente suas técnicas de aprendizado padrão.'
-                        : 'New sessions will automatically use your default learning techniques.'
-                      }
-                    </p>
-                  </div>
+                  <button
+                    onClick={unsetRememberChoice}
+                    className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                  >
+                    {t.unsetRememberChoice}
+                  </button>
                 )}
               </div>
 
-              {/* Learning Techniques Info */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">{t.researchBasedBenefits}</h3>
-                <ul className="text-sm text-gray-700 space-y-2">
-                  <li>• <strong>{language === 'pt-BR' ? 'Retenção melhorada:' : 'Improved retention:'}</strong> {t.improvedRetention}</li>
-                  <li>• <strong>{language === 'pt-BR' ? 'Melhor transferência:' : 'Better transfer:'}</strong> {t.betterTransfer}</li>
-                  <li>• <strong>{language === 'pt-BR' ? 'Compreensão mais profunda:' : 'Deeper understanding:'}</strong> {t.deeperUnderstanding}</li>
-                  <li>• <strong>{language === 'pt-BR' ? 'Consciência metacognitiva:' : 'Metacognitive awareness:'}</strong> {t.metacognitiveAwareness}</li>
-                </ul>
+              {/* Learning Science Information */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                <h4 className="text-base font-medium text-green-900 mb-4 flex items-center">
+                  <BookOpen className="w-5 h-5 mr-2" />
+                  {t.makeItStickScience}
+                </h4>
+                <div className="space-y-4 text-sm text-green-800">
+                  <div>
+                    <h5 className="font-medium">{t.spacedRepetition}</h5>
+                    <p>{t.spacedRepetitionFull}</p>
+                    <p className="text-xs mt-1 italic">{t.spacedRepetitionHow}</p>
+                  </div>
+                  <div>
+                    <h5 className="font-medium">{t.interleaving}</h5>
+                    <p>{t.interleavingFull}</p>
+                    <p className="text-xs mt-1 italic">{t.interleavingHow}</p>
+                  </div>
+                  <div>
+                    <h5 className="font-medium">{t.elaborativeInterrogation}</h5>
+                    <p>{t.elaborativeInterrogationFull}</p>
+                    <p className="text-xs mt-1 italic">{t.elaborativeInterrogationHow}</p>
+                  </div>
+                  <div>
+                    <h5 className="font-medium">{t.retrievalPractice}</h5>
+                    <p>{t.retrievalPracticeFull}</p>
+                    <p className="text-xs mt-1 italic">{t.retrievalPracticeHow}</p>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-green-200">
+                  <h5 className="font-medium text-green-900 mb-2">{t.researchBasedBenefits}</h5>
+                  <ul className="text-sm text-green-800 space-y-1 list-disc list-inside">
+                    <li>{t.improvedRetention}</li>
+                    <li>{t.betterTransfer}</li>
+                    <li>{t.deeperUnderstanding}</li>
+                    <li>{t.metacognitiveAwareness}</li>
+                  </ul>
+                </div>
               </div>
             </div>
           )}
@@ -514,162 +473,118 @@ export default function Settings() {
           {/* Language Tab */}
           {activeTab === 'language' && (
             <div className="space-y-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Globe className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{t.language}</h2>
-                  <p className="text-sm text-gray-600">{t.selectLanguage}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {LANGUAGES.map((lang) => (
-                  <button
-                    key={lang.value}
-                    onClick={() => handleLanguageChange(lang.value)}
-                    className={`p-4 border-2 rounded-lg transition-all duration-200 text-left ${
-                      language === lang.value
-                        ? 'border-orange-500 bg-orange-50'
-                        : 'border-gray-200 hover:border-orange-300'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">{lang.flag}</span>
-                      <div>
-                        <h3 className="font-medium text-gray-900">{lang.label}</h3>
-                        <p className="text-sm text-gray-600">
-                          {lang.value === 'en-US' ? 'English (United States)' : 'Português (Brasil)'}
-                        </p>
-                      </div>
-                      {language === lang.value && (
-                        <div className="ml-auto w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        </div>
-                      )}
+              <h3 className="text-lg font-semibold text-gray-900">{t.selectLanguage}</h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  onClick={() => handleLanguageChange('en-US')}
+                  className={`p-4 border-2 rounded-lg transition-all duration-200 ${
+                    language === 'en-US'
+                      ? 'border-orange-500 bg-orange-50'
+                      : 'border-gray-200 hover:border-orange-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">🇺🇸</span>
+                    <div className="text-left">
+                      <h4 className="font-medium text-gray-900">English (US)</h4>
+                      <p className="text-sm text-gray-600">United States</p>
                     </div>
-                  </button>
-                ))}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleLanguageChange('pt-BR')}
+                  className={`p-4 border-2 rounded-lg transition-all duration-200 ${
+                    language === 'pt-BR'
+                      ? 'border-orange-500 bg-orange-50'
+                      : 'border-gray-200 hover:border-orange-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">🇧🇷</span>
+                    <div className="text-left">
+                      <h4 className="font-medium text-gray-900">Português (Brasil)</h4>
+                      <p className="text-sm text-gray-600">Brasil</p>
+                    </div>
+                  </div>
+                </button>
               </div>
 
               {/* Language Switch Preferences */}
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
-                  <RefreshCw className="w-4 h-4 mr-2" />
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                <h4 className="text-base font-medium text-gray-900 mb-4">
                   {t.languageSwitchPreferences}
-                </h3>
+                </h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  {t.manageLanguagePreferences}
+                </p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-700">{t.rememberChoice}</span>
                     <span className={`text-xs px-2 py-1 rounded-full ${
                       languageSwitchPreference.rememberChoice 
                         ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
+                        : 'bg-gray-100 text-gray-600'
                     }`}>
-                      {languageSwitchPreference.rememberChoice ? t.yes : t.no}
+                      {languageSwitchPreference.rememberChoice ? 'Yes' : 'No'}
                     </span>
                   </div>
-                  {languageSwitchPreference.rememberChoice && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">{t.resetPromptsOption}</span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        languageSwitchPreference.autoResetPrompts 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {languageSwitchPreference.autoResetPrompts ? t.yes : t.no}
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">{t.resetPromptsOption}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      languageSwitchPreference.autoResetPrompts 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {languageSwitchPreference.autoResetPrompts ? 'Yes' : 'No'}
+                    </span>
+                  </div>
                 </div>
                 <button
-                  onClick={handleResetLanguagePreferences}
-                  className="mt-3 text-sm text-orange-600 hover:text-orange-700 underline"
+                  onClick={resetLanguageSwitchPreference}
+                  className="mt-4 text-sm text-orange-600 hover:text-orange-700 font-medium"
                 >
                   {t.resetLanguagePreferences}
                 </button>
-                {preferencesReset && (
-                  <p className="text-sm text-green-600 mt-2">{t.languagePreferencesReset}</p>
-                )}
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-green-900 mb-2">
-                  {language === 'pt-BR' ? 'Detecção Automática' : 'Automatic Detection'}
-                </h3>
-                <p className="text-sm text-green-700">
-                  {language === 'pt-BR' 
-                    ? 'O idioma é detectado automaticamente baseado nas configurações do seu navegador e salvo localmente. Os prompts da IA também são atualizados automaticamente para corresponder ao idioma selecionado.'
-                    : 'Language is automatically detected based on your browser settings and saved locally. AI prompts are also automatically updated to match the selected language.'
-                  }
-                </p>
               </div>
             </div>
           )}
 
-          {/* Data Management Tab */}
-          {activeTab === 'data' && (
+          {/* Sync Tab */}
+          {activeTab === 'sync' && (
             <div className="space-y-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                  <Trash2 className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{t.dataManagement}</h2>
-                  <p className="text-sm text-gray-600">{t.manageYourData}</p>
-                </div>
-              </div>
-
-              {/* Delete All Data Section */}
-              <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-5 h-5 text-red-600" />
+              <DropboxSyncSettings />
+              
+              {/* Data Management */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <Trash2 className="w-5 h-5 text-red-600" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-red-900 mb-2">{t.deleteAllData}</h3>
-                    <p className="text-red-800 text-sm mb-4 leading-relaxed">
-                      {t.deleteAllDataDesc}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {t.dataManagement}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {t.manageYourData}
                     </p>
-                    <div className="bg-red-100 border border-red-300 rounded-lg p-3 mb-4">
-                      <p className="text-red-800 text-sm font-medium">
-                        ⚠️ {language === 'pt-BR' 
-                          ? 'Esta ação excluirá permanentemente:'
-                          : 'This action will permanently delete:'
-                        }
-                      </p>
-                      <ul className="text-red-700 text-sm mt-2 space-y-1 list-disc list-inside">
-                        <li>{language === 'pt-BR' ? 'Todas as sessões de estudo' : 'All study sessions'}</li>
-                        <li>{language === 'pt-BR' ? 'Configurações da API' : 'API settings'}</li>
-                        <li>{language === 'pt-BR' ? 'Chaves da API' : 'API keys'}</li>
-                        <li>{language === 'pt-BR' ? 'Preferências de idioma' : 'Language preferences'}</li>
-                        <li>{language === 'pt-BR' ? 'Técnicas de aprendizado' : 'Learning techniques'}</li>
-                        <li>{language === 'pt-BR' ? 'Prompts personalizados' : 'Custom prompts'}</li>
-                      </ul>
-                    </div>
-                    <button
-                      onClick={() => setShowDeleteModal(true)}
-                      className="bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      {t.deleteAllData}
-                    </button>
                   </div>
                 </div>
-              </div>
 
-              {/* Privacy Information */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-blue-900 mb-2">
-                  {language === 'pt-BR' ? '🔒 Informações de Privacidade' : '🔒 Privacy Information'}
-                </h3>
-                <p className="text-sm text-blue-700">
-                  {language === 'pt-BR' 
-                    ? 'Todos os seus dados são armazenados localmente no seu navegador. Nenhuma informação é enviada para nossos servidores. Excluir os dados aqui os remove apenas do seu dispositivo atual.'
-                    : 'All your data is stored locally in your browser. No information is sent to our servers. Deleting data here only removes it from your current device.'
-                  }
-                </p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="font-medium text-red-900 mb-2">{t.deleteAllData}</h4>
+                  <p className="text-sm text-red-700 mb-4">
+                    {t.deleteAllDataDesc}
+                  </p>
+                  <button
+                    onClick={deleteAllData}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center space-x-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>{t.deleteAllData}</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -677,203 +592,131 @@ export default function Settings() {
           {/* About Tab */}
           {activeTab === 'about' && (
             <div className="space-y-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-blue-600" />
+              <div className="text-center">
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BookOpen className="w-8 h-8 text-orange-600" />
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{t.aboutStudorama}</h2>
-                  <p className="text-sm text-gray-600">{t.aiPoweredPlatform}</p>
-                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{t.aboutStudorama}</h3>
+                <p className="text-gray-600">{t.aiPoweredPlatform}</p>
+                <p className="text-sm text-gray-500 mt-2">{t.createdBy}</p>
               </div>
 
-              <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">{t.createdBy}</h3>
-                <p className="text-gray-700 mb-4">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                <p className="text-orange-800 leading-relaxed">
                   {t.studoramaDescription}
                 </p>
-                <div className="flex items-center space-x-4">
-                  <a
-                    href="https://github.com/oluiscabral"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-gray-700 hover:text-gray-900 transition-colors"
-                  >
-                    <Github className="w-5 h-5 mr-2" />
-                    {t.github}
-                  </a>
-                  <a
-                    href="https://www.linkedin.com/in/oluiscabral"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-                  >
-                    <Linkedin className="w-5 h-5 mr-2" />
-                    {t.linkedin}
-                  </a>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Core Features */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                  <h4 className="font-semibold text-blue-900 mb-4">{t.coreFeatures}</h4>
+                  <ul className="text-blue-800 text-sm space-y-2 list-disc list-inside">
+                    <li>{t.aiGeneratedQuestions}</li>
+                    <li>{t.mixedQuestionTypes}</li>
+                    <li>{t.spacedRepetitionScheduling}</li>
+                    <li>{t.elaborativePrompts}</li>
+                    <li>{t.selfExplanationExercises}</li>
+                    <li>{t.confidenceTracking}</li>
+                    <li>{t.sessionHistoryAnalytics}</li>
+                  </ul>
+                </div>
+
+                {/* Learning Science */}
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                  <h4 className="font-semibold text-green-900 mb-4">{t.learningScience}</h4>
+                  <ul className="text-green-800 text-sm space-y-2 list-disc list-inside">
+                    <li>{t.makeItStickResearch}</li>
+                    <li>{t.retrievalPracticeImplementation}</li>
+                    <li>{t.desirableDifficultiesIntegration}</li>
+                    <li>{t.generationEffectUtilization}</li>
+                    <li>{t.metacognitiveStrategyTraining}</li>
+                    <li>{t.evidenceBasedSpacing}</li>
+                    <li>{t.cognitiveLoadOptimization}</li>
+                  </ul>
                 </div>
               </div>
 
-              {/* Open Source Section */}
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6 border border-purple-200">
-                <h3 className="text-lg font-semibold text-purple-900 mb-3 flex items-center">
-                  <Github className="w-6 h-6 mr-2" />
-                  {t.openSourceProject}
-                </h3>
-                <p className="text-purple-800 mb-4">
+              {/* Privacy & Security */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                <h4 className="font-semibold text-purple-900 mb-3">{t.privacySecurity}</h4>
+                <p className="text-purple-800 text-sm leading-relaxed">
+                  {t.privacyDescription}
+                </p>
+              </div>
+
+              {/* Scientific Foundation */}
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
+                <h4 className="font-semibold text-indigo-900 mb-3">{t.scientificFoundation}</h4>
+                <p className="text-indigo-800 text-sm leading-relaxed">
+                  {t.scientificDescription}
+                </p>
+              </div>
+
+              {/* Open Source */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                <h4 className="font-semibold text-gray-900 mb-3">{t.openSourceProject}</h4>
+                <p className="text-gray-700 text-sm leading-relaxed mb-4">
                   {t.openSourceDescription}
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-wrap gap-3">
                   <a
                     href="https://github.com/oluiscabral/studorama"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center bg-purple-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+                    className="inline-flex items-center space-x-2 bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
                   >
-                    <Github className="w-5 h-5 mr-2" />
-                    {t.viewOnGitHub}
+                    <span>{t.viewOnGitHub}</span>
                   </a>
                   <a
                     href="https://github.com/oluiscabral/studorama/issues"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center bg-white text-purple-600 border border-purple-300 px-4 py-3 rounded-lg font-medium hover:bg-purple-50 transition-colors"
+                    className="inline-flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
                   >
-                    <ExternalLink className="w-5 h-5 mr-2" />
-                    {t.reportIssue}
+                    <span>{t.reportIssue}</span>
                   </a>
                 </div>
-                <div className="mt-4 p-3 bg-white/50 rounded-lg">
-                  <p className="text-purple-700 text-sm break-all">
-                    <strong>{language === 'pt-BR' ? 'Repositório:' : 'Repository:'}</strong> https://github.com/oluiscabral/studorama
-                  </p>
+              </div>
+
+              {/* Links */}
+              <div className="text-center">
+                <div className="flex justify-center space-x-6">
+                  <a
+                    href="https://github.com/oluiscabral"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-600 hover:text-orange-600 transition-colors"
+                  >
+                    {t.github}
+                  </a>
+                  <a
+                    href="https://linkedin.com/in/oluiscabral"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-600 hover:text-orange-600 transition-colors"
+                  >
+                    {t.linkedin}
+                  </a>
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-2">{t.coreFeatures}</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• {t.aiGeneratedQuestions}</li>
-                    <li>• {t.mixedQuestionTypes}</li>
-                    <li>• {t.spacedRepetitionScheduling}</li>
-                    <li>• {t.elaborativePrompts}</li>
-                    <li>• {t.selfExplanationExercises}</li>
-                    <li>• {t.confidenceTracking}</li>
-                    <li>• {t.sessionHistoryAnalytics}</li>
-                  </ul>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-2">{t.learningScience}</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• {t.makeItStickResearch}</li>
-                    <li>• {t.retrievalPracticeImplementation}</li>
-                    <li>• {t.desirableDifficultiesIntegration}</li>
-                    <li>• {t.generationEffectUtilization}</li>
-                    <li>• {t.metacognitiveStrategyTraining}</li>
-                    <li>• {t.evidenceBasedSpacing}</li>
-                    <li>• {t.cognitiveLoadOptimization}</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-green-900 mb-2">{t.privacySecurity}</h4>
-                <p className="text-sm text-green-700">
-                  {t.privacyDescription}
-                </p>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-blue-900 mb-2">{t.scientificFoundation}</h4>
-                <p className="text-sm text-blue-700">
-                  {t.scientificDescription}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Save Button */}
-          {(activeTab === 'api' || activeTab === 'prompts') && (
-            <div className="pt-6 border-t border-gray-200">
-              <button
-                onClick={handleSave}
-                disabled={!isValid && activeTab === 'api'}
-                className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center ${
-                  (isValid || activeTab === 'prompts')
-                    ? saved
-                      ? 'bg-green-600 text-white'
-                      : 'bg-orange-600 text-white hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                <Save className="w-5 h-5 mr-2" />
-                {saved ? t.saved : t.saveSettings}
-              </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Status */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <Bot className="w-5 h-5 text-blue-600" />
-          </div>
-          <h2 className="text-lg font-semibold text-gray-900">{t.configurationStatus}</h2>
+      {/* Save Button */}
+      {(activeTab === 'api' || activeTab === 'prompts') && (
+        <div className="text-center">
+          <button
+            onClick={handleSave}
+            className="bg-orange-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all duration-200 flex items-center space-x-2 mx-auto"
+          >
+            <Save className="w-5 h-5" />
+            <span>{showSaved ? t.saved : t.saveSettings}</span>
+          </button>
         </div>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-gray-700">{t.openaiApiKey}</span>
-            <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              apiSettings.openaiApiKey
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}>
-              {apiSettings.openaiApiKey ? t.configured : t.notConfigured}
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-gray-700">{t.selectedModel}</span>
-            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              {(() => {
-                const selectedModel = OPENAI_MODELS.find(m => m.value === (apiSettings.model || 'gpt-4o-mini'));
-                return selectedModel ? t[selectedModel.label as keyof typeof t] || selectedModel.label : t.gpt4oMini;
-              })()}
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-gray-700">{t.language}</span>
-            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-              {LANGUAGES.find(l => l.value === language)?.label || 'English (US)'}
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-gray-700">{t.learningTechniquesTab}</span>
-            <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              learningPreference.rememberChoice 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-blue-100 text-blue-800'
-            }`}>
-              {learningPreference.rememberChoice 
-                ? (language === 'pt-BR' ? 'Lembradas' : 'Remembered')
-                : t.enhancedStudyMode
-              }
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-gray-700">{t.study}</span>
-            <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              apiSettings.openaiApiKey
-                ? 'bg-green-100 text-green-800'
-                : 'bg-orange-100 text-orange-800'
-            }`}>
-              {apiSettings.openaiApiKey ? t.ready : t.requiresApiKey}
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Language Switch Modal */}
       <LanguageSwitchModal
@@ -886,59 +729,6 @@ export default function Settings() {
         currentLanguage={language}
         newLanguage={pendingLanguage || language}
       />
-
-      {/* Delete All Data Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                  <AlertTriangle className="w-6 h-6 text-red-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {t.deleteAllData}
-                </h3>
-              </div>
-              
-              <div className="mb-6">
-                <p className="text-gray-700 mb-3">
-                  {t.deleteAllDataConfirm}
-                </p>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-red-800 text-sm font-medium">
-                    ⚠️ {t.deleteAllDataWarning}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  disabled={isDeleting}
-                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors disabled:opacity-50"
-                >
-                  {t.cancel}
-                </button>
-                <button
-                  onClick={handleDeleteAllData}
-                  disabled={isDeleting}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {isDeleting ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      {t.delete}
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

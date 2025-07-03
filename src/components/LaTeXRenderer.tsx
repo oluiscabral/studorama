@@ -2,65 +2,99 @@ import React from 'react';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 
-interface LaTeXRendererProps {
-  content: string;
-  className?: string;
-}
+/**
+ * LaTeXRenderer component: Parses and renders arbitrary LaTeX syntax
+ * Recognizes:
+ *  - Block math: $$...$$, \[...\]
+ *  - Inline math: $...$, \(...\)
+ *  - Escaped delimiters and nested content
+ */
+export default function LaTeXRenderer({ content, className = '' }) {
+  const TOKEN_REGEX = /\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\$(?!\$)[^$\n]+?\$|\\\([^\n]+?\\\)/g;
 
-export default function LaTeXRenderer({ content, className = '' }: LaTeXRendererProps) {
-  // Function to parse and render LaTeX content
-  const renderContent = (text: string) => {
-    // Split by block math delimiters ($$...$$)
-    const blockParts = text.split(/(\$\$[\s\S]*?\$\$)/);
-    
-    return blockParts.map((part, blockIndex) => {
-      if (part.startsWith('$$') && part.endsWith('$$')) {
-        // Block math
-        const math = part.slice(2, -2).trim();
+  const renderContent = (text) => {
+    if (!text) return null;
+
+    const elements = [];
+    let lastIndex = 0;
+    let matchIndex = 0;
+
+    const addText = (str) => {
+      // Preserve line breaks in plain text
+      str.split('\n').forEach((segment, i, arr) => {
+        elements.push(
+          <React.Fragment key={`text-${matchIndex}-${elements.length}`}>
+            {segment}
+            {i < arr.length - 1 && <br />}
+          </React.Fragment>
+        );
+      });
+    };
+
+    // Iterate through all matches of math tokens
+    let m;
+    while ((m = TOKEN_REGEX.exec(text))) {
+      const token = m[0];
+      const idx = m.index;
+
+      // Add preceding text
+      if (lastIndex < idx) {
+        addText(text.slice(lastIndex, idx));
+      }
+
+      // Determine type and strip delimiters
+      let math = '';
+      let Component = InlineMath;
+      if (token.startsWith('$$') && token.endsWith('$$')) {
+        math = token.slice(2, -2).trim();
+        Component = BlockMath;
+      } else if (token.startsWith('\\[') && token.endsWith('\\]')) {
+        math = token.slice(2, -2).trim();
+        Component = BlockMath;
+      } else if (token.startsWith('$') && token.endsWith('$')) {
+        math = token.slice(1, -1).trim();
+        Component = InlineMath;
+      } else if (token.startsWith('\\(') && token.endsWith('\\)')) {
+        math = token.slice(2, -2).trim();
+        Component = InlineMath;
+      }
+
+      // Render the math or an error block
+      if (math) {
         try {
-          return (
-            <div key={blockIndex} className="my-4 text-center">
-              <BlockMath math={math} />
-            </div>
+          elements.push(
+            Component === BlockMath ? (
+              <div key={`math-block-${matchIndex}`} className="my-4 text-center">
+                <BlockMath math={math} />
+              </div>
+            ) : (
+              <InlineMath key={`math-inline-${matchIndex}`} math={math} />
+            )
           );
-        } catch (error) {
-          console.error('LaTeX block math error:', error);
-          return (
-            <div key={blockIndex} className="my-4 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-              LaTeX Error: {part}
-            </div>
+        } catch (err) {
+          console.error('KaTeX render error:', err);
+          elements.push(
+            <span key={`math-error-${matchIndex}`} className="bg-red-50 text-red-700 px-1 rounded text-sm">
+              LaTeX Error: {token}
+            </span>
           );
         }
       } else {
-        // Split by inline math delimiters ($...$)
-        const inlineParts = part.split(/(\$[^$]+?\$)/);
-        
-        return inlineParts.map((inlinePart, inlineIndex) => {
-          if (inlinePart.startsWith('$') && inlinePart.endsWith('$') && inlinePart.length > 2) {
-            // Inline math
-            const math = inlinePart.slice(1, -1).trim();
-            try {
-              return <InlineMath key={`${blockIndex}-${inlineIndex}`} math={math} />;
-            } catch (error) {
-              console.error('LaTeX inline math error:', error);
-              return (
-                <span key={`${blockIndex}-${inlineIndex}`} className="bg-red-50 text-red-700 px-1 rounded text-sm">
-                  LaTeX Error: {inlinePart}
-                </span>
-              );
-            }
-          } else {
-            // Regular text
-            return inlinePart;
-          }
-        });
+        // Fallback if somehow no math extracted
+        addText(token);
       }
-    });
+
+      lastIndex = idx + token.length;
+      matchIndex++;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      addText(text.slice(lastIndex));
+    }
+
+    return elements;
   };
 
-  return (
-    <div className={className}>
-      {renderContent(content)}
-    </div>
-  );
+  return <div className={className}>{renderContent(content)}</div>;
 }

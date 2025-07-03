@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "dropbox": "^10.34.0",
+    "json5": "^2.2.3",
     "katex": "^0.16.9",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",

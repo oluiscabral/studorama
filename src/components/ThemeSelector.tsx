@@ -16,24 +16,9 @@ const categoryIcons = {
   calm: Waves,
 };
 
-const categoryLabels = {
-  en: {
-    standard: 'Standard',
-    focus: 'Focus',
-    energy: 'Energy',
-    calm: 'Calm',
-  },
-  pt: {
-    standard: 'Padrão',
-    focus: 'Foco',
-    energy: 'Energia',
-    calm: 'Calmo',
-  },
-};
-
 export default function ThemeSelector({ className = '', showLabel = true }: ThemeSelectorProps) {
   const { currentTheme, changeTheme, getAllThemes, getThemesByCategory, themeConfig } = useTheme();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<ThemeConfig['category'] | 'all'>('all');
 
@@ -50,9 +35,18 @@ export default function ThemeSelector({ className = '', showLabel = true }: Them
   };
 
   const getCategoryLabel = (category: ThemeConfig['category']) => {
-    return language === 'pt-BR' 
-      ? categoryLabels.pt[category] 
-      : categoryLabels.en[category];
+    switch (category) {
+      case 'standard':
+        return language === 'pt-BR' ? 'Padrão' : 'Standard';
+      case 'focus':
+        return language === 'pt-BR' ? 'Foco' : 'Focus';
+      case 'energy':
+        return language === 'pt-BR' ? 'Energia' : 'Energy';
+      case 'calm':
+        return language === 'pt-BR' ? 'Calmo' : 'Calm';
+      default:
+        return category;
+    }
   };
 
   const getThemePreview = (theme: ThemeConfig) => {
@@ -74,6 +68,44 @@ export default function ThemeSelector({ className = '', showLabel = true }: Them
     );
   };
 
+  const getLocalizedThemeName = (theme: ThemeConfig) => {
+    if (language === 'pt-BR') {
+      switch (theme.id) {
+        case 'light': return 'Claro';
+        case 'dark': return 'Escuro';
+        case 'focus': return 'Modo Foco';
+        case 'midnight': return 'Meia-noite';
+        case 'forest': return 'Floresta';
+        case 'ocean': return 'Oceano';
+        case 'sunset': return 'Pôr do Sol';
+        case 'neon': return 'Neon';
+        case 'minimal': return 'Minimalista';
+        case 'warm': return 'Quente';
+        default: return theme.name;
+      }
+    }
+    return theme.name;
+  };
+
+  const getLocalizedThemeDescription = (theme: ThemeConfig) => {
+    if (language === 'pt-BR') {
+      switch (theme.id) {
+        case 'light': return 'Limpo e brilhante para estudar durante o dia';
+        case 'dark': return 'Suave para os olhos para estudar à noite';
+        case 'focus': return 'Distrações mínimas para concentração profunda';
+        case 'midnight': return 'Tema azul profundo para sessões de estudo noturnas';
+        case 'forest': return 'Tema verde natural para aprendizado calmo e focado';
+        case 'ocean': return 'Tema azul calmante inspirado no oceano';
+        case 'sunset': return 'Tema laranja e rosa quente para sessões de estudo energizantes';
+        case 'neon': return 'Tema cyberpunk de alta energia para sessões de estudo intensas';
+        case 'minimal': return 'Design ultra-limpo para aprendizado sem distrações';
+        case 'warm': return 'Tema aconchegante e confortável para estudar relaxado';
+        default: return theme.description;
+      }
+    }
+    return theme.description;
+  };
+
   return (
     <div className={`relative ${className}`}>
       {/* Theme Selector Button */}
@@ -86,12 +118,12 @@ export default function ThemeSelector({ className = '', showLabel = true }: Them
           color: themeConfig.colors.text,
           '--tw-ring-color': themeConfig.colors.primary,
         }}
-        aria-label="Select theme"
+        aria-label={language === 'pt-BR' ? 'Selecionar tema' : 'Select theme'}
       >
         <Palette className="w-4 h-4" style={{ color: themeConfig.colors.textSecondary }} />
         {showLabel && (
           <span className="text-sm font-medium" style={{ color: themeConfig.colors.text }}>
-            {language === 'pt-BR' ? 'Tema' : 'Theme'}
+            {t.theme}
           </span>
         )}
         <div className="flex space-x-1">
@@ -129,14 +161,14 @@ export default function ThemeSelector({ className = '', showLabel = true }: Them
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold" style={{ color: themeConfig.colors.text }}>
-                  {language === 'pt-BR' ? 'Escolher Tema' : 'Choose Theme'}
+                  {t.selectTheme}
                 </h3>
                 <IconButton
                   icon={X}
                   onClick={() => setIsOpen(false)}
                   variant="ghost"
                   size="sm"
-                  aria-label="Close theme selector"
+                  aria-label={language === 'pt-BR' ? 'Fechar seletor de tema' : 'Close theme selector'}
                 />
               </div>
               
@@ -205,7 +237,7 @@ export default function ThemeSelector({ className = '', showLabel = true }: Them
                           className="font-medium text-sm"
                           style={{ color: theme.colors.text }}
                         >
-                          {theme.name}
+                          {getLocalizedThemeName(theme)}
                         </h4>
                         {currentTheme === theme.id && (
                           <Check className="w-4 h-4" style={{ color: theme.colors.primary }} />
@@ -215,7 +247,7 @@ export default function ThemeSelector({ className = '', showLabel = true }: Them
                         className="text-xs mt-1 leading-tight"
                         style={{ color: theme.colors.textMuted }}
                       >
-                        {theme.description}
+                        {getLocalizedThemeDescription(theme)}
                       </p>
                       
                       {/* Category Badge */}

@@ -710,10 +710,32 @@ export default function Settings() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium" style={{ color: themeConfig.colors.text }}>
-                          {themeConfig.name}
+                          {language === 'pt-BR' ? 
+                            (currentTheme === 'light' ? 'Claro' : 
+                             currentTheme === 'dark' ? 'Escuro' : 
+                             currentTheme === 'focus' ? 'Modo Foco' : 
+                             currentTheme === 'midnight' ? 'Meia-noite' : 
+                             currentTheme === 'forest' ? 'Floresta' : 
+                             currentTheme === 'ocean' ? 'Oceano' : 
+                             currentTheme === 'sunset' ? 'Pôr do Sol' : 
+                             currentTheme === 'neon' ? 'Neon' : 
+                             currentTheme === 'minimal' ? 'Minimalista' : 
+                             currentTheme === 'warm' ? 'Quente' : themeConfig.name) 
+                            : themeConfig.name}
                         </p>
                         <p className="text-sm" style={{ color: themeConfig.colors.textMuted }}>
-                          {themeConfig.description}
+                          {language === 'pt-BR' ? 
+                            (currentTheme === 'light' ? 'Limpo e brilhante para estudar durante o dia' : 
+                             currentTheme === 'dark' ? 'Suave para os olhos para estudar à noite' : 
+                             currentTheme === 'focus' ? 'Distrações mínimas para concentração profunda' : 
+                             currentTheme === 'midnight' ? 'Tema azul profundo para sessões de estudo noturnas' : 
+                             currentTheme === 'forest' ? 'Tema verde natural para aprendizado calmo e focado' : 
+                             currentTheme === 'ocean' ? 'Tema azul calmante inspirado no oceano' : 
+                             currentTheme === 'sunset' ? 'Tema laranja e rosa quente para sessões de estudo energizantes' : 
+                             currentTheme === 'neon' ? 'Tema cyberpunk de alta energia para sessões de estudo intensas' : 
+                             currentTheme === 'minimal' ? 'Design ultra-limpo para aprendizado sem distrações' : 
+                             currentTheme === 'warm' ? 'Tema aconchegante e confortável para estudar relaxado' : themeConfig.description) 
+                            : themeConfig.description}
                         </p>
                       </div>
                       <ThemeSelector showLabel={false} />
@@ -729,7 +751,7 @@ export default function Settings() {
                     }}
                   >
                     <h4 className="font-medium mb-4" style={{ color: themeConfig.colors.text }}>
-                      Theme Preview
+                      {language === 'pt-BR' ? 'Prévia do Tema' : 'Theme Preview'}
                     </h4>
                     
                     {/* Sample UI Elements */}
@@ -742,7 +764,7 @@ export default function Settings() {
                           color: '#ffffff'
                         }}
                       >
-                        Sample Button
+                        {language === 'pt-BR' ? 'Botão de Exemplo' : 'Sample Button'}
                       </button>
                       
                       {/* Sample Card */}
@@ -754,48 +776,51 @@ export default function Settings() {
                         }}
                       >
                         <h5 className="font-medium mb-2" style={{ color: themeConfig.colors.text }}>
-                          Sample Card
+                          {language === 'pt-BR' ? 'Cartão de Exemplo' : 'Sample Card'}
                         </h5>
                         <p className="text-sm" style={{ color: themeConfig.colors.textSecondary }}>
-                          This is how content will look in the selected theme.
+                          {language === 'pt-BR' 
+                            ? 'É assim que o conteúdo aparecerá no tema selecionado.'
+                            : 'This is how content will look in the selected theme.'
+                          }
                         </p>
                       </div>
                       
                       {/* Color Palette */}
                       <div>
                         <p className="text-sm font-medium mb-2" style={{ color: themeConfig.colors.text }}>
-                          Color Palette
+                          {language === 'pt-BR' ? 'Paleta de Cores' : 'Color Palette'}
                         </p>
                         <div className="flex space-x-2">
                           <div 
                             className="w-8 h-8 rounded border"
                             style={{ backgroundColor: themeConfig.colors.primary }}
-                            title="Primary"
+                            title={language === 'pt-BR' ? 'Primária' : 'Primary'}
                           />
                           <div 
                             className="w-8 h-8 rounded border"
                             style={{ backgroundColor: themeConfig.colors.secondary }}
-                            title="Secondary"
+                            title={language === 'pt-BR' ? 'Secundária' : 'Secondary'}
                           />
                           <div 
                             className="w-8 h-8 rounded border"
                             style={{ backgroundColor: themeConfig.colors.accent }}
-                            title="Accent"
+                            title={language === 'pt-BR' ? 'Destaque' : 'Accent'}
                           />
                           <div 
                             className="w-8 h-8 rounded border"
                             style={{ backgroundColor: themeConfig.colors.success }}
-                            title="Success"
+                            title={language === 'pt-BR' ? 'Sucesso' : 'Success'}
                           />
                           <div 
                             className="w-8 h-8 rounded border"
                             style={{ backgroundColor: themeConfig.colors.warning }}
-                            title="Warning"
+                            title={language === 'pt-BR' ? 'Aviso' : 'Warning'}
                           />
                           <div 
                             className="w-8 h-8 rounded border"
                             style={{ backgroundColor: themeConfig.colors.error }}
-                            title="Error"
+                            title={language === 'pt-BR' ? 'Erro' : 'Error'}
                           />
                         </div>
                       </div>

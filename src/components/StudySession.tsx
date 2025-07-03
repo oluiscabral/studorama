@@ -11,6 +11,7 @@ import MarkdownRenderer from './MarkdownRenderer';
 import SessionEditModal from './SessionEditModal';
 import TimerSettingsModal from './TimerSettingsModal';
 import IconButton from './ui/IconButton';
+import { isEqual } from 'lodash';
 
 const DEFAULT_LEARNING_SETTINGS: LearningSettings = {
   spacedRepetition: true,
@@ -125,9 +126,13 @@ export default function StudySessionPage() {
   // Check if we're continuing an existing session
   useEffect(() => {
     if (sessionIdFromState) {
-      const existingSession = sessions.find(s => s.id === sessionIdFromState);
-      if (existingSession && existingSession.status === 'active') {
-        if (existingSession.id === currentSession?.id) return
+      const existingSession = sessions.find((s) => s.id === sessionIdFromState);
+      if (existingSession && existingSession.status === "active") {
+        if (existingSession.id === currentSession?.id) return;
+
+        const hasSameState = isEqual(currentSession?.sessionState, existingSession.sessionState) && isEqual(currentSession?.questions, existingSession.questions) && isEqual(currentSession?.timerSettings, existingSession.timerSettings) && isEqual(currentSession?.sessionTimer, existingSession.sessionTimer);
+        if (hasSameState) return;
+
         setCurrentSession(existingSession);
         setSessionStarted(true);
         
@@ -246,9 +251,7 @@ export default function StudySessionPage() {
       // @ts-ignore
       setSessions((prev) => prev.map((s) => (s.id === currentSession.id ? updatedSession : s)));
     }
-  }, [
-    currentSession, sessionStarted, userAnswer, confidence, showFeedback, showElaborative, showSelfExplanation, elaborativeQuestion, elaborativeAnswer, selfExplanationAnswer, isEvaluating, sessionTimer, timerSettings, //setSessions
-  ]);
+  }, [currentSession, sessionStarted, userAnswer, confidence, showFeedback, showElaborative, showSelfExplanation, elaborativeQuestion, elaborativeAnswer, selfExplanationAnswer, isEvaluating, sessionTimer, timerSettings, setSessions]);
 
   // Preload questions in the background
   const preloadQuestions = useCallback(async (session: StudySession, count: number = 3) => {

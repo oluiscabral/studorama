@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { localStorage } from '../core/services';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { localStorage } from "../core/services";
+import { isEqual } from "lodash";
 
 /**
  * Custom hook for using localStorage with React state
@@ -12,20 +13,27 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   });
 
   // Function to update both state and localStorage
-  const setValue = useCallback((value: T | ((val: T) => T)) => {
-    try {
-      // Allow value to be a function for previous state pattern
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
-      
-      // Save state
-      setStoredValue(valueToStore);
-      
-      // Save to localStorage
-      localStorage.setItem(key, valueToStore);
-    } catch (error) {
-      console.error(`Error setting localStorage key "${key}":`, error);
-    }
-  }, [key, storedValue]);
+  const setValue = useCallback(
+    (value: T | ((val: T) => T)) => {
+      setStoredValue((prevStoredValue) => {
+        // Allow value to be a function for previous state pattern
+        const valueToStore = value instanceof Function ? value(prevStoredValue) : value;
+
+        // Save state
+        if (isEqual(prevStoredValue, valueToStore)) return prevStoredValue;
+
+        try {
+          // Save to localStorage
+          localStorage.setItem(key, valueToStore);
+        } catch (error) {
+          console.error(`Error setting localStorage key "${key}":`, error);
+        }
+
+        return valueToStore;
+      });
+    },
+    [key]
+  );
 
   // Sync with localStorage changes from other tabs/windows
   useEffect(() => {
@@ -41,12 +49,12 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     }
 
     // Listen for storage events
-    window.addEventListener('storage', handleStorageChange);
-    
+    window.addEventListener("storage", handleStorageChange);
+
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, [key]);
 
-  return [storedValue, setValue] as const;
+  return useMemo(() => [storedValue, setValue] as const, [storedValue, setValue]);
 }

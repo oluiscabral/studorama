@@ -5,6 +5,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
 import Logo from './Logo';
 import ThemeSelector from './ThemeSelector';
+import IconButton from './ui/IconButton';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -148,18 +149,16 @@ export default function Layout({ children }: LayoutProps) {
                 <span>{language === 'pt-BR' ? '100% Gratuito' : '100% Free'}</span>
               </div>
               
-              <button
+              <IconButton
+                icon={mobileMenuOpen ? X : Menu}
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-lg transition-colors focus-ring touch-target"
-                style={{
-                  color: themeConfig.colors.textSecondary,
-                }}
+                variant="ghost"
+                size="md"
+                className="lg:hidden"
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-menu"
                 aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-              >
-                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
+              />
             </div>
           </div>
 

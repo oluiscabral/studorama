@@ -524,16 +524,28 @@ export function useTheme() {
   const changeTheme = (newTheme: Theme) => {
     setCurrentTheme(newTheme);
     
-    // Force a page refresh to ensure all components update properly
-    // Use a small delay to allow the theme to be saved first
+    // Use a more reliable refresh method for theme changes too
     setTimeout(() => {
-      // Check if we're on mobile or desktop and use appropriate refresh method
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
-        // Modern browsers - use location.reload with force refresh
-        window.location.reload();
-      } else {
-        // Fallback for older browsers
-        window.location.href = window.location.href;
+      try {
+        // For theme changes, we can use a gentler approach
+        if (typeof window !== 'undefined' && window.location) {
+          // Add cache-busting parameter
+          const currentUrl = window.location.href;
+          const url = new URL(currentUrl);
+          url.searchParams.set('_theme_refresh', Date.now().toString());
+          
+          // Use location.replace for consistency
+          window.location.replace(url.toString());
+        }
+      } catch (error) {
+        console.error('Error during theme change refresh:', error);
+        
+        // Fallback to standard reload
+        try {
+          window.location.reload();
+        } catch (fallbackError) {
+          console.error('Theme change fallback refresh failed:', fallbackError);
+        }
       }
     }, 100);
   };

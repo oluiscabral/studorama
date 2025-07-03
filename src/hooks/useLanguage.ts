@@ -24,10 +24,35 @@ export function useLanguage() {
     setLanguageSettings({ language: newLanguage });
     setCurrentLanguage(newLanguage);
     
-    // Force page refresh to ensure all components update
+    // Use a more reliable refresh method that works better on mobile browsers
     setTimeout(() => {
-      window.location.reload();
-    }, 100);
+      try {
+        // First try the standard reload method
+        if (typeof window !== 'undefined' && window.location) {
+          // For mobile browsers, use replace to avoid navigation issues
+          const currentUrl = window.location.href;
+          const url = new URL(currentUrl);
+          
+          // Add a cache-busting parameter to ensure fresh load
+          url.searchParams.set('_refresh', Date.now().toString());
+          
+          // Use location.replace instead of reload for better mobile compatibility
+          window.location.replace(url.toString());
+        }
+      } catch (error) {
+        console.error('Error during language change refresh:', error);
+        
+        // Fallback: try standard reload
+        try {
+          window.location.reload();
+        } catch (fallbackError) {
+          console.error('Fallback refresh also failed:', fallbackError);
+          
+          // Last resort: redirect to home page
+          window.location.href = window.location.origin;
+        }
+      }
+    }, 150); // Slightly longer delay to ensure localStorage is updated
   };
 
   const updateLanguageSwitchPreference = (preference: Partial<LanguageSwitchPreference>) => {

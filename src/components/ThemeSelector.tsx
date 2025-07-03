@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Palette, Check, Sun, Moon, Focus, Zap, Waves, Heart, X } from 'lucide-react';
 import { useTheme, Theme, ThemeConfig } from '../hooks/useTheme';
 import { useLanguage } from '../hooks/useLanguage';
+import IconButton from './ui/IconButton';
 
 interface ThemeSelectorProps {
   className?: string;
@@ -130,16 +131,13 @@ export default function ThemeSelector({ className = '', showLabel = true }: Them
                 <h3 className="text-lg font-semibold" style={{ color: themeConfig.colors.text }}>
                   {language === 'pt-BR' ? 'Escolher Tema' : 'Choose Theme'}
                 </h3>
-                <button
+                <IconButton
+                  icon={X}
                   onClick={() => setIsOpen(false)}
-                  className="p-1 rounded-lg transition-colors"
-                  style={{
-                    color: themeConfig.colors.textMuted,
-                    ':hover': { backgroundColor: themeConfig.colors.surfaceHover }
-                  }}
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Close theme selector"
+                />
               </div>
               
               {/* Category Filter */}

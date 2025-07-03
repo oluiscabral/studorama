@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Key, Globe, Info, Trash2, RefreshCw, Settings as SettingsIcon, Palette } from 'lucide-react';
+import { Save, Key, Globe, Info, Trash2, RefreshCw, Settings as SettingsIcon, Palette, Timer, Clock, Volume2, Vibrate } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
-import { Language } from '../types';
+import { Language, TimerPreferences } from '../types';
 import LanguageSwitchModal from './LanguageSwitchModal';
 import ThemeSelector from './ThemeSelector';
 
@@ -15,6 +15,19 @@ const DEFAULT_PROMPTS = {
   retrievalPrompt: ''
 };
 
+const DEFAULT_TIMER_PREFERENCES: TimerPreferences = {
+  rememberChoice: false,
+  defaultSessionTimerEnabled: false,
+  defaultSessionTimer: 30,
+  defaultQuestionTimerEnabled: false,
+  defaultQuestionTimer: 60,
+  defaultAccumulateTime: false,
+  defaultShowWarnings: true,
+  defaultAutoSubmit: false,
+  soundEnabled: true,
+  vibrationEnabled: true,
+};
+
 export default function Settings() {
   const { t, language, changeLanguage, languageSwitchPreference, updateLanguageSwitchPreference, resetLanguageSwitchPreference } = useLanguage();
   const { currentTheme, themeConfig } = useTheme();
@@ -24,10 +37,20 @@ export default function Settings() {
     customPrompts: DEFAULT_PROMPTS,
     preloadQuestions: 3 // Default to 3 questions ahead
   });
+  const [timerPreferences, setTimerPreferences] = useLocalStorage<TimerPreferences>('studorama-timer-preferences', DEFAULT_TIMER_PREFERENCES);
   const [showSaved, setShowSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'api' | 'appearance' | 'language' | 'data'>('api');
+  const [activeTab, setActiveTab] = useState<'api' | 'appearance' | 'language' | 'timers' | 'data'>('api');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [pendingLanguage, setPendingLanguage] = useState<Language | null>(null);
+
+  // Auto-save timer preferences
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setTimerPreferences(timerPreferences);
+    }, 500); // Auto-save after 500ms of no changes
+
+    return () => clearTimeout(timeoutId);
+  }, [timerPreferences, setTimerPreferences]);
 
   const handleSave = () => {
     setApiSettings(apiSettings);
@@ -76,6 +99,17 @@ export default function Settings() {
     setPendingLanguage(null);
   };
 
+  const updateTimerPreference = <K extends keyof TimerPreferences>(key: K, value: TimerPreferences[K]) => {
+    setTimerPreferences(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const resetTimerPreferences = () => {
+    setTimerPreferences(DEFAULT_TIMER_PREFERENCES);
+  };
+
   const deleteAllData = () => {
     const confirmMessage = t.deleteAllDataConfirm;
     const warningMessage = t.deleteAllDataWarning;
@@ -101,6 +135,7 @@ export default function Settings() {
 
   const tabs = [
     { id: 'api' as const, label: t.apiConfiguration, icon: Key },
+    { id: 'timers' as const, label: language === 'pt-BR' ? 'Timers' : 'Timers', icon: Timer },
     { id: 'appearance' as const, label: t.appearance, icon: Palette },
     { id: 'language' as const, label: t.language, icon: Globe },
     { id: 'data' as const, label: t.dataManagement, icon: Trash2 },
@@ -134,12 +169,12 @@ export default function Settings() {
         }}
       >
         <div className="border-b" style={{ borderColor: themeConfig.colors.border }}>
-          <nav className="flex space-x-1 p-1">
+          <nav className="flex space-x-1 p-1 overflow-x-auto">
             {tabs.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                   activeTab === id
                     ? 'text-white'
                     : 'hover:opacity-80'
@@ -149,14 +184,14 @@ export default function Settings() {
                   color: activeTab === id ? '#ffffff' : themeConfig.colors.textSecondary,
                 }}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-4 h-4 flex-shrink-0" />
                 <span className="hidden sm:inline">{label}</span>
               </button>
             ))}
           </nav>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* API Configuration Tab */}
           {activeTab === 'api' && (
             <div className="space-y-6">
@@ -275,6 +310,337 @@ export default function Settings() {
                     <li>{t.copyPasteKey}</li>
                   </ol>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Timer Settings Tab */}
+          {activeTab === 'timers' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold" style={{ color: themeConfig.colors.text }}>
+                  {language === 'pt-BR' ? 'Configurações de Timer' : 'Timer Settings'}
+                </h3>
+                <button
+                  onClick={resetTimerPreferences}
+                  className="text-sm px-3 py-1 rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: themeConfig.colors.textMuted + '20',
+                    color: themeConfig.colors.textMuted
+                  }}
+                >
+                  {language === 'pt-BR' ? 'Restaurar Padrões' : 'Reset Defaults'}
+                </button>
+              </div>
+
+              {/* Remember Choice */}
+              <div 
+                className="border rounded-lg p-4"
+                style={{
+                  backgroundColor: themeConfig.colors.info + '10',
+                  borderColor: themeConfig.colors.info + '30'
+                }}
+              >
+                <label className="flex items-start space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={timerPreferences.rememberChoice}
+                    onChange={(e) => updateTimerPreference('rememberChoice', e.target.checked)}
+                    className="w-4 h-4 rounded focus:ring-2 mt-0.5 flex-shrink-0"
+                    style={{
+                      accentColor: themeConfig.colors.info,
+                      '--tw-ring-color': themeConfig.colors.info,
+                    }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-sm" style={{ color: themeConfig.colors.info }}>
+                      {language === 'pt-BR' ? 'Lembrar minhas configurações de timer' : 'Remember my timer settings'}
+                    </div>
+                    <div className="text-xs mt-1 leading-relaxed" style={{ color: themeConfig.colors.info }}>
+                      {language === 'pt-BR' 
+                        ? 'Usar essas configurações como padrão ao criar novas sessões de estudo'
+                        : 'Use these settings as defaults when creating new study sessions'
+                      }
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              {/* Session Timer */}
+              <div 
+                className="border rounded-lg p-4 sm:p-6"
+                style={{
+                  backgroundColor: themeConfig.colors.surface,
+                  borderColor: themeConfig.colors.border
+                }}
+              >
+                <div className="flex items-center space-x-3 mb-4">
+                  <Clock className="w-5 h-5" style={{ color: themeConfig.colors.info }} />
+                  <h4 className="text-lg font-semibold" style={{ color: themeConfig.colors.text }}>
+                    {language === 'pt-BR' ? 'Timer da Sessão' : 'Session Timer'}
+                  </h4>
+                </div>
+                
+                <div className="space-y-4">
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={timerPreferences.defaultSessionTimerEnabled}
+                      onChange={(e) => updateTimerPreference('defaultSessionTimerEnabled', e.target.checked)}
+                      className="w-4 h-4 rounded focus:ring-2"
+                      style={{
+                        accentColor: themeConfig.colors.primary,
+                        '--tw-ring-color': themeConfig.colors.primary,
+                      }}
+                    />
+                    <span className="font-medium" style={{ color: themeConfig.colors.text }}>
+                      {language === 'pt-BR' ? 'Habilitar timer da sessão por padrão' : 'Enable session timer by default'}
+                    </span>
+                  </label>
+                  
+                  {timerPreferences.defaultSessionTimerEnabled && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: themeConfig.colors.text }}>
+                        {language === 'pt-BR' ? 'Duração padrão da sessão (minutos)' : 'Default session duration (minutes)'}
+                      </label>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="range"
+                          min="5"
+                          max="240"
+                          step="5"
+                          value={timerPreferences.defaultSessionTimer}
+                          onChange={(e) => updateTimerPreference('defaultSessionTimer', parseInt(e.target.value))}
+                          className="flex-1"
+                          style={{ accentColor: themeConfig.colors.primary }}
+                        />
+                        <span 
+                          className="text-sm font-medium px-3 py-1 rounded-lg min-w-[60px] text-center"
+                          style={{
+                            backgroundColor: themeConfig.colors.primary + '20',
+                            color: themeConfig.colors.primary
+                          }}
+                        >
+                          {timerPreferences.defaultSessionTimer}m
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Question Timer */}
+              <div 
+                className="border rounded-lg p-4 sm:p-6"
+                style={{
+                  backgroundColor: themeConfig.colors.surface,
+                  borderColor: themeConfig.colors.border
+                }}
+              >
+                <div className="flex items-center space-x-3 mb-4">
+                  <Timer className="w-5 h-5" style={{ color: themeConfig.colors.warning }} />
+                  <h4 className="text-lg font-semibold" style={{ color: themeConfig.colors.text }}>
+                    {language === 'pt-BR' ? 'Timer por Questão' : 'Question Timer'}
+                  </h4>
+                </div>
+                
+                <div className="space-y-4">
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={timerPreferences.defaultQuestionTimerEnabled}
+                      onChange={(e) => updateTimerPreference('defaultQuestionTimerEnabled', e.target.checked)}
+                      className="w-4 h-4 rounded focus:ring-2"
+                      style={{
+                        accentColor: themeConfig.colors.primary,
+                        '--tw-ring-color': themeConfig.colors.primary,
+                      }}
+                    />
+                    <span className="font-medium" style={{ color: themeConfig.colors.text }}>
+                      {language === 'pt-BR' ? 'Habilitar timer por questão por padrão' : 'Enable question timer by default'}
+                    </span>
+                  </label>
+                  
+                  {timerPreferences.defaultQuestionTimerEnabled && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2" style={{ color: themeConfig.colors.text }}>
+                          {language === 'pt-BR' ? 'Tempo padrão por questão (segundos)' : 'Default time per question (seconds)'}
+                        </label>
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="range"
+                            min="15"
+                            max="300"
+                            step="15"
+                            value={timerPreferences.defaultQuestionTimer}
+                            onChange={(e) => updateTimerPreference('defaultQuestionTimer', parseInt(e.target.value))}
+                            className="flex-1"
+                            style={{ accentColor: themeConfig.colors.primary }}
+                          />
+                          <span 
+                            className="text-sm font-medium px-3 py-1 rounded-lg min-w-[60px] text-center"
+                            style={{
+                              backgroundColor: themeConfig.colors.warning + '20',
+                              color: themeConfig.colors.warning
+                            }}
+                          >
+                            {timerPreferences.defaultQuestionTimer}s
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <label className="flex items-start space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={timerPreferences.defaultAccumulateTime}
+                          onChange={(e) => updateTimerPreference('defaultAccumulateTime', e.target.checked)}
+                          className="w-4 h-4 rounded focus:ring-2 mt-0.5"
+                          style={{
+                            accentColor: themeConfig.colors.primary,
+                            '--tw-ring-color': themeConfig.colors.primary,
+                          }}
+                        />
+                        <div>
+                          <span className="font-medium" style={{ color: themeConfig.colors.text }}>
+                            {language === 'pt-BR' ? 'Acumular tempo entre questões' : 'Accumulate time between questions'}
+                          </span>
+                          <p className="text-sm mt-1" style={{ color: themeConfig.colors.textSecondary }}>
+                            {language === 'pt-BR' 
+                              ? 'O tempo não utilizado em uma questão será adicionado à próxima'
+                              : 'Unused time from one question will be added to the next'
+                            }
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Timer Behavior */}
+              <div 
+                className="border rounded-lg p-4 sm:p-6"
+                style={{
+                  backgroundColor: themeConfig.colors.surface,
+                  borderColor: themeConfig.colors.border
+                }}
+              >
+                <h4 className="text-lg font-semibold mb-4" style={{ color: themeConfig.colors.text }}>
+                  {language === 'pt-BR' ? 'Comportamento do Timer' : 'Timer Behavior'}
+                </h4>
+                
+                <div className="space-y-4">
+                  <label className="flex items-start space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={timerPreferences.defaultShowWarnings}
+                      onChange={(e) => updateTimerPreference('defaultShowWarnings', e.target.checked)}
+                      className="w-4 h-4 rounded focus:ring-2 mt-0.5"
+                      style={{
+                        accentColor: themeConfig.colors.primary,
+                        '--tw-ring-color': themeConfig.colors.primary,
+                      }}
+                    />
+                    <div>
+                      <span className="font-medium" style={{ color: themeConfig.colors.text }}>
+                        {language === 'pt-BR' ? 'Mostrar avisos de tempo' : 'Show timer warnings'}
+                      </span>
+                      <p className="text-sm mt-1" style={{ color: themeConfig.colors.textSecondary }}>
+                        {language === 'pt-BR' 
+                          ? 'Exibir avisos quando o tempo estiver acabando'
+                          : 'Display warnings when time is running out'
+                        }
+                      </p>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-start space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={timerPreferences.defaultAutoSubmit}
+                      onChange={(e) => updateTimerPreference('defaultAutoSubmit', e.target.checked)}
+                      className="w-4 h-4 rounded focus:ring-2 mt-0.5"
+                      style={{
+                        accentColor: themeConfig.colors.primary,
+                        '--tw-ring-color': themeConfig.colors.primary,
+                      }}
+                    />
+                    <div>
+                      <span className="font-medium" style={{ color: themeConfig.colors.text }}>
+                        {language === 'pt-BR' ? 'Enviar automaticamente quando o tempo acabar' : 'Auto-submit when time runs out'}
+                      </span>
+                      <p className="text-sm mt-1" style={{ color: themeConfig.colors.textSecondary }}>
+                        {language === 'pt-BR' 
+                          ? 'Enviar a resposta automaticamente quando o timer da questão expirar'
+                          : 'Automatically submit the answer when the question timer expires'
+                        }
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Audio & Haptic Feedback */}
+              <div 
+                className="border rounded-lg p-4 sm:p-6"
+                style={{
+                  backgroundColor: themeConfig.colors.surface,
+                  borderColor: themeConfig.colors.border
+                }}
+              >
+                <h4 className="text-lg font-semibold mb-4" style={{ color: themeConfig.colors.text }}>
+                  {language === 'pt-BR' ? 'Feedback Sensorial' : 'Sensory Feedback'}
+                </h4>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={timerPreferences.soundEnabled}
+                      onChange={(e) => updateTimerPreference('soundEnabled', e.target.checked)}
+                      className="w-4 h-4 rounded focus:ring-2"
+                      style={{
+                        accentColor: themeConfig.colors.primary,
+                        '--tw-ring-color': themeConfig.colors.primary,
+                      }}
+                    />
+                    <Volume2 className="w-4 h-4" style={{ color: themeConfig.colors.success }} />
+                    <span className="font-medium" style={{ color: themeConfig.colors.text }}>
+                      {language === 'pt-BR' ? 'Sons habilitados' : 'Sound enabled'}
+                    </span>
+                  </label>
+                  
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={timerPreferences.vibrationEnabled}
+                      onChange={(e) => updateTimerPreference('vibrationEnabled', e.target.checked)}
+                      className="w-4 h-4 rounded focus:ring-2"
+                      style={{
+                        accentColor: themeConfig.colors.primary,
+                        '--tw-ring-color': themeConfig.colors.primary,
+                      }}
+                    />
+                    <Vibrate className="w-4 h-4" style={{ color: themeConfig.colors.accent }} />
+                    <span className="font-medium" style={{ color: themeConfig.colors.text }}>
+                      {language === 'pt-BR' ? 'Vibração habilitada' : 'Vibration enabled'}
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Auto-save indicator */}
+              <div 
+                className="border rounded-lg p-3 text-center"
+                style={{
+                  backgroundColor: themeConfig.colors.success + '10',
+                  borderColor: themeConfig.colors.success + '30'
+                }}
+              >
+                <p className="text-sm" style={{ color: themeConfig.colors.success }}>
+                  ✓ {language === 'pt-BR' ? 'Configurações salvas automaticamente' : 'Settings auto-saved'}
+                </p>
               </div>
             </div>
           )}

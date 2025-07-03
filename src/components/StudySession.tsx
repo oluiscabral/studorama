@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, TrendingUp, Loader2, CheckCircle, XCircle, Brain, Lightbulb, Target, Zap, Plus, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, TrendingUp, Loader2, CheckCircle, XCircle, Brain, Lightbulb, Target, Zap, Plus, X, Play, Pause, Edit, Timer, Clock } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
-import { StudySession, Question, LearningSettings, APISettings, LearningTechniquesPreference } from '../types';
+import { StudySession, Question, LearningSettings, APISettings, LearningTechniquesPreference, TimerSettings, TimerPreferences, SessionTimer, QuestionTimer } from '../types';
 import { generateQuestion, generateDissertativeQuestion, evaluateAnswer, generateElaborativeQuestion, generateRetrievalQuestion } from '../utils/openai';
 import { getRandomModifierPlaceholder } from '../utils/i18n';
 import MarkdownRenderer from './MarkdownRenderer';
+import SessionEditModal from './SessionEditModal';
+import TimerSettingsModal from './TimerSettingsModal';
+import IconButton from './ui/IconButton';
 
 const DEFAULT_LEARNING_SETTINGS: LearningSettings = {
   spacedRepetition: true,
@@ -17,6 +20,18 @@ const DEFAULT_LEARNING_SETTINGS: LearningSettings = {
   desirableDifficulties: true,
   retrievalPractice: true,
   generationEffect: true
+};
+
+const DEFAULT_TIMER_SETTINGS: TimerSettings = {
+  sessionTimerEnabled: false,
+  sessionTimerDuration: 30,
+  questionTimerEnabled: false,
+  questionTimerDuration: 60,
+  accumulateQuestionTime: false,
+  showTimerWarnings: true,
+  autoSubmitOnTimeout: false,
+  soundEnabled: true,
+  vibrationEnabled: true,
 };
 
 export default function StudySessionPage() {
@@ -45,6 +60,18 @@ export default function StudySessionPage() {
     rememberChoice: false,
     defaultSettings: DEFAULT_LEARNING_SETTINGS
   });
+  const [timerPreferences] = useLocalStorage<TimerPreferences>('studorama-timer-preferences', {
+    rememberChoice: false,
+    defaultSessionTimerEnabled: false,
+    defaultSessionTimer: 30,
+    defaultQuestionTimerEnabled: false,
+    defaultQuestionTimer: 60,
+    defaultAccumulateTime: false,
+    defaultShowWarnings: true,
+    defaultAutoSubmit: false,
+    soundEnabled: true,
+    vibrationEnabled: true,
+  });
 
   // Session configuration state
   const [subject, setSubject] = useState('');
@@ -53,6 +80,19 @@ export default function StudySessionPage() {
   const [questionType, setQuestionType] = useState<'multiple-choice' | 'dissertative' | 'mixed'>('multiple-choice');
   const [learningSettings, setLearningSettings] = useState<LearningSettings>(learningPreference.defaultSettings);
   const [rememberChoice, setRememberChoice] = useState(learningPreference.rememberChoice);
+  const [timerSettings, setTimerSettings] = useState<TimerSettings>(
+    timerPreferences.rememberChoice ? {
+      sessionTimerEnabled: timerPreferences.defaultSessionTimerEnabled,
+      sessionTimerDuration: timerPreferences.defaultSessionTimer,
+      questionTimerEnabled: timerPreferences.defaultQuestionTimerEnabled,
+      questionTimerDuration: timerPreferences.defaultQuestionTimer,
+      accumulateQuestionTime: timerPreferences.defaultAccumulateTime,
+      showTimerWarnings: timerPreferences.defaultShowWarnings,
+      autoSubmitOnTimeout: timerPreferences.defaultAutoSubmit,
+      soundEnabled: timerPreferences.soundEnabled,
+      vibrationEnabled: timerPreferences.vibrationEnabled,
+    } : DEFAULT_TIMER_SETTINGS
+  );
 
   // Session state
   const [currentSession, setCurrentSession] = useState<StudySession | null>(null);
@@ -68,6 +108,15 @@ export default function StudySessionPage() {
   const [selfExplanationAnswer, setSelfExplanationAnswer] = useState<string>('');
   const [showSelfExplanation, setShowSelfExplanation] = useState(false);
   const [sessionStarted, setSessionStarted] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showTimerModal, setShowTimerModal] = useState(false);
+
+  // Timer state
+  const [sessionTimer, setSessionTimer] = useState<SessionTimer | null>(null);
+  const [currentQuestionTimer, setCurrentQuestionTimer] = useState<QuestionTimer | null>(null);
+  const [sessionTimeLeft, setSessionTimeLeft] = useState<number | null>(null);
+  const [questionTimeLeft, setQuestionTimeLeft] = useState<number | null>(null);
+  const [isSessionPaused, setIsSessionPaused] = useState(false);
 
   // Preloading state
   const [preloadedQuestions, setPreloadedQuestions] = useState<Question[]>([]);
@@ -81,6 +130,20 @@ export default function StudySessionPage() {
         setCurrentSession(existingSession);
         setSessionStarted(true);
         
+        // Restore session state if available
+        if (existingSession.sessionState) {
+          const state = existingSession.sessionState;
+          setUserAnswer(state.currentUserAnswer || '');
+          setConfidence(state.currentConfidence || 3);
+          setShowFeedback(state.showFeedback || false);
+          setShowElaborative(state.showElaborative || false);
+          setShowSelfExplanation(state.showSelfExplanation || false);
+          setElaborativeQuestion(state.elaborativeQuestion || '');
+          setElaborativeAnswer(state.elaborativeAnswer || '');
+          setSelfExplanationAnswer(state.selfExplanationAnswer || '');
+          setIsEvaluating(state.isEvaluating || false);
+        }
+        
         // Set the current question based on the session's current question index
         const questionIndex = existingSession.currentQuestionIndex || 0;
         if (existingSession.questions[questionIndex]) {
@@ -89,9 +152,104 @@ export default function StudySessionPage() {
           // Generate next question if we're at the end
           generateNextQuestion(existingSession);
         }
+
+        // Restore timer settings and state
+        if (existingSession.timerSettings) {
+          setTimerSettings(existingSession.timerSettings);
+        }
+        if (existingSession.sessionTimer) {
+          setSessionTimer(existingSession.sessionTimer);
+          setIsSessionPaused(existingSession.sessionTimer.isPaused);
+        }
       }
     }
   }, [sessionIdFromState, sessions]);
+
+  // Timer effects
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (sessionTimer && !isSessionPaused && sessionTimer.startTime && !sessionTimer.endTime) {
+      interval = setInterval(() => {
+        const now = Date.now();
+        const startTime = new Date(sessionTimer.startTime).getTime();
+        const elapsed = now - startTime - (sessionTimer.pausedTime || 0);
+        const duration = (timerSettings.sessionTimerDuration || 30) * 60 * 1000;
+        const timeLeft = Math.max(0, duration - elapsed);
+        
+        setSessionTimeLeft(timeLeft);
+        
+        if (timeLeft === 0) {
+          // Session time expired
+          endSession();
+        }
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [sessionTimer, isSessionPaused, timerSettings.sessionTimerDuration]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (currentQuestionTimer && !isSessionPaused && currentQuestionTimer.startTime && !currentQuestionTimer.endTime) {
+      interval = setInterval(() => {
+        const now = Date.now();
+        const startTime = new Date(currentQuestionTimer.startTime).getTime();
+        const elapsed = now - startTime - (currentQuestionTimer.pausedTime || 0);
+        const duration = (timerSettings.questionTimerDuration || 60) * 1000;
+        const timeLeft = Math.max(0, duration - elapsed);
+        
+        setQuestionTimeLeft(timeLeft);
+        
+        if (timeLeft === 0 && !currentQuestionTimer.timedOut) {
+          // Question time expired
+          setCurrentQuestionTimer(prev => prev ? { ...prev, timedOut: true } : null);
+          
+          if (timerSettings.autoSubmitOnTimeout) {
+            submitAnswer();
+          }
+        }
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [currentQuestionTimer, isSessionPaused, timerSettings.questionTimerDuration, timerSettings.autoSubmitOnTimeout]);
+
+  // Auto-save session state
+  useEffect(() => {
+    if (currentSession && sessionStarted) {
+      const sessionState = {
+        currentUserAnswer: userAnswer,
+        currentConfidence: confidence,
+        showFeedback,
+        showElaborative,
+        showSelfExplanation,
+        elaborativeQuestion,
+        elaborativeAnswer,
+        selfExplanationAnswer,
+        isEvaluating,
+        lastSavedAt: new Date().toISOString()
+      };
+
+      const updatedSession = {
+        ...currentSession,
+        sessionState,
+        sessionTimer,
+        timerSettings
+      };
+
+      setSessions(prev => prev.map(s => s.id === currentSession.id ? updatedSession : s));
+    }
+  }, [
+    currentSession, sessionStarted, userAnswer, confidence, showFeedback, 
+    showElaborative, showSelfExplanation, elaborativeQuestion, elaborativeAnswer, 
+    selfExplanationAnswer, isEvaluating, sessionTimer, timerSettings, setSessions
+  ]);
 
   // Preload questions in the background
   const preloadQuestions = useCallback(async (session: StudySession, count: number = 3) => {
@@ -195,8 +353,20 @@ export default function StudySessionPage() {
       totalQuestions: 0,
       questionType,
       learningSettings,
-      currentQuestionIndex: 0
+      currentQuestionIndex: 0,
+      timerSettings
     };
+
+    // Initialize session timer if enabled
+    if (timerSettings.sessionTimerEnabled) {
+      const sessionTimerData: SessionTimer = {
+        startTime: new Date().toISOString(),
+        isPaused: false,
+        pausedTime: 0
+      };
+      newSession.sessionTimer = sessionTimerData;
+      setSessionTimer(sessionTimerData);
+    }
 
     setCurrentSession(newSession);
     setSessionStarted(true);
@@ -257,6 +427,19 @@ export default function StudySessionPage() {
         };
       }
 
+      // Initialize question timer if enabled
+      if (timerSettings.questionTimerEnabled) {
+        const questionTimerData: QuestionTimer = {
+          questionId: question.id,
+          startTime: new Date().toISOString(),
+          timeSpent: 0,
+          timedOut: false,
+          pausedTime: 0
+        };
+        setCurrentQuestionTimer(questionTimerData);
+        question.startedAt = questionTimerData.startTime;
+      }
+
       setCurrentQuestion(question);
       
       // Update session with new question
@@ -309,6 +492,23 @@ export default function StudySessionPage() {
                    aiEvaluation.toLowerCase().includes('well') ||
                    aiEvaluation.toLowerCase().includes('excellent');
       }
+
+      // Complete question timer if enabled
+      if (currentQuestionTimer) {
+        const endTime = new Date().toISOString();
+        const startTime = new Date(currentQuestionTimer.startTime).getTime();
+        const endTimeMs = new Date(endTime).getTime();
+        const timeSpent = endTimeMs - startTime - (currentQuestionTimer.pausedTime || 0);
+        
+        const completedTimer = {
+          ...currentQuestionTimer,
+          endTime,
+          timeSpent
+        };
+        
+        setCurrentQuestionTimer(null);
+        setQuestionTimeLeft(null);
+      }
       
       // Update question with answer and feedback
       const updatedQuestion: Question = {
@@ -318,7 +518,8 @@ export default function StudySessionPage() {
         feedback,
         aiEvaluation,
         attempts: currentQuestion.attempts + 1,
-        confidence
+        confidence,
+        completedAt: new Date().toISOString()
       };
       
       // Update session
@@ -380,9 +581,20 @@ export default function StudySessionPage() {
   const endSession = () => {
     if (!currentSession) return;
     
+    // Complete session timer if running
+    if (sessionTimer && !sessionTimer.endTime) {
+      const endTime = new Date().toISOString();
+      const updatedTimer = {
+        ...sessionTimer,
+        endTime
+      };
+      setSessionTimer(updatedTimer);
+    }
+    
     const finalSession: StudySession = {
       ...currentSession,
-      status: 'completed'
+      status: 'completed',
+      sessionTimer
     };
     
     setSessions(prev => prev.map(s => s.id === currentSession.id ? finalSession : s));
@@ -399,27 +611,90 @@ export default function StudySessionPage() {
     setSelfExplanationAnswer('');
   };
 
+  const pauseSession = () => {
+    if (!sessionTimer) return;
+    
+    const now = new Date().toISOString();
+    setIsSessionPaused(true);
+    
+    const updatedTimer = {
+      ...sessionTimer,
+      isPaused: true
+    };
+    
+    setSessionTimer(updatedTimer);
+  };
+
+  const resumeSession = () => {
+    if (!sessionTimer) return;
+    
+    const now = Date.now();
+    const pauseStartTime = sessionTimer.isPaused ? Date.now() : 0;
+    
+    setIsSessionPaused(false);
+    
+    const updatedTimer = {
+      ...sessionTimer,
+      isPaused: false,
+      pausedTime: (sessionTimer.pausedTime || 0) + (pauseStartTime ? now - pauseStartTime : 0)
+    };
+    
+    setSessionTimer(updatedTimer);
+  };
+
+  const handleSessionEdit = (updates: any) => {
+    if (!currentSession) return;
+    
+    const updatedSession = {
+      ...currentSession,
+      ...updates
+    };
+    
+    setCurrentSession(updatedSession);
+    setSessions(prev => prev.map(s => s.id === currentSession.id ? updatedSession : s));
+  };
+
+  const handleTimerSettingsUpdate = (newSettings: TimerSettings) => {
+    setTimerSettings(newSettings);
+    
+    if (currentSession) {
+      const updatedSession = {
+        ...currentSession,
+        timerSettings: newSettings
+      };
+      
+      setCurrentSession(updatedSession);
+      setSessions(prev => prev.map(s => s.id === currentSession.id ? updatedSession : s));
+    }
+  };
+
+  const formatTime = (milliseconds: number): string => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const hasTimerConfiguration = timerSettings.sessionTimerEnabled || timerSettings.questionTimerEnabled;
+
   if (!sessionStarted) {
     return (
       <div className="min-h-screen" style={{ background: themeConfig.gradients.background }}>
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
+        <div className="container mx-auto px-2 sm:px-3 py-3 sm:py-4 max-w-4xl">
           {/* Header - Mobile Optimized */}
-          <div className="flex items-center space-x-3 mb-4 sm:mb-6">
-            <button
+          <div className="flex items-center space-x-2 mb-3 sm:mb-4">
+            <IconButton
+              icon={ArrowLeft}
               onClick={() => navigate('/')}
-              className="p-2 rounded-lg transition-colors touch-target"
-              style={{
-                backgroundColor: themeConfig.colors.surface,
-                color: themeConfig.colors.textSecondary
-              }}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+              variant="ghost"
+              size="md"
+              aria-label="Go back to dashboard"
+            />
             <div className="min-w-0 flex-1">
-              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold leading-tight" style={{ color: themeConfig.colors.text }}>
+              <h1 className="text-base sm:text-lg lg:text-xl font-bold leading-tight truncate" style={{ color: themeConfig.colors.text }}>
                 {t.startNewStudySession}
               </h1>
-              <p className="text-sm sm:text-base mt-1" style={{ color: themeConfig.colors.textSecondary }}>
+              <p className="text-xs sm:text-sm mt-0.5 truncate" style={{ color: themeConfig.colors.textSecondary }}>
                 {t.configureSession}
               </p>
             </div>
@@ -427,13 +702,13 @@ export default function StudySessionPage() {
 
           {/* Configuration Form - Mobile First Design */}
           <div 
-            className="rounded-xl shadow-sm border p-4 sm:p-6"
+            className="rounded-xl shadow-sm border p-3 sm:p-4 lg:p-6"
             style={{
               backgroundColor: themeConfig.colors.surface,
               borderColor: themeConfig.colors.border
             }}
           >
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Subject Input - Enhanced Mobile UX */}
               <div>
                 <label htmlFor="subject" className="block text-sm font-medium mb-2" style={{ color: themeConfig.colors.text }}>
@@ -445,7 +720,7 @@ export default function StudySessionPage() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder={t.subjectPlaceholder}
-                  className="w-full px-3 sm:px-4 py-3 border rounded-lg focus:ring-2 focus:ring-offset-2 outline-none transition-colors text-base"
+                  className="w-full px-3 py-2.5 sm:py-3 border rounded-lg focus:ring-2 focus:ring-offset-2 outline-none transition-colors text-base"
                   style={{
                     backgroundColor: themeConfig.colors.background,
                     borderColor: themeConfig.colors.border,
@@ -511,17 +786,13 @@ export default function StudySessionPage() {
                             <span className="text-sm flex-1 mr-2 break-words" style={{ color: themeConfig.colors.text }}>
                               {modifier}
                             </span>
-                            <button
+                            <IconButton
+                              icon={X}
                               onClick={() => removeModifier(index)}
-                              className="w-8 h-8 rounded-lg transition-colors touch-target flex-shrink-0 flex items-center justify-center"
-                              style={{
-                                backgroundColor: themeConfig.colors.error + '20',
-                                color: themeConfig.colors.error
-                              }}
+                              variant="danger"
+                              size="sm"
                               aria-label={`Remove ${modifier}`}
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
+                            />
                           </div>
                         ))}
                       </div>
@@ -560,6 +831,59 @@ export default function StudySessionPage() {
                       </p>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Timer Settings */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <Timer className="w-5 h-5" style={{ color: themeConfig.colors.primary }} />
+                    <label className="text-sm font-medium" style={{ color: themeConfig.colors.text }}>
+                      {language === 'pt-BR' ? 'Configurações de Timer' : 'Timer Settings'}
+                    </label>
+                  </div>
+                  <button
+                    onClick={() => setShowTimerModal(true)}
+                    className="text-xs px-3 py-1 rounded-lg transition-colors"
+                    style={{
+                      backgroundColor: themeConfig.colors.primary + '20',
+                      color: themeConfig.colors.primary
+                    }}
+                  >
+                    {language === 'pt-BR' ? 'Configurar' : 'Configure'}
+                  </button>
+                </div>
+                
+                <div 
+                  className="border rounded-lg p-3"
+                  style={{
+                    backgroundColor: themeConfig.colors.background,
+                    borderColor: themeConfig.colors.border
+                  }}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="w-4 h-4" style={{ color: themeConfig.colors.info }} />
+                      <span style={{ color: themeConfig.colors.text }}>
+                        {language === 'pt-BR' ? 'Sessão:' : 'Session:'} {' '}
+                        {timerSettings.sessionTimerEnabled 
+                          ? `${timerSettings.sessionTimerDuration}m`
+                          : (language === 'pt-BR' ? 'Desabilitado' : 'Disabled')
+                        }
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Timer className="w-4 h-4" style={{ color: themeConfig.colors.warning }} />
+                      <span style={{ color: themeConfig.colors.text }}>
+                        {language === 'pt-BR' ? 'Questão:' : 'Question:'} {' '}
+                        {timerSettings.questionTimerEnabled 
+                          ? `${timerSettings.questionTimerDuration}s`
+                          : (language === 'pt-BR' ? 'Desabilitado' : 'Disabled')
+                        }
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -650,12 +974,12 @@ export default function StudySessionPage() {
               </div>
 
               {/* Start Button - Mobile Optimized */}
-              <div className="pt-4">
+              <div className="pt-2">
                 {apiSettings.openaiApiKey ? (
                   <button
                     onClick={startSession}
                     disabled={!subject.trim()}
-                    className="w-full py-4 px-6 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center space-x-2 text-base touch-target"
+                    className="w-full py-3 sm:py-4 px-6 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center space-x-2 text-base touch-target"
                     style={{
                       background: themeConfig.gradients.primary,
                       color: '#ffffff'
@@ -682,79 +1006,150 @@ export default function StudySessionPage() {
             </div>
           </div>
         </div>
+
+        {/* Timer Settings Modal */}
+        <TimerSettingsModal
+          timerSettings={timerSettings}
+          isOpen={showTimerModal}
+          onClose={() => setShowTimerModal(false)}
+          onSave={handleTimerSettingsUpdate}
+        />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen" style={{ background: themeConfig.gradients.background }}>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
-        {/* Header - Mobile Optimized */}
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <div className="flex items-center space-x-3 min-w-0 flex-1">
-            <button
+      <div className="container mx-auto px-2 sm:px-3 py-3 sm:py-4 max-w-4xl">
+        {/* Header - Completely Redesigned for Small Devices */}
+        <div className="flex items-center justify-between mb-3 sm:mb-4 gap-1 sm:gap-2">
+          {/* Left Section - Back Button + Subject Info */}
+          <div className="flex items-center space-x-1 sm:space-x-2 min-w-0 flex-1">
+            <IconButton
+              icon={ArrowLeft}
               onClick={() => navigate('/history')}
-              className="p-2 rounded-lg transition-colors touch-target flex-shrink-0"
-              style={{
-                backgroundColor: themeConfig.colors.surface,
-                color: themeConfig.colors.textSecondary
-              }}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+              variant="ghost"
+              size="sm"
+              aria-label="Go back to history"
+            />
+            
             <div className="min-w-0 flex-1">
-              <h1 className="text-lg sm:text-xl font-bold truncate" style={{ color: themeConfig.colors.text }}>
-                {currentSession?.subject}
-              </h1>
-              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm" style={{ color: themeConfig.colors.textSecondary }}>
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <h1 className="text-sm sm:text-base font-bold truncate" style={{ color: themeConfig.colors.text }}>
+                  {currentSession?.subject}
+                </h1>
+                <IconButton
+                  icon={Edit}
+                  onClick={() => setShowEditModal(true)}
+                  variant="ghost"
+                  size="xs"
+                  aria-label="Edit session"
+                />
+              </div>
+              
+              {/* Compact Info Row */}
+              <div className="flex items-center space-x-1 text-xs" style={{ color: themeConfig.colors.textSecondary }}>
                 <span>{t.using} {apiSettings.model}</span>
                 <span>•</span>
-                <span>{t.currentScore}: {currentSession?.score || 0}%</span>
+                <span>{currentSession?.score || 0}%</span>
                 {apiSettings.preloadQuestions && apiSettings.preloadQuestions > 0 && (
                   <>
                     <span>•</span>
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center space-x-0.5">
                       <Zap className="w-3 h-3" style={{ color: themeConfig.colors.accent }} />
-                      <span style={{ color: themeConfig.colors.accent }}>
-                        {language === 'pt-BR' ? 'Smart' : 'Smart'}
-                      </span>
+                      <span style={{ color: themeConfig.colors.accent }}>Smart</span>
                     </div>
                   </>
                 )}
               </div>
             </div>
           </div>
-          <button
-            onClick={endSession}
-            className="px-3 py-2 text-sm rounded-lg transition-colors touch-target flex-shrink-0"
-            style={{ color: themeConfig.colors.textSecondary }}
-          >
-            {t.endSession}
-          </button>
+
+          {/* Right Section - Action Buttons */}
+          <div className="flex items-center space-x-1 flex-shrink-0">
+            {/* Timer Displays - Only show if timers are configured */}
+            {hasTimerConfiguration && (
+              <div className="hidden sm:flex items-center space-x-1 text-xs" style={{ color: themeConfig.colors.textSecondary }}>
+                {sessionTimeLeft !== null && (
+                  <div className="flex items-center space-x-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{formatTime(sessionTimeLeft)}</span>
+                  </div>
+                )}
+                {questionTimeLeft !== null && (
+                  <div className="flex items-center space-x-1">
+                    <Timer className="w-3 h-3" />
+                    <span>{formatTime(questionTimeLeft)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Pause/Resume Button - Only show if timers are configured */}
+            {hasTimerConfiguration && (
+              <IconButton
+                icon={isSessionPaused ? Play : Pause}
+                onClick={isSessionPaused ? resumeSession : pauseSession}
+                variant="ghost"
+                size="sm"
+                aria-label={isSessionPaused ? t.resumeSession : t.pauseSession}
+              />
+            )}
+
+            {/* End Session Button */}
+            <button
+              onClick={endSession}
+              className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg transition-colors touch-target"
+              style={{ 
+                color: themeConfig.colors.textSecondary,
+                backgroundColor: themeConfig.colors.surface + '80'
+              }}
+            >
+              {t.endSession}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Timer Display - Only show if timers are configured */}
+        {hasTimerConfiguration && (
+          <div className="sm:hidden mb-3 flex items-center justify-center space-x-4 text-xs" style={{ color: themeConfig.colors.textSecondary }}>
+            {sessionTimeLeft !== null && (
+              <div className="flex items-center space-x-1">
+                <Clock className="w-3 h-3" />
+                <span>{formatTime(sessionTimeLeft)}</span>
+              </div>
+            )}
+            {questionTimeLeft !== null && (
+              <div className="flex items-center space-x-1">
+                <Timer className="w-3 h-3" />
+                <span>{formatTime(questionTimeLeft)}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Question Card - Mobile Optimized */}
         <div 
-          className="rounded-xl shadow-sm border p-4 sm:p-6 mb-4 sm:mb-6"
+          className="rounded-xl shadow-sm border p-3 sm:p-4 lg:p-6 mb-3 sm:mb-4 lg:mb-6"
           style={{
             backgroundColor: themeConfig.colors.surface,
             borderColor: themeConfig.colors.border
           }}
         >
           {isLoading ? (
-            <div className="text-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: themeConfig.colors.primary }} />
-              <p style={{ color: themeConfig.colors.textSecondary }}>{t.generatingQuestion}</p>
+            <div className="text-center py-8 sm:py-12">
+              <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin mx-auto mb-3 sm:mb-4" style={{ color: themeConfig.colors.primary }} />
+              <p className="text-sm sm:text-base" style={{ color: themeConfig.colors.textSecondary }}>{t.generatingQuestion}</p>
             </div>
           ) : currentQuestion ? (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Question Header - Mobile Optimized */}
               <div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                  <h2 className="text-lg font-semibold" style={{ color: themeConfig.colors.text }}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3 sm:mb-4">
+                  <h2 className="text-base sm:text-lg font-semibold" style={{ color: themeConfig.colors.text }}>
                     {t.question} {(currentSession?.questions.length || 0)}
                   </h2>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1 sm:gap-2">
                     {currentQuestion.difficulty && (
                       <span 
                         className={`text-xs px-2 py-1 rounded-full font-medium`}
@@ -792,12 +1187,12 @@ export default function StudySessionPage() {
               {!showFeedback && (
                 <div className="space-y-4">
                   {currentQuestion.type === 'multiple-choice' && currentQuestion.options ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {currentQuestion.options.map((option, index) => (
                         <button
                           key={index}
                           onClick={() => setUserAnswer(index)}
-                          className={`w-full p-4 text-left border-2 rounded-lg transition-all duration-200 min-h-[60px] flex items-center justify-center touch-target ${
+                          className={`w-full p-3 sm:p-4 text-left border-2 rounded-lg transition-all duration-200 min-h-[48px] sm:min-h-[60px] flex items-center justify-center touch-target ${
                             userAnswer === index ? 'shadow-sm' : ''
                           }`}
                           style={{
@@ -805,7 +1200,7 @@ export default function StudySessionPage() {
                             backgroundColor: userAnswer === index ? themeConfig.colors.primary + '10' : themeConfig.colors.background,
                           }}
                         >
-                          <div className="flex w-full text-center items-center">
+                          <div className="w-full text-center">
                             <MarkdownRenderer content={option} />
                           </div>
                         </button>
@@ -817,8 +1212,8 @@ export default function StudySessionPage() {
                         value={userAnswer}
                         onChange={(e) => setUserAnswer(e.target.value)}
                         placeholder={language === 'pt-BR' ? 'Digite sua resposta aqui...' : 'Type your answer here...'}
-                        rows={6}
-                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-offset-2 outline-none transition-colors resize-none text-base"
+                        rows={4}
+                        className="w-full px-3 sm:px-4 py-3 border rounded-lg focus:ring-2 focus:ring-offset-2 outline-none transition-colors resize-none text-sm sm:text-base"
                         style={{
                           backgroundColor: themeConfig.colors.background,
                           borderColor: themeConfig.colors.border,
@@ -829,15 +1224,13 @@ export default function StudySessionPage() {
                     </div>
                   )}
 
-                  {/* Confidence Scale - Completely Redesigned for Mobile */}
+                  {/* Confidence Scale - Mobile Optimized */}
                   <div>
-                    <label className="block text-sm font-medium mb-3" style={{ color: themeConfig.colors.text }}>
+                    <label className="block text-sm font-medium mb-2 sm:mb-3" style={{ color: themeConfig.colors.text }}>
                       {t.confidenceQuestion}
                     </label>
                     
-                    {/* Mobile-First Confidence Scale */}
-                    <div className="space-y-3">
-                      {/* Labels Row - Stacked on Mobile */}
+                    <div className="space-y-2 sm:space-y-3">
                       <div className="flex justify-between items-center text-xs">
                         <span style={{ color: themeConfig.colors.textSecondary }}>
                           {t.notConfident}
@@ -847,7 +1240,6 @@ export default function StudySessionPage() {
                         </span>
                       </div>
                       
-                      {/* Buttons Row - Responsive Sizing */}
                       <div className="flex justify-center">
                         <div className="flex space-x-1 sm:space-x-2">
                           {[1, 2, 3, 4, 5].map((level) => (
@@ -861,7 +1253,7 @@ export default function StudySessionPage() {
                                 borderColor: confidence === level ? themeConfig.colors.primary : themeConfig.colors.border,
                                 backgroundColor: confidence === level ? themeConfig.colors.primary : 'transparent',
                                 color: confidence === level ? '#ffffff' : themeConfig.colors.textSecondary,
-                                minWidth: '32px', // Ensure minimum touch target
+                                minWidth: '32px',
                                 minHeight: '32px'
                               }}
                             >
@@ -877,7 +1269,7 @@ export default function StudySessionPage() {
                   <button
                     onClick={submitAnswer}
                     disabled={isEvaluating || (currentQuestion.type === 'multiple-choice' ? userAnswer === '' : !userAnswer.toString().trim())}
-                    className="w-full py-4 px-6 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-base touch-target"
+                    className="w-full py-3 sm:py-4 px-6 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-base touch-target"
                     style={{
                       backgroundColor: themeConfig.colors.primary,
                       color: '#ffffff'
@@ -1034,29 +1426,29 @@ export default function StudySessionPage() {
                   )}
 
                   {/* Action Buttons - Mobile Optimized */}
-                  <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     {!currentQuestion.isCorrect && (
                       <button
                         onClick={tryAgain}
-                        className="flex-1 py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 text-base touch-target"
+                        className="flex-1 py-2.5 sm:py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base touch-target"
                         style={{
                           backgroundColor: themeConfig.colors.textSecondary,
                           color: '#ffffff'
                         }}
                       >
-                        <XCircle className="w-5 h-5" />
+                        <XCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                         <span>{t.tryAgain}</span>
                       </button>
                     )}
                     <button
                       onClick={nextQuestion}
-                      className="flex-1 py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 text-base touch-target"
+                      className="flex-1 py-2.5 sm:py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base touch-target"
                       style={{
                         backgroundColor: themeConfig.colors.primary,
                         color: '#ffffff'
                       }}
                     >
-                      <BookOpen className="w-5 h-5" />
+                      <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span>{t.nextQuestion}</span>
                     </button>
                   </div>
@@ -1064,9 +1456,9 @@ export default function StudySessionPage() {
               )}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <BookOpen className="w-12 h-12 mx-auto mb-4" style={{ color: themeConfig.colors.textMuted }} />
-              <p style={{ color: themeConfig.colors.textSecondary }}>{t.readyToLearn}</p>
+            <div className="text-center py-8 sm:py-12">
+              <BookOpen className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4" style={{ color: themeConfig.colors.textMuted }} />
+              <p className="text-sm sm:text-base" style={{ color: themeConfig.colors.textSecondary }}>{t.readyToLearn}</p>
             </div>
           )}
         </div>
@@ -1074,13 +1466,13 @@ export default function StudySessionPage() {
         {/* Progress Indicator - Mobile Optimized */}
         {currentSession && currentSession.questions.length > 0 && (
           <div 
-            className="rounded-lg shadow-sm border p-4"
+            className="rounded-lg shadow-sm border p-3 sm:p-4"
             style={{
               backgroundColor: themeConfig.colors.surface,
               borderColor: themeConfig.colors.border
             }}
           >
-            <div className="flex items-center justify-between text-sm mb-2" style={{ color: themeConfig.colors.textSecondary }}>
+            <div className="flex items-center justify-between text-xs sm:text-sm mb-2" style={{ color: themeConfig.colors.textSecondary }}>
               <span>{t.currentScore}</span>
               <span>{currentSession.score}%</span>
             </div>
@@ -1103,6 +1495,22 @@ export default function StudySessionPage() {
           </div>
         )}
       </div>
+
+      {/* Session Edit Modal */}
+      <SessionEditModal
+        session={currentSession!}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleSessionEdit}
+      />
+
+      {/* Timer Settings Modal */}
+      <TimerSettingsModal
+        timerSettings={timerSettings}
+        isOpen={showTimerModal}
+        onClose={() => setShowTimerModal(false)}
+        onSave={handleTimerSettingsUpdate}
+      />
     </div>
   );
 }

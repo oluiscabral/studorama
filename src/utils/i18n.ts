@@ -76,6 +76,8 @@ export interface Translations {
   evaluating: string;
   tryAgain: string;
   nextQuestion: string;
+  pauseSession: string;
+  resumeSession: string;
   
   // Session History
   studyHistory: string;
@@ -160,6 +162,7 @@ export interface Translations {
   retrievalPractice: string;
   retrievalPracticeFull: string;
   retrievalPracticeHow: string;
+  generationEffect: string;
   researchBasedBenefits: string;
   improvedRetention: string;
   betterTransfer: string;
@@ -432,6 +435,8 @@ const translations: Record<Language, Translations> = {
     evaluating: 'Evaluating...',
     tryAgain: 'Try Again',
     nextQuestion: 'Next Question',
+    pauseSession: 'Pause Session',
+    resumeSession: 'Resume Session',
     
     // Session History
     studyHistory: 'Study History',
@@ -516,6 +521,7 @@ const translations: Record<Language, Translations> = {
     retrievalPractice: 'Retrieval Practice',
     retrievalPracticeFull: 'Test yourself frequently to strengthen memory pathways. The act of retrieving information makes it more memorable.',
     retrievalPracticeHow: 'Questions test your ability to recall information, and confidence levels help track your certainty.',
+    generationEffect: 'Generation Effect',
     researchBasedBenefits: 'Research-Based Benefits',
     improvedRetention: 'These techniques can improve long-term retention by 50-200%',
     betterTransfer: 'Knowledge gained through these methods transfers better to new situations',
@@ -744,6 +750,8 @@ const translations: Record<Language, Translations> = {
     evaluating: 'Avaliando...',
     tryAgain: 'Tentar Novamente',
     nextQuestion: 'Próxima Questão',
+    pauseSession: 'Pausar Sessão',
+    resumeSession: 'Retomar Sessão',
     
     // Session History
     studyHistory: 'Histórico de Estudos',
@@ -828,6 +836,7 @@ const translations: Record<Language, Translations> = {
     retrievalPractice: 'Prática de Recuperação',
     retrievalPracticeFull: 'Teste-se frequentemente para fortalecer caminhos de memória. O ato de recuperar informação a torna mais memorável.',
     retrievalPracticeHow: 'Questões testam sua habilidade de lembrar informações, e níveis de confiança ajudam a rastrear sua certeza.',
+    generationEffect: 'Efeito de Geração',
     researchBasedBenefits: 'Benefícios Baseados em Pesquisa',
     improvedRetention: 'Essas técnicas podem melhorar a retenção a longo prazo em 50-200%',
     betterTransfer: 'Conhecimento adquirido através desses métodos se transfere melhor para novas situações',

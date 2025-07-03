@@ -302,6 +302,21 @@ export interface Translations {
   themeSettings: string;
   customizeAppearance: string;
   
+  // API Key Notifications
+  apiKeyConfigured: string;
+  apiKeyConfiguredDesc: string;
+  invalidApiKey: string;
+  invalidApiKeyDesc: string;
+  apiKeyFromUrl: string;
+  apiKeyPreserved: string;
+  
+  // Version Control
+  appUpdated: string;
+  versionUpdated: string;
+  dataRefreshed: string;
+  initializingApp: string;
+  checkingUpdates: string;
+  
   // Common
   loading: string;
   error: string;
@@ -660,6 +675,21 @@ const translations: Record<Language, Translations> = {
     themeSettings: 'Theme Settings',
     customizeAppearance: 'Customize the appearance of Studorama',
     
+    // API Key Notifications
+    apiKeyConfigured: 'API Key Configured',
+    apiKeyConfiguredDesc: 'API key has been automatically configured from URL',
+    invalidApiKey: 'Invalid API Key',
+    invalidApiKeyDesc: 'The API key in the URL is not valid. Please check the format.',
+    apiKeyFromUrl: 'API key configured from URL',
+    apiKeyPreserved: 'Your API key has been preserved',
+    
+    // Version Control
+    appUpdated: 'Studorama Updated!',
+    versionUpdated: 'Updated from v{oldVersion} to v{newVersion}',
+    dataRefreshed: 'Your data has been refreshed for the new version. Your API key has been preserved.',
+    initializingApp: 'Initializing your learning experience...',
+    checkingUpdates: 'Checking for updates...',
+    
     // Common
     loading: 'Loading...',
     error: 'Error',
@@ -973,6 +1003,21 @@ const translations: Record<Language, Translations> = {
     selectTheme: 'Selecionar Tema',
     themeSettings: 'Configurações de Tema',
     customizeAppearance: 'Personalize a aparência do Studorama',
+    
+    // API Key Notifications
+    apiKeyConfigured: 'Chave da API Configurada',
+    apiKeyConfiguredDesc: 'Chave da API foi configurada automaticamente a partir da URL',
+    invalidApiKey: 'Chave da API Inválida',
+    invalidApiKeyDesc: 'A chave da API na URL não é válida. Verifique o formato.',
+    apiKeyFromUrl: 'Chave da API configurada a partir da URL',
+    apiKeyPreserved: 'Sua chave da API foi preservada',
+    
+    // Version Control
+    appUpdated: 'Studorama Atualizado!',
+    versionUpdated: 'Atualizado da v{oldVersion} para v{newVersion}',
+    dataRefreshed: 'Seus dados foram atualizados para a nova versão. Sua chave da API foi preservada.',
+    initializingApp: 'Inicializando sua experiência de aprendizado...',
+    checkingUpdates: 'Verificando atualizações...',
     
     // Common
     loading: 'Carregando...',

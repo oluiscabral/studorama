@@ -119,6 +119,26 @@ export function handleVersionMigration(): boolean {
  */
 function showMigrationNotification(oldVersion: string, newVersion: string): void {
   try {
+    // Try to get translations
+    let title = 'Studorama Updated!';
+    let versionText = `Updated from v${oldVersion} to v${newVersion}`;
+    let dataText = 'Your data has been refreshed for the new version. Your API key has been preserved.';
+    
+    // Try to detect language from localStorage
+    try {
+      const languageSettings = localStorage.getItem('studorama-language');
+      if (languageSettings) {
+        const settings = JSON.parse(languageSettings);
+        if (settings.language === 'pt-BR') {
+          title = 'Studorama Atualizado!';
+          versionText = `Atualizado da v${oldVersion} para v${newVersion}`;
+          dataText = 'Seus dados foram atualizados para a nova versão. Sua chave da API foi preservada.';
+        }
+      }
+    } catch (e) {
+      // Ignore language detection errors
+    }
+    
     // Create notification element
     const notification = document.createElement('div');
     notification.style.cssText = `
@@ -189,13 +209,13 @@ function showMigrationNotification(oldVersion: string, newVersion: string): void
         </div>
         <div style="flex: 1;">
           <div style="font-weight: 600; margin-bottom: 4px; font-size: 15px;">
-            Studorama Updated!
+            ${title}
           </div>
           <div style="opacity: 0.95; font-size: 13px; line-height: 1.4; margin-bottom: 8px;">
-            Updated from v${oldVersion} to v${newVersion}
+            ${versionText}
           </div>
           <div style="opacity: 0.9; font-size: 12px; line-height: 1.3;">
-            Your data has been refreshed for the new version. Your API key has been preserved.
+            ${dataText}
           </div>
         </div>
       </div>

@@ -1,7 +1,10 @@
 import React from 'react';
 import Logo from './Logo';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function LoadingScreen() {
+  const { language } = useLanguage();
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center">
       <div className="text-center">
@@ -15,7 +18,9 @@ export default function LoadingScreen() {
           Studorama
         </h1>
         <p className="text-gray-600 mb-6">
-          Initializing your learning experience...
+          {language === 'pt-BR' 
+            ? 'Inicializando sua experiência de aprendizado...' 
+            : 'Initializing your learning experience...'}
         </p>
         
         {/* Loading Spinner */}
@@ -25,7 +30,9 @@ export default function LoadingScreen() {
         
         {/* Version Info */}
         <div className="mt-8 text-xs text-gray-500">
-          Checking for updates...
+          {language === 'pt-BR' 
+            ? 'Verificando atualizações...' 
+            : 'Checking for updates...'}
         </div>
       </div>
     </div>

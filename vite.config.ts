@@ -19,13 +19,8 @@ export default defineConfig({
       }
     },
     sourcemap: false, // Disable sourcemaps in production to reduce bundle size
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.logs in production
-        drop_debugger: true
-      }
-    }
+    minify: 'esbuild', // Use esbuild instead of terser for faster builds
+    target: 'esnext'
   },
   server: {
     fs: {

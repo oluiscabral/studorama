@@ -91,10 +91,57 @@ export default function StudySessionComponent() {
         setQuestionType(existingSession.questionType || 'multiple-choice');
         setLearningSettings(existingSession.learningSettings || DEFAULT_LEARNING_SETTINGS);
         setSessionStarted(true);
-        loadNextQuestion(existingSession);
+        
+        // Find the next question to continue from
+        continueFromLastQuestion(existingSession);
       }
     }
   }, [location.state, sessions]);
+
+  const continueFromLastQuestion = (session: StudySession) => {
+    // Find the first question that hasn't been answered yet
+    const unansweredQuestion = session.questions.find(q => q.isCorrect === undefined);
+    
+    if (unansweredQuestion) {
+      // Continue from the first unanswered question
+      setCurrentQuestion(unansweredQuestion);
+      
+      // Reset all UI states for a fresh start
+      setSelectedAnswer(null);
+      setDissertativeAnswer('');
+      setShowFeedback(false);
+      setShowElaborativePrompt(false);
+      setShowSelfExplanation(false);
+      setElaborativeResponse('');
+      setSelfExplanation('');
+      setConfidenceLevel(3);
+      
+      // If this question already has a user answer, restore it and show feedback
+      if (unansweredQuestion.userAnswer !== undefined) {
+        if (unansweredQuestion.type === 'multiple-choice') {
+          setSelectedAnswer(unansweredQuestion.userAnswer as number);
+        } else {
+          setDissertativeAnswer(unansweredQuestion.userAnswer as string);
+        }
+        
+        // If the question was already evaluated, show feedback
+        if (unansweredQuestion.isCorrect !== undefined) {
+          setShowFeedback(true);
+          
+          // Show learning prompts if applicable
+          if (learningSettings.elaborativeInterrogation && !unansweredQuestion.isCorrect) {
+            setShowElaborativePrompt(true);
+          }
+          if (learningSettings.selfExplanation && unansweredQuestion.isCorrect) {
+            setShowSelfExplanation(true);
+          }
+        }
+      }
+    } else {
+      // All questions have been answered, load a new question
+      loadNextQuestion(session);
+    }
+  };
 
   const getNextQuestionType = (session: StudySession): 'multiple-choice' | 'dissertative' => {
     if (questionType === 'mixed') {
@@ -731,6 +778,10 @@ export default function StudySessionComponent() {
     );
   }
 
+  // Calculate the current question number based on answered questions
+  const answeredQuestionsCount = currentSession?.questions.filter(q => q.isCorrect !== undefined).length || 0;
+  const currentQuestionNumber = showFeedback ? answeredQuestionsCount : answeredQuestionsCount + 1;
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
       {/* Session Header */}
@@ -750,7 +801,7 @@ export default function StudySessionComponent() {
               </div>
             )}
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-600 mt-2">
-              <span>{t.question} {currentSession?.questions.length + 1}</span>
+              <span>{t.question} {currentQuestionNumber}</span>
               <span className="flex items-center">
                 {currentQuestion.type === 'multiple-choice' ? (
                   <List className="w-4 h-4 mr-1 flex-shrink-0" />

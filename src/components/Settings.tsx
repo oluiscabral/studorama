@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Key, Bot, Globe, Info, Trash2, RefreshCw, BookOpen, Brain, Lightbulb, Settings as SettingsIcon, Download, Upload, Cloud } from 'lucide-react';
+import { Save, Key, Bot, Globe, Info, Trash2, RefreshCw, BookOpen, Brain, Lightbulb, Settings as SettingsIcon } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
 import { Language, LearningSettings, LearningTechniquesPreference } from '../types';
 import LanguageSwitchModal from './LanguageSwitchModal';
-import DropboxSyncSettings from './dropbox/DropboxSyncSettings';
 
 const DEFAULT_PROMPTS = {
   multipleChoice: '',
@@ -38,7 +37,7 @@ export default function Settings() {
   });
   const [learningPreference, setLearningPreference] = useLocalStorage<LearningTechniquesPreference>('studorama-learning-preference', DEFAULT_LEARNING_PREFERENCE);
   const [showSaved, setShowSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'language' | 'sync' | 'about'>('api');
+  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'learning' | 'language' | 'about'>('api');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [pendingLanguage, setPendingLanguage] = useState<Language | null>(null);
 
@@ -162,7 +161,6 @@ export default function Settings() {
     { id: 'prompts' as const, label: t.aiPrompts, icon: Bot },
     { id: 'learning' as const, label: t.learningTechniquesTab, icon: Brain },
     { id: 'language' as const, label: t.language, icon: Globe },
-    { id: 'sync' as const, label: 'Sync', icon: Cloud },
     { id: 'about' as const, label: t.about, icon: Info },
   ];
 
@@ -551,44 +549,6 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Sync Tab */}
-          {activeTab === 'sync' && (
-            <div className="space-y-6">
-              <DropboxSyncSettings />
-              
-              {/* Data Management */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                    <Trash2 className="w-5 h-5 text-red-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {t.dataManagement}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {t.manageYourData}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <h4 className="font-medium text-red-900 mb-2">{t.deleteAllData}</h4>
-                  <p className="text-sm text-red-700 mb-4">
-                    {t.deleteAllDataDesc}
-                  </p>
-                  <button
-                    onClick={deleteAllData}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center space-x-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>{t.deleteAllData}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* About Tab */}
           {activeTab === 'about' && (
             <div className="space-y-6">
@@ -676,6 +636,33 @@ export default function Settings() {
                   >
                     <span>{t.reportIssue}</span>
                   </a>
+                </div>
+              </div>
+
+              {/* Data Management */}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <Trash2 className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-red-900">{t.dataManagement}</h4>
+                    <p className="text-sm text-red-700">{t.manageYourData}</p>
+                  </div>
+                </div>
+
+                <div className="bg-red-100 border border-red-300 rounded-lg p-4">
+                  <h5 className="font-medium text-red-900 mb-2">{t.deleteAllData}</h5>
+                  <p className="text-sm text-red-700 mb-4">
+                    {t.deleteAllDataDesc}
+                  </p>
+                  <button
+                    onClick={deleteAllData}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center space-x-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>{t.deleteAllData}</span>
+                  </button>
                 </div>
               </div>
 

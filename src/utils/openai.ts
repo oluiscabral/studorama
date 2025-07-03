@@ -45,18 +45,53 @@ export function extractJSON(raw: string): string {
 }
 
 /**
- * Parse extracted JSON with fallback to JSON5
+ * Enhanced JSON parser with better error recovery for truncated responses
  */
 export function parseJSON(raw: string): any {
   const jsonString = extractJSON(raw);
+  
   try {
     return JSON.parse(jsonString);
   } catch (e) {
     try {
       return JSON5.parse(jsonString);
     } catch (e2) {
-      console.error('Failed to parse JSON string:', jsonString);
-      throw new Error(`Parsing error: ${e2.message}`);
+      // Try to fix common truncation issues
+      try {
+        let fixedJson = jsonString;
+        
+        // If the JSON ends with an incomplete string, try to close it
+        if (fixedJson.match(/[^"\\]"[^"]*$/)) {
+          fixedJson = fixedJson.replace(/([^"\\]"[^"]*)$/, '$1"');
+        }
+        
+        // If there's an incomplete array, try to close it
+        if (fixedJson.match(/\[[^\]]*$/)) {
+          fixedJson = fixedJson + ']';
+        }
+        
+        // If there's an incomplete object, try to close it
+        const openBraces = (fixedJson.match(/\{/g) || []).length;
+        const closeBraces = (fixedJson.match(/\}/g) || []).length;
+        const missingBraces = openBraces - closeBraces;
+        
+        if (missingBraces > 0) {
+          fixedJson = fixedJson + '}'.repeat(missingBraces);
+        }
+        
+        // Try parsing the fixed JSON
+        return JSON.parse(fixedJson);
+      } catch (e3) {
+        try {
+          return JSON5.parse(fixedJson);
+        } catch (e4) {
+          console.error('Failed to parse JSON string:', jsonString);
+          console.error('Original error:', e.message);
+          console.error('JSON5 error:', e2.message);
+          console.error('Recovery attempt error:', e4.message);
+          throw new Error(`Parsing error: Response appears to be truncated. Please try again with a shorter question or check your OpenAI API limits.`);
+        }
+      }
     }
   }
 }
@@ -82,6 +117,7 @@ CRITICAL REQUIREMENTS FOR ALL CONTENT (question, options, explanation):
 5. Add spaces around inline math expressions in text
 6. Example: "The function $f(x) = x^2$ is a parabola" (note spaces around $f(x) = x^2$)
 7. EVERY option must also use proper LaTeX: "$x = 2$", "$\\frac{1}{2}$", "$\\sin(\\pi) = 0$"
+8. Keep content concise to avoid truncation
 
 Return ONLY a JSON object with: question (string with proper LaTeX), options (array of 4 strings with proper LaTeX), correctAnswer (number 0-3), and explanation (string with proper LaTeX). Do not include any other text or formatting.`;
 
@@ -101,12 +137,12 @@ Return ONLY a JSON object with: question (string with proper LaTeX), options (ar
         {
           role: 'user',
           content: language === 'pt-BR' 
-            ? `Crie uma questão de múltipla escolha sobre ${subject}. Torne-a desafiadora mas justa. Use notação LaTeX CORRETA para TODAS as expressões matemáticas em TODAS as partes (questão, opções, explicação) com espaços adequados: "A função $f(x) = x^2$ é uma parábola", opções como "$x = 2$", "$\\frac{a}{b}$", "$\\lim_{x \\to 0}$", etc.`
-            : `Create a multiple choice question about ${subject}. Make it challenging but fair. Use CORRECT LaTeX notation for ALL mathematical expressions in ALL parts (question, options, explanation) with proper spacing: "The function $f(x) = x^2$ is a parabola", options like "$x = 2$", "$\\frac{a}{b}$", "$\\lim_{x \\to 0}$", etc.`
+            ? `Crie uma questão de múltipla escolha sobre ${subject}. Torne-a desafiadora mas justa. Use notação LaTeX CORRETA para TODAS as expressões matemáticas em TODAS as partes (questão, opções, explicação) com espaços adequados: "A função $f(x) = x^2$ é uma parábola", opções como "$x = 2$", "$\\frac{a}{b}$", "$\\lim_{x \\to 0}$", etc. Mantenha o conteúdo conciso.`
+            : `Create a multiple choice question about ${subject}. Make it challenging but fair. Use CORRECT LaTeX notation for ALL mathematical expressions in ALL parts (question, options, explanation) with proper spacing: "The function $f(x) = x^2$ is a parabola", options like "$x = 2$", "$\\frac{a}{b}$", "$\\lim_{x \\to 0}$", etc. Keep content concise.`
         }
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 800, // Increased from 500
     }),
   });
 
@@ -148,8 +184,10 @@ CRITICAL REQUIREMENTS FOR ALL CONTENT (question, sampleAnswer, evaluationCriteri
 4. Always escape backslashes properly: \\frac, \\lim, \\sin, \\cos, etc.
 5. Add spaces around inline math expressions in text
 6. Example: "The function $f(x) = x^2$ is a parabola" (note spaces around $f(x) = x^2$)
+7. Keep content reasonably concise to avoid truncation
+8. Limit evaluationCriteria to 3-4 short, clear points
 
-Create an open-ended question that requires thoughtful analysis and explanation. Return ONLY a JSON object with: question (string with proper LaTeX), sampleAnswer (string with comprehensive model answer using proper LaTeX), and evaluationCriteria (array of strings). Do not include any other text or formatting.`;
+Create an open-ended question that requires thoughtful analysis and explanation. Return ONLY a JSON object with: question (string with proper LaTeX), sampleAnswer (string with comprehensive model answer using proper LaTeX), and evaluationCriteria (array of 3-4 short strings). Do not include any other text or formatting.`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -167,12 +205,12 @@ Create an open-ended question that requires thoughtful analysis and explanation.
         {
           role: 'user',
           content: language === 'pt-BR'
-            ? `Crie uma questão dissertativa sobre ${subject}. Torne-a instigante e que exija análise detalhada. Use notação LaTeX CORRETA para TODAS as expressões matemáticas em TODAS as partes com espaços adequados: "A função $f(x) = x^2$ é uma parábola", $\\frac{a}{b}$, $\\lim_{x \\to 0}$, etc.`
-            : `Create a dissertative question about ${subject}. Make it thought-provoking and require detailed analysis. Use CORRECT LaTeX notation for ALL mathematical expressions in ALL parts with proper spacing: "The function $f(x) = x^2$ is a parabola", $\\frac{a}{b}$, $\\lim_{x \\to 0}$, etc.`
+            ? `Crie uma questão dissertativa sobre ${subject}. Torne-a instigante e que exija análise detalhada. Use notação LaTeX CORRETA para TODAS as expressões matemáticas em TODAS as partes com espaços adequados: "A função $f(x) = x^2$ é uma parábola", $\\frac{a}{b}$, $\\lim_{x \\to 0}$, etc. Mantenha o conteúdo razoavelmente conciso.`
+            : `Create a dissertative question about ${subject}. Make it thought-provoking and require detailed analysis. Use CORRECT LaTeX notation for ALL mathematical expressions in ALL parts with proper spacing: "The function $f(x) = x^2$ is a parabola", $\\frac{a}{b}$, $\\lim_{x \\to 0}$, etc. Keep content reasonably concise.`
         }
       ],
       temperature: 0.7,
-      max_tokens: 800,
+      max_tokens: 1200, // Increased from 800
     }),
   });
 
@@ -217,6 +255,7 @@ CRITICAL REQUIREMENTS for your feedback:
 4. Always escape backslashes properly: \\frac, \\lim, \\sin, \\cos, etc.
 5. Add spaces around inline math expressions in text
 6. Example: "The function $f(x) = x^2$ is a parabola" (note spaces around $f(x) = x^2$)
+7. Keep feedback concise and focused
 
 You are evaluating a student's answer to a dissertative question. 
 Question: ${question}
@@ -248,7 +287,7 @@ Provide constructive feedback focusing on accuracy, completeness, and understand
         }
       ],
       temperature: 0.7,
-      max_tokens: 400,
+      max_tokens: 600, // Increased from 400
     }),
   });
 
@@ -297,7 +336,7 @@ export async function generateElaborativeQuestion(subject: string, question: str
         }
       ],
       temperature: 0.7,
-      max_tokens: 200,
+      max_tokens: 300, // Increased from 200
     }),
   });
 
@@ -336,6 +375,7 @@ REQUISITOS CRÍTICOS PARA TODO CONTEÚDO (questão, opções, explicação, resp
 5. Adicione espaços ao redor de expressões matemáticas inline no texto
 6. Exemplo: "A função $f(x) = x^2$ é uma parábola" (note os espaços ao redor de $f(x) = x^2$)
 7. TODA opção deve usar LaTeX adequado: "$x = 2$", "$\\frac{1}{2}$", "$\\sin(\\pi) = 0$"
+8. Mantenha o conteúdo conciso para evitar truncamento
 
 Crie uma questão que teste a recordação de material previamente coberto ou conecte novos conceitos aos antigos. Retorne APENAS um objeto JSON com: question (string com LaTeX correto), type (either "multiple-choice" or "dissertative"), e se múltipla escolha: options (array com LaTeX correto), correctAnswer (number), explanation (string com LaTeX correto). Se dissertativa: sampleAnswer (string com LaTeX correto). Não inclua nenhum outro texto ou formatação.`
     : `You are a study assistant that creates retrieval practice questions about ${subject}. ${questionsContext}. ${languageInstruction}
@@ -348,12 +388,13 @@ CRITICAL REQUIREMENTS FOR ALL CONTENT (question, options, explanation, sampleAns
 5. Add spaces around inline math expressions in text
 6. Example: "The function $f(x) = x^2$ is a parabola" (note spaces around $f(x) = x^2$)
 7. EVERY option must use proper LaTeX: "$x = 2$", "$\\frac{1}{2}$", "$\\sin(\\pi) = 0$"
+8. Keep content concise to avoid truncation
 
 Create a question that tests recall of previously covered material or connects new concepts to old ones. Return ONLY a JSON object with: question (string with proper LaTeX), type (either "multiple-choice" or "dissertative"), and if multiple-choice: options (array with proper LaTeX), correctAnswer (number), explanation (string with proper LaTeX). If dissertative: sampleAnswer (string with proper LaTeX). Do not include any other text or formatting.`;
 
   const userMessage = language === 'pt-BR'
-    ? `Crie uma questão de prática de recuperação sobre ${subject} que ajude a reforçar o aprendizado anterior. Use notação LaTeX CORRETA para TODAS as expressões matemáticas em TODAS as partes com espaçamento adequado: "A função $f(x) = x^2$ é uma parábola", opções como "$x = 2$", "$\\frac{a}{b}$", "$\\lim_{x \\to 0}$", etc.`
-    : `Create a retrieval practice question about ${subject} that helps reinforce previous learning. Use CORRECT LaTeX notation for ALL mathematical expressions in ALL parts with proper spacing: "The function $f(x) = x^2$ is a parabola", options like "$x = 2$", "$\\frac{a}{b}$", "$\\lim_{x \\to 0}$", etc.`;
+    ? `Crie uma questão de prática de recuperação sobre ${subject} que ajude a reforçar o aprendizado anterior. Use notação LaTeX CORRETA para TODAS as expressões matemáticas em TODAS as partes com espaçamento adequado: "A função $f(x) = x^2$ é uma parábola", opções como "$x = 2$", "$\\frac{a}{b}$", "$\\lim_{x \\to 0}$", etc. Mantenha o conteúdo conciso.`
+    : `Create a retrieval practice question about ${subject} that helps reinforce previous learning. Use CORRECT LaTeX notation for ALL mathematical expressions in ALL parts with proper spacing: "The function $f(x) = x^2$ is a parabola", options like "$x = 2$", "$\\frac{a}{b}$", "$\\lim_{x \\to 0}$", etc. Keep content concise.`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -374,7 +415,7 @@ Create a question that tests recall of previously covered material or connects n
         }
       ],
       temperature: 0.7,
-      max_tokens: 600,
+      max_tokens: 800, // Increased from 600
     }),
   });
 
@@ -432,7 +473,7 @@ export async function generateModifierSuggestions(subject: string, apiKey: strin
         }
       ],
       temperature: 0.7,
-      max_tokens: 300,
+      max_tokens: 400, // Increased from 300
     }),
   });
 

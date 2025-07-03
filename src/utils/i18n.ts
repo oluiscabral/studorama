@@ -292,35 +292,6 @@ export interface Translations {
   standardDesc: string;
   basicDesc: string;
   
-  // Dropbox Sync
-  syncYourData: string;
-  connected: string;
-  disconnected: string;
-  connectToDropbox: string;
-  connecting: string;
-  syncStatus: string;
-  lastSync: string;
-  neverSynced: string;
-  syncing: string;
-  conflictDetected: string;
-  resolveConflict: string;
-  autoSync: string;
-  syncInterval: string;
-  minutes: string;
-  hour: string;
-  hours: string;
-  syncNow: string;
-  disconnectDropbox: string;
-  syncConflict: string;
-  localData: string;
-  cloudData: string;
-  useLocalData: string;
-  useCloudData: string;
-  importExportData: string;
-  backupOrRestore: string;
-  exportData: string;
-  importData: string;
-  
   // Common
   loading: string;
   error: string;
@@ -669,35 +640,6 @@ const translations: Record<Language, Translations> = {
     standardDesc: 'Show your appreciation with a monthly contribution. Every bit helps us keep Studorama free and accessible.',
     basicDesc: 'Buy us a coffee each month! A small gesture that makes a big difference in supporting our mission.',
     
-    // Dropbox Sync
-    syncYourData: 'Sync your data across devices',
-    connected: 'Connected',
-    disconnected: 'Disconnected',
-    connectToDropbox: 'Connect to Dropbox',
-    connecting: 'Connecting...',
-    syncStatus: 'Sync Status',
-    lastSync: 'Last Sync',
-    neverSynced: 'Never synced',
-    syncing: 'Syncing...',
-    conflictDetected: 'Conflict detected',
-    resolveConflict: 'Resolve Conflict',
-    autoSync: 'Auto Sync',
-    syncInterval: 'Sync Interval',
-    minutes: 'minutes',
-    hour: 'hour',
-    hours: 'hours',
-    syncNow: 'Sync Now',
-    disconnectDropbox: 'Disconnect Dropbox',
-    syncConflict: 'Sync Conflict',
-    localData: 'Local Data',
-    cloudData: 'Cloud Data',
-    useLocalData: 'Use Local Data',
-    useCloudData: 'Use Cloud Data',
-    importExportData: 'Import/Export Data',
-    backupOrRestore: 'Backup or restore your Studorama data',
-    exportData: 'Export Data',
-    importData: 'Import Data',
-    
     // Common
     loading: 'Loading...',
     error: 'Error',
@@ -1001,35 +943,6 @@ const translations: Record<Language, Translations> = {
     advancedDesc: 'Apoie o desenvolvimento do Studorama com uma contribuição mensal generosa. Nos ajude a manter e melhorar a plataforma para todos.',
     standardDesc: 'Mostre seu apreço com uma contribuição mensal. Cada bit nos ajuda a manter o Studorama gratuito e acessível.',
     basicDesc: 'Nos compre um café todo mês! Um pequeno gesto que faz uma grande diferença no apoio à nossa missão.',
-    
-    // Dropbox Sync
-    syncYourData: 'Sincronize seus dados entre dispositivos',
-    connected: 'Conectado',
-    disconnected: 'Desconectado',
-    connectToDropbox: 'Conectar ao Dropbox',
-    connecting: 'Conectando...',
-    syncStatus: 'Status da Sincronização',
-    lastSync: 'Última Sincronização',
-    neverSynced: 'Nunca sincronizado',
-    syncing: 'Sincronizando...',
-    conflictDetected: 'Conflito detectado',
-    resolveConflict: 'Resolver Conflito',
-    autoSync: 'Sincronização Automática',
-    syncInterval: 'Intervalo de Sincronização',
-    minutes: 'minutos',
-    hour: 'hora',
-    hours: 'horas',
-    syncNow: 'Sincronizar Agora',
-    disconnectDropbox: 'Desconectar Dropbox',
-    syncConflict: 'Conflito de Sincronização',
-    localData: 'Dados Locais',
-    cloudData: 'Dados da Nuvem',
-    useLocalData: 'Usar Dados Locais',
-    useCloudData: 'Usar Dados da Nuvem',
-    importExportData: 'Importar/Exportar Dados',
-    backupOrRestore: 'Faça backup ou restaure seus dados do Studorama',
-    exportData: 'Exportar Dados',
-    importData: 'Importar Dados',
     
     // Common
     loading: 'Carregando...',

@@ -68,27 +68,30 @@ export function useTheme() {
   const changeTheme = useCallback((newTheme: Theme) => {
     setCurrentTheme(newTheme);
     
-    // Use a more reliable refresh method for theme changes too
+    // Use a more reliable refresh method that always goes to home page
     setTimeout(() => {
       try {
-        // For theme changes, we can use a gentler approach
-        if (typeof window !== 'undefined' && window.location) {
-          // Add cache-busting parameter
-          const currentUrl = window.location.href;
-          const url = new URL(currentUrl);
-          url.searchParams.set('_theme_refresh', Date.now().toString());
-          
-          // Use location.replace for consistency
-          window.location.replace(url.toString());
-        }
-      } catch (error) {
-        console.error('Error during theme change refresh:', error);
+        // Always redirect to home page to avoid 404 errors
+        const baseUrl = window.location.origin;
+        const homeUrl = `${baseUrl}/`;
         
-        // Fallback to standard reload
+        // Use window.location.href for the most reliable redirect
+        window.location.href = homeUrl;
+      } catch (error) {
+        console.error('Error during theme change redirect:', error);
+        
+        // Fallback: try to reload the current page
         try {
           window.location.reload();
         } catch (fallbackError) {
-          console.error('Theme change fallback refresh failed:', fallbackError);
+          console.error('Fallback reload also failed:', fallbackError);
+          
+          // Last resort: force navigation to home
+          try {
+            window.location.replace('/');
+          } catch (lastResortError) {
+            console.error('All redirect methods failed:', lastResortError);
+          }
         }
       }
     }, 100);

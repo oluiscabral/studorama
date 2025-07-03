@@ -25,7 +25,7 @@ export default function LanguageSwitchModal({
   currentLanguage, 
   newLanguage 
 }: LanguageSwitchModalProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { themeConfig } = useTheme();
   const [resetPrompts, setResetPrompts] = React.useState(true);
   const [rememberChoice, setRememberChoice] = React.useState(false);

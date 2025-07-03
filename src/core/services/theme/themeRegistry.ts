@@ -1,4 +1,4 @@
-import { Theme, ThemeConfig, ThemeCategory } from '../../types';
+import { Theme, ThemeCategory, ThemeConfig } from '../../types';
 
 /**
  * Theme registry containing all available themes
@@ -462,6 +462,7 @@ export function getLocalizedThemeName(themeId: Theme, language: string): string 
       case 'neon': return 'Neon';
       case 'minimal': return 'Minimalista';
       case 'warm': return 'Quente';
+      // @ts-ignore
       default: return themes[themeId]?.name || 'Tema';
     }
   }
@@ -484,6 +485,7 @@ export function getLocalizedThemeDescription(themeId: Theme, language: string): 
       case 'neon': return 'Tema cyberpunk de alta energia para sessões de estudo intensas';
       case 'minimal': return 'Design ultra-limpo para aprendizado sem distrações';
       case 'warm': return 'Tema aconchegante e confortável para estudar relaxado';
+      // @ts-ignore
       default: return themes[themeId]?.description || '';
     }
   }

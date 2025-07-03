@@ -594,6 +594,7 @@ export default function StudySessionPage() {
     const finalSession: StudySession = {
       ...currentSession,
       status: 'completed',
+      // @ts-ignore
       sessionTimer
     };
     

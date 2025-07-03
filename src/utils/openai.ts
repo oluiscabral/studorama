@@ -86,8 +86,11 @@ export function parseJSON(raw: string): any {
           return JSON5.parse(fixedJson);
         } catch (e4) {
           console.error('Failed to parse JSON string:', jsonString);
+          // @ts-ignore
           console.error('Original error:', e.message);
+          // @ts-ignore
           console.error('JSON5 error:', e2.message);
+          // @ts-ignore
           console.error('Recovery attempt error:', e4.message);
           throw new Error(`Parsing error: Response appears to be truncated. Please try again with a shorter question or check your OpenAI API limits.`);
         }

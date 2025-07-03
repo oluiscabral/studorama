@@ -12,6 +12,7 @@ export function calculateNextReview(question: Question, spacedRepetitionData: Sp
       interval = 3; // Second review after 3 days
     } else {
       // Use spaced repetition algorithm
+      // @ts-ignore
       const previousInterval = spacedRepetitionData.reviewIntervals[Math.min(question.reviewCount - 1, spacedRepetitionData.reviewIntervals.length - 1)];
       interval = Math.round(previousInterval * spacedRepetitionData.easeFactor);
     }

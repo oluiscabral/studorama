@@ -92,21 +92,22 @@ export default function StudySessionComponent() {
         setLearningSettings(existingSession.learningSettings || DEFAULT_LEARNING_SETTINGS);
         setSessionStarted(true);
         
-        // Find the next question to continue from
+        // Continue from the last viewed question
         continueFromLastQuestion(existingSession);
       }
     }
   }, [location.state, sessions]);
 
   const continueFromLastQuestion = (session: StudySession) => {
-    // Find the first question that hasn't been answered yet
-    const unansweredQuestion = session.questions.find(q => q.isCorrect === undefined);
+    // Get the current question index, defaulting to 0 if not set or if no questions exist
+    const currentIndex = session.currentQuestionIndex ?? 0;
+    const questionToShow = session.questions[currentIndex];
     
-    if (unansweredQuestion) {
-      // Continue from the first unanswered question
-      setCurrentQuestion(unansweredQuestion);
+    if (questionToShow) {
+      // Load the specific question the user was on
+      setCurrentQuestion(questionToShow);
       
-      // Reset all UI states for a fresh start
+      // Reset UI states first
       setSelectedAnswer(null);
       setDissertativeAnswer('');
       setShowFeedback(false);
@@ -114,31 +115,31 @@ export default function StudySessionComponent() {
       setShowSelfExplanation(false);
       setElaborativeResponse('');
       setSelfExplanation('');
-      setConfidenceLevel(3);
+      setConfidenceLevel(questionToShow.confidence || 3);
       
-      // If this question already has a user answer, restore it and show feedback
-      if (unansweredQuestion.userAnswer !== undefined) {
-        if (unansweredQuestion.type === 'multiple-choice') {
-          setSelectedAnswer(unansweredQuestion.userAnswer as number);
+      // If this question has a user answer, restore it
+      if (questionToShow.userAnswer !== undefined) {
+        if (questionToShow.type === 'multiple-choice') {
+          setSelectedAnswer(questionToShow.userAnswer as number);
         } else {
-          setDissertativeAnswer(unansweredQuestion.userAnswer as string);
+          setDissertativeAnswer(questionToShow.userAnswer as string);
         }
         
-        // If the question was already evaluated, show feedback
-        if (unansweredQuestion.isCorrect !== undefined) {
+        // If the question was already evaluated, show feedback immediately
+        if (questionToShow.isCorrect !== undefined) {
           setShowFeedback(true);
           
           // Show learning prompts if applicable
-          if (learningSettings.elaborativeInterrogation && !unansweredQuestion.isCorrect) {
+          if (learningSettings.elaborativeInterrogation && !questionToShow.isCorrect) {
             setShowElaborativePrompt(true);
           }
-          if (learningSettings.selfExplanation && unansweredQuestion.isCorrect) {
+          if (learningSettings.selfExplanation && questionToShow.isCorrect) {
             setShowSelfExplanation(true);
           }
         }
       }
     } else {
-      // All questions have been answered, load a new question
+      // No questions yet or invalid index, load a new one
       loadNextQuestion(session);
     }
   };
@@ -234,6 +235,7 @@ export default function StudySessionComponent() {
       totalQuestions: 0,
       questionType,
       learningSettings,
+      currentQuestionIndex: 0,
       spacedRepetition: {
         reviewIntervals: [1, 3, 7, 14, 30],
         currentInterval: 0,
@@ -245,6 +247,20 @@ export default function StudySessionComponent() {
     setCurrentSession(newSession);
     setSessionStarted(true);
     loadNextQuestion(newSession);
+  };
+
+  // Helper function to save session to localStorage
+  const saveSessionToStorage = (session: StudySession) => {
+    setSessions(prev => {
+      const existingIndex = prev.findIndex(s => s.id === session.id);
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = session;
+        return updated;
+      } else {
+        return [...prev, session];
+      }
+    });
   };
 
   const loadNextQuestion = async (session: StudySession) => {
@@ -265,13 +281,25 @@ export default function StudySessionComponent() {
         if (reviewQuestions.length > 0 && Math.random() < 0.3) {
           // 30% chance to review a previous question
           const questionToReview = reviewQuestions[Math.floor(Math.random() * reviewQuestions.length)];
-          setCurrentQuestion({
+          const newQuestion: Question = {
             ...questionToReview,
             id: Date.now().toString(), // New ID for tracking
             attempts: 0,
             userAnswer: undefined,
             isCorrect: undefined
-          });
+          };
+          
+          setCurrentQuestion(newQuestion);
+          
+          // Save the question immediately to the session
+          const updatedSession = {
+            ...session,
+            questions: [...session.questions, newQuestion],
+            currentQuestionIndex: session.questions.length // Point to the new question
+          };
+          setCurrentSession(updatedSession);
+          saveSessionToStorage(updatedSession);
+          
           setLoading(false);
           return;
         }
@@ -280,6 +308,7 @@ export default function StudySessionComponent() {
       const nextType = getNextQuestionType(session);
       const subjectContext = buildSubjectContext();
       let questionData;
+      let newQuestion: Question;
       
       if (nextType === 'dissertative') {
         questionData = await generateDissertativeQuestion(
@@ -290,7 +319,7 @@ export default function StudySessionComponent() {
           language
         );
         
-        const newQuestion: Question = {
+        newQuestion = {
           id: Date.now().toString(),
           question: questionData.question,
           correctAnswerText: questionData.sampleAnswer,
@@ -301,8 +330,6 @@ export default function StudySessionComponent() {
           confidence: 3, // Always start at middle
           retrievalStrength: 0.5
         };
-
-        setCurrentQuestion(newQuestion);
       } else {
         // Apply desirable difficulties - make some questions harder
         const difficultyModifier = learningSettings.desirableDifficulties && Math.random() < 0.3 
@@ -319,7 +346,7 @@ export default function StudySessionComponent() {
           language
         );
         
-        const newQuestion: Question = {
+        newQuestion = {
           id: Date.now().toString(),
           question: questionData.question,
           options: questionData.options,
@@ -332,9 +359,19 @@ export default function StudySessionComponent() {
           confidence: 3, // Always start at middle
           retrievalStrength: 0.5
         };
-
-        setCurrentQuestion(newQuestion);
       }
+
+      setCurrentQuestion(newQuestion);
+      
+      // CRITICAL: Save the question immediately to the session
+      const updatedSession = {
+        ...session,
+        questions: [...session.questions, newQuestion],
+        currentQuestionIndex: session.questions.length // Point to the new question
+      };
+      setCurrentSession(updatedSession);
+      saveSessionToStorage(updatedSession);
+      
     } catch (error) {
       console.error('Error generating question:', error);
       const errorMessage = language === 'pt-BR' 
@@ -439,7 +476,7 @@ export default function StudySessionComponent() {
       setShowSelfExplanation(true);
     }
 
-    // Update session
+    // Update session with the current question
     const updatedQuestions = [...currentSession.questions];
     const existingIndex = updatedQuestions.findIndex(q => q.id === currentQuestion.id);
     
@@ -449,9 +486,13 @@ export default function StudySessionComponent() {
       updatedQuestions.push(updatedQuestion);
     }
 
+    // Update the current question index to track where the user is
+    const currentQuestionIndex = existingIndex >= 0 ? existingIndex : updatedQuestions.length - 1;
+
     const updatedSession = {
       ...currentSession,
       questions: updatedQuestions,
+      currentQuestionIndex,
       totalQuestions: updatedQuestions.length,
       score: Math.round((updatedQuestions.filter(q => q.isCorrect).length / updatedQuestions.length) * 100)
     };
@@ -459,21 +500,24 @@ export default function StudySessionComponent() {
     setCurrentSession(updatedSession);
 
     // Save to localStorage
-    setSessions(prev => {
-      const existingIndex = prev.findIndex(s => s.id === updatedSession.id);
-      if (existingIndex >= 0) {
-        const updated = [...prev];
-        updated[existingIndex] = updatedSession;
-        return updated;
-      } else {
-        return [...prev, updatedSession];
-      }
-    });
+    saveSessionToStorage(updatedSession);
   };
 
   const nextQuestion = () => {
     if (currentSession) {
-      loadNextQuestion(currentSession);
+      // Update the current question index to the next question
+      const nextIndex = (currentSession.currentQuestionIndex || 0) + 1;
+      const updatedSession = {
+        ...currentSession,
+        currentQuestionIndex: nextIndex
+      };
+      
+      setCurrentSession(updatedSession);
+      
+      // Save the updated session
+      saveSessionToStorage(updatedSession);
+      
+      loadNextQuestion(updatedSession);
     }
   };
 
@@ -484,19 +528,23 @@ export default function StudySessionComponent() {
         status: 'completed' as const
       };
 
-      setSessions(prev => {
-        const existingIndex = prev.findIndex(s => s.id === finalSession.id);
-        if (existingIndex >= 0) {
-          const updated = [...prev];
-          updated[existingIndex] = finalSession;
-          return updated;
-        } else {
-          return [...prev, finalSession];
-        }
-      });
+      saveSessionToStorage(finalSession);
     }
     
     navigate('/history');
+  };
+
+  // Calculate the current question number based on the session's current question index
+  const getCurrentQuestionNumber = () => {
+    if (!currentSession) return 1;
+    
+    if (showFeedback) {
+      // When showing feedback, show the current question number
+      return (currentSession.currentQuestionIndex || 0) + 1;
+    } else {
+      // When asking a new question, show the next question number
+      return (currentSession.currentQuestionIndex || 0) + 1;
+    }
   };
 
   if (!sessionStarted) {
@@ -778,10 +826,6 @@ export default function StudySessionComponent() {
     );
   }
 
-  // Calculate the current question number based on answered questions
-  const answeredQuestionsCount = currentSession?.questions.filter(q => q.isCorrect !== undefined).length || 0;
-  const currentQuestionNumber = showFeedback ? answeredQuestionsCount : answeredQuestionsCount + 1;
-
   return (
     <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
       {/* Session Header */}
@@ -801,7 +845,7 @@ export default function StudySessionComponent() {
               </div>
             )}
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-600 mt-2">
-              <span>{t.question} {currentQuestionNumber}</span>
+              <span>{t.question} {getCurrentQuestionNumber()}</span>
               <span className="flex items-center">
                 {currentQuestion.type === 'multiple-choice' ? (
                   <List className="w-4 h-4 mr-1 flex-shrink-0" />

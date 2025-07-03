@@ -10,6 +10,7 @@ export interface StudySession {
   questionType?: 'multiple-choice' | 'dissertative' | 'mixed';
   learningSettings?: LearningSettings;
   spacedRepetition?: SpacedRepetitionData;
+  currentQuestionIndex?: number; // Track which question the user was on
 }
 
 export interface Question {

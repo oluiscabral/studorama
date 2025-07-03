@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Key, Bot, Globe, Info, Trash2, RefreshCw, BookOpen, Brain, Lightbulb, Settings as SettingsIcon } from 'lucide-react';
+import { Save, Key, Bot, Globe, Info, Trash2, RefreshCw, BookOpen, Brain, Lightbulb, Settings as SettingsIcon, Zap } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
 import { Language, LearningSettings, LearningTechniquesPreference } from '../types';
@@ -33,7 +33,8 @@ export default function Settings() {
   const [apiSettings, setApiSettings] = useLocalStorage('studorama-api-settings', { 
     openaiApiKey: '',
     model: 'gpt-4o-mini',
-    customPrompts: DEFAULT_PROMPTS
+    customPrompts: DEFAULT_PROMPTS,
+    preloadQuestions: 3 // Default to 3 questions ahead
   });
   const [learningPreference, setLearningPreference] = useLocalStorage<LearningTechniquesPreference>('studorama-learning-preference', DEFAULT_LEARNING_PREFERENCE);
   const [showSaved, setShowSaved] = useState(false);
@@ -243,6 +244,37 @@ export default function Settings() {
                       {apiSettings.model === 'gpt-3.5-turbo' && t.fastEconomical}
                     </div>
                   </div>
+
+                  {/* Question Preloading Setting */}
+                  <div>
+                    <label htmlFor="preloadQuestions" className="block text-sm font-medium text-gray-700 mb-2">
+                      <div className="flex items-center space-x-2">
+                        <Zap className="w-4 h-4 text-purple-600" />
+                        <span>
+                          {language === 'pt-BR' ? 'Questões Pré-carregadas' : 'Preloaded Questions'}
+                        </span>
+                      </div>
+                    </label>
+                    <select
+                      id="preloadQuestions"
+                      value={apiSettings.preloadQuestions || 3}
+                      onChange={(e) => setApiSettings(prev => ({ ...prev, preloadQuestions: parseInt(e.target.value) }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
+                    >
+                      <option value={0}>{language === 'pt-BR' ? 'Desabilitado (0)' : 'Disabled (0)'}</option>
+                      <option value={1}>1 {language === 'pt-BR' ? 'questão' : 'question'}</option>
+                      <option value={2}>2 {language === 'pt-BR' ? 'questões' : 'questions'}</option>
+                      <option value={3}>3 {language === 'pt-BR' ? 'questões (Recomendado)' : 'questions (Recommended)'}</option>
+                      <option value={4}>4 {language === 'pt-BR' ? 'questões' : 'questions'}</option>
+                      <option value={5}>5 {language === 'pt-BR' ? 'questões' : 'questions'}</option>
+                    </select>
+                    <div className="mt-2 text-sm text-gray-600">
+                      {language === 'pt-BR' 
+                        ? 'Número de questões carregadas antecipadamente em segundo plano para uma experiência mais fluida. Valores maiores usam mais tokens da API.'
+                        : 'Number of questions loaded ahead in the background for a smoother experience. Higher values use more API tokens.'
+                      }
+                    </div>
+                  </div>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
@@ -259,6 +291,44 @@ export default function Settings() {
                     <li>{t.copyPasteKey}</li>
                   </ol>
                 </div>
+
+                {/* Preloading Benefits */}
+                {(apiSettings.preloadQuestions || 0) > 0 && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mt-6">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Zap className="w-5 h-5 text-purple-600" />
+                      <h4 className="font-medium text-purple-900">
+                        {language === 'pt-BR' ? 'Carregamento Inteligente Ativado' : 'Smart Loading Enabled'}
+                      </h4>
+                    </div>
+                    <ul className="text-purple-800 text-sm space-y-1 list-disc list-inside">
+                      <li>
+                        {language === 'pt-BR' 
+                          ? 'Transições instantâneas entre questões'
+                          : 'Instant transitions between questions'
+                        }
+                      </li>
+                      <li>
+                        {language === 'pt-BR' 
+                          ? 'Carregamento em segundo plano durante o estudo'
+                          : 'Background loading while you study'
+                        }
+                      </li>
+                      <li>
+                        {language === 'pt-BR' 
+                          ? 'Experiência de estudo mais fluida'
+                          : 'Smoother study experience'
+                        }
+                      </li>
+                      <li>
+                        {language === 'pt-BR' 
+                          ? `${apiSettings.preloadQuestions} questões sempre prontas`
+                          : `${apiSettings.preloadQuestions} questions always ready`
+                        }
+                      </li>
+                    </ul>
+                  </div>
+                )}
 
                 {/* Configuration Status */}
                 <div className="bg-gray-50 rounded-lg p-4 mt-6">
@@ -277,6 +347,17 @@ export default function Settings() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">{t.selectedModel}</span>
                       <span className="text-sm font-medium text-gray-900">{apiSettings.model}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">
+                        {language === 'pt-BR' ? 'Pré-carregamento' : 'Preloading'}
+                      </span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {(apiSettings.preloadQuestions || 0) > 0 
+                          ? `${apiSettings.preloadQuestions} ${language === 'pt-BR' ? 'questões' : 'questions'}`
+                          : (language === 'pt-BR' ? 'Desabilitado' : 'Disabled')
+                        }
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">{t.enhancedStudyMode}</span>
@@ -579,6 +660,12 @@ export default function Settings() {
                     <li>{t.selfExplanationExercises}</li>
                     <li>{t.confidenceTracking}</li>
                     <li>{t.sessionHistoryAnalytics}</li>
+                    <li>
+                      {language === 'pt-BR' 
+                        ? 'Pré-carregamento inteligente de questões'
+                        : 'Smart question preloading'
+                      }
+                    </li>
                   </ul>
                 </div>
 

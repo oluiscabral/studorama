@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { CheckCircle, XCircle, RefreshCw, ArrowRight, BookOpen, FileText, List, Brain, Target, Clock, Lightbulb, HelpCircle, Settings, Plus, X } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, ArrowRight, BookOpen, FileText, List, Brain, Target, Clock, Lightbulb, HelpCircle, Settings, Plus, X, FunctionSquare as Function, Code, Loader2 } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
 import { StudySession, Question, LearningSettings, LearningTechniquesPreference } from '../types';
@@ -38,7 +38,8 @@ export default function StudySessionComponent() {
       evaluation: '',
       elaborativePrompt: '',
       retrievalPrompt: ''
-    }
+    },
+    preloadQuestions: 3
   });
   
   const [currentSession, setCurrentSession] = useState<StudySession | null>(null);
@@ -60,6 +61,14 @@ export default function StudySessionComponent() {
   const [showSelfExplanation, setShowSelfExplanation] = useState(false);
   const [selfExplanation, setSelfExplanation] = useState('');
   const [loadingModifierSuggestions, setLoadingModifierSuggestions] = useState(false);
+  
+  // New visualization options
+  const [enableLatex, setEnableLatex] = useState(false);
+  const [enableCodeVisualization, setEnableCodeVisualization] = useState(false);
+  
+  // Preloading states
+  const [backgroundLoading, setBackgroundLoading] = useState(false);
+  const [preloadingProgress, setPreloadingProgress] = useState(0);
 
   // Learning techniques labels translation
   const getLearningTechniqueLabel = (key: string): string => {
@@ -90,6 +99,8 @@ export default function StudySessionComponent() {
         setSubjectModifiers(existingSession.subjectModifiers || []);
         setQuestionType(existingSession.questionType || 'multiple-choice');
         setLearningSettings(existingSession.learningSettings || DEFAULT_LEARNING_SETTINGS);
+        setEnableLatex(existingSession.enableLatex || false);
+        setEnableCodeVisualization(existingSession.enableCodeVisualization || false);
         setSessionStarted(true);
         
         // Continue from the last viewed question
@@ -97,6 +108,18 @@ export default function StudySessionComponent() {
       }
     }
   }, [location.state, sessions]);
+
+  // Background preloading effect
+  useEffect(() => {
+    if (currentSession && sessionStarted && apiSettings.preloadQuestions > 0) {
+      const preloadedCount = currentSession.preloadedQuestions?.length || 0;
+      const targetCount = apiSettings.preloadQuestions;
+      
+      if (preloadedCount < targetCount && !backgroundLoading) {
+        preloadQuestions(currentSession, targetCount - preloadedCount);
+      }
+    }
+  }, [currentSession, sessionStarted, apiSettings.preloadQuestions, backgroundLoading]);
 
   const continueFromLastQuestion = (session: StudySession) => {
     // Get the current question index, defaulting to 0 if not set or if no questions exist
@@ -141,6 +164,109 @@ export default function StudySessionComponent() {
     } else {
       // No questions yet or invalid index, load a new one
       loadNextQuestion(session);
+    }
+  };
+
+  const generateSingleQuestion = async (session: StudySession, isPreloaded: boolean = false): Promise<Question> => {
+    const nextType = getNextQuestionType(session);
+    const subjectContext = buildSubjectContext();
+    let questionData;
+    let newQuestion: Question;
+    
+    if (nextType === 'dissertative') {
+      questionData = await generateDissertativeQuestion(
+        subjectContext, 
+        apiSettings.openaiApiKey,
+        apiSettings.model || 'gpt-4o-mini',
+        apiSettings.customPrompts?.dissertative,
+        language,
+        session.enableLatex || false,
+        session.enableCodeVisualization || false
+      );
+      
+      newQuestion = {
+        id: Date.now().toString() + (isPreloaded ? '-preload' : ''),
+        question: questionData.question,
+        correctAnswerText: questionData.sampleAnswer,
+        attempts: 0,
+        type: 'dissertative',
+        difficulty: 'medium',
+        reviewCount: 0,
+        confidence: 3,
+        retrievalStrength: 0.5,
+        isPreloaded
+      };
+    } else {
+      // Apply desirable difficulties - make some questions harder
+      const difficultyModifier = learningSettings.desirableDifficulties && Math.random() < 0.3 
+        ? (language === 'pt-BR' 
+            ? ' Torne esta questão mais desafiadora e que exija pensamento mais profundo.' 
+            : ' Make this question more challenging and require deeper thinking.')
+        : '';
+
+      questionData = await generateQuestion(
+        subjectContext + difficultyModifier, 
+        apiSettings.openaiApiKey,
+        apiSettings.model || 'gpt-4o-mini',
+        apiSettings.customPrompts?.multipleChoice,
+        language,
+        session.enableLatex || false,
+        session.enableCodeVisualization || false
+      );
+      
+      newQuestion = {
+        id: Date.now().toString() + (isPreloaded ? '-preload' : ''),
+        question: questionData.question,
+        options: questionData.options,
+        correctAnswer: questionData.correctAnswer,
+        attempts: 0,
+        feedback: questionData.explanation,
+        type: 'multiple-choice',
+        difficulty: difficultyModifier ? 'hard' : 'medium',
+        reviewCount: 0,
+        confidence: 3,
+        retrievalStrength: 0.5,
+        isPreloaded
+      };
+    }
+
+    return newQuestion;
+  };
+
+  const preloadQuestions = async (session: StudySession, count: number) => {
+    if (!apiSettings.openaiApiKey || count <= 0) return;
+    
+    setBackgroundLoading(true);
+    setPreloadingProgress(0);
+    
+    try {
+      const newPreloadedQuestions: Question[] = [];
+      
+      for (let i = 0; i < count; i++) {
+        try {
+          const question = await generateSingleQuestion(session, true);
+          newPreloadedQuestions.push(question);
+          setPreloadingProgress(((i + 1) / count) * 100);
+        } catch (error) {
+          console.error(`Error preloading question ${i + 1}:`, error);
+          break; // Stop preloading on error
+        }
+      }
+      
+      if (newPreloadedQuestions.length > 0) {
+        const updatedSession = {
+          ...session,
+          preloadedQuestions: [...(session.preloadedQuestions || []), ...newPreloadedQuestions]
+        };
+        
+        setCurrentSession(updatedSession);
+        saveSessionToStorage(updatedSession);
+      }
+    } catch (error) {
+      console.error('Error preloading questions:', error);
+    } finally {
+      setBackgroundLoading(false);
+      setPreloadingProgress(0);
     }
   };
 
@@ -236,6 +362,9 @@ export default function StudySessionComponent() {
       questionType,
       learningSettings,
       currentQuestionIndex: 0,
+      enableLatex,
+      enableCodeVisualization,
+      preloadedQuestions: [],
       spacedRepetition: {
         reviewIntervals: [1, 3, 7, 14, 30],
         currentInterval: 0,
@@ -275,13 +404,40 @@ export default function StudySessionComponent() {
     setConfidenceLevel(3); // Always reset to middle
 
     try {
+      let newQuestion: Question;
+      
+      // Check if we have preloaded questions available
+      if (session.preloadedQuestions && session.preloadedQuestions.length > 0) {
+        // Use the first preloaded question
+        const preloadedQuestion = session.preloadedQuestions[0];
+        newQuestion = {
+          ...preloadedQuestion,
+          id: Date.now().toString(), // Give it a new ID
+          isPreloaded: false // Mark as no longer preloaded
+        };
+        
+        // Remove the used question from preloaded questions
+        const updatedSession = {
+          ...session,
+          preloadedQuestions: session.preloadedQuestions.slice(1),
+          questions: [...session.questions, newQuestion],
+          currentQuestionIndex: session.questions.length
+        };
+        
+        setCurrentSession(updatedSession);
+        saveSessionToStorage(updatedSession);
+        setCurrentQuestion(newQuestion);
+        setLoading(false);
+        return;
+      }
+
       // Check for spaced repetition questions first
       if (learningSettings.spacedRepetition) {
         const reviewQuestions = session.questions.filter(q => shouldReviewQuestion(q));
         if (reviewQuestions.length > 0 && Math.random() < 0.3) {
           // 30% chance to review a previous question
           const questionToReview = reviewQuestions[Math.floor(Math.random() * reviewQuestions.length)];
-          const newQuestion: Question = {
+          newQuestion = {
             ...questionToReview,
             id: Date.now().toString(), // New ID for tracking
             attempts: 0,
@@ -305,62 +461,9 @@ export default function StudySessionComponent() {
         }
       }
 
-      const nextType = getNextQuestionType(session);
-      const subjectContext = buildSubjectContext();
-      let questionData;
-      let newQuestion: Question;
+      // Generate a new question
+      newQuestion = await generateSingleQuestion(session, false);
       
-      if (nextType === 'dissertative') {
-        questionData = await generateDissertativeQuestion(
-          subjectContext, 
-          apiSettings.openaiApiKey,
-          apiSettings.model || 'gpt-4o-mini',
-          apiSettings.customPrompts?.dissertative,
-          language
-        );
-        
-        newQuestion = {
-          id: Date.now().toString(),
-          question: questionData.question,
-          correctAnswerText: questionData.sampleAnswer,
-          attempts: 0,
-          type: 'dissertative',
-          difficulty: 'medium',
-          reviewCount: 0,
-          confidence: 3, // Always start at middle
-          retrievalStrength: 0.5
-        };
-      } else {
-        // Apply desirable difficulties - make some questions harder
-        const difficultyModifier = learningSettings.desirableDifficulties && Math.random() < 0.3 
-          ? (language === 'pt-BR' 
-              ? ' Torne esta questão mais desafiadora e que exija pensamento mais profundo.' 
-              : ' Make this question more challenging and require deeper thinking.')
-          : '';
-
-        questionData = await generateQuestion(
-          subjectContext + difficultyModifier, 
-          apiSettings.openaiApiKey,
-          apiSettings.model || 'gpt-4o-mini',
-          apiSettings.customPrompts?.multipleChoice,
-          language
-        );
-        
-        newQuestion = {
-          id: Date.now().toString(),
-          question: questionData.question,
-          options: questionData.options,
-          correctAnswer: questionData.correctAnswer,
-          attempts: 0,
-          feedback: questionData.explanation,
-          type: 'multiple-choice',
-          difficulty: difficultyModifier ? 'hard' : 'medium',
-          reviewCount: 0,
-          confidence: 3, // Always start at middle
-          retrievalStrength: 0.5
-        };
-      }
-
       setCurrentQuestion(newQuestion);
       
       // CRITICAL: Save the question immediately to the session
@@ -411,7 +514,9 @@ export default function StudySessionComponent() {
           apiSettings.openaiApiKey,
           apiSettings.model || 'gpt-4o-mini',
           apiSettings.customPrompts?.evaluation,
-          language
+          language,
+          currentSession.enableLatex || false,
+          currentSession.enableCodeVisualization || false
         );
 
         // Enhanced scoring based on evaluation
@@ -547,6 +652,14 @@ export default function StudySessionComponent() {
     }
   };
 
+  // Render content based on LaTeX setting
+  const renderContent = (content: string) => {
+    if (currentSession?.enableLatex) {
+      return <LaTeXRenderer content={content} />;
+    }
+    return <div className="break-words">{content}</div>;
+  };
+
   if (!sessionStarted) {
     return (
       <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
@@ -674,6 +787,63 @@ export default function StudySessionComponent() {
                   <h3 className="font-medium text-gray-900">{t.mixed}</h3>
                   <p className="text-sm text-gray-600 mt-1">{t.interleavedPractice}</p>
                 </button>
+              </div>
+            </div>
+
+            {/* Visualization Options */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-medium text-blue-900 mb-4 flex items-center">
+                <Settings className="w-5 h-5 mr-2 flex-shrink-0" />
+                <span className="break-words">
+                  {language === 'pt-BR' ? 'Opções de Visualização' : 'Visualization Options'}
+                </span>
+              </h3>
+              <div className="space-y-4">
+                <label className="flex items-start space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={enableLatex}
+                    onChange={(e) => setEnableLatex(e.target.checked)}
+                    className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 mt-0.5 flex-shrink-0"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Function className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                      <span className="font-medium text-blue-900">
+                        {language === 'pt-BR' ? 'Visualização LaTeX' : 'LaTeX Visualization'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      {language === 'pt-BR' 
+                        ? 'Renderizar equações matemáticas e fórmulas científicas com formatação LaTeX'
+                        : 'Render mathematical equations and scientific formulas with LaTeX formatting'
+                      }
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-start space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={enableCodeVisualization}
+                    onChange={(e) => setEnableCodeVisualization(e.target.checked)}
+                    className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 mt-0.5 flex-shrink-0"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Code className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                      <span className="font-medium text-blue-900">
+                        {language === 'pt-BR' ? 'Visualização de Código' : 'Code Visualization'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      {language === 'pt-BR' 
+                        ? 'Incluir exemplos de código e sintaxe de programação quando relevante'
+                        : 'Include code examples and programming syntax when relevant'
+                      }
+                    </p>
+                  </div>
+                </label>
               </div>
             </div>
 
@@ -828,6 +998,29 @@ export default function StudySessionComponent() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
+      {/* Background Loading Indicator */}
+      {backgroundLoading && (
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+          <div className="flex items-center space-x-3">
+            <Loader2 className="w-4 h-4 text-purple-600 animate-spin flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-purple-800">
+                {language === 'pt-BR' 
+                  ? 'Carregando questões em segundo plano...'
+                  : 'Loading questions in background...'
+                }
+              </p>
+              <div className="w-full bg-purple-200 rounded-full h-1.5 mt-1">
+                <div
+                  className="bg-purple-600 h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${preloadingProgress}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Session Header */}
       <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -863,6 +1056,26 @@ export default function StudySessionComponent() {
                   {t[currentQuestion.difficulty as keyof typeof t] || currentQuestion.difficulty}
                 </span>
               )}
+              {/* Visualization indicators */}
+              {currentSession?.enableLatex && (
+                <span className="flex items-center text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                  <Function className="w-3 h-3 mr-1" />
+                  LaTeX
+                </span>
+              )}
+              {currentSession?.enableCodeVisualization && (
+                <span className="flex items-center text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                  <Code className="w-3 h-3 mr-1" />
+                  Code
+                </span>
+              )}
+              {/* Preloaded questions indicator */}
+              {(currentSession?.preloadedQuestions?.length || 0) > 0 && (
+                <span className="flex items-center text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                  <Loader2 className="w-3 h-3 mr-1" />
+                  {currentSession?.preloadedQuestions?.length} {language === 'pt-BR' ? 'prontas' : 'ready'}
+                </span>
+              )}
             </div>
             {apiSettings.model && (
               <p className="text-xs text-gray-500 mt-1">{t.using} {apiSettings.model}</p>
@@ -879,7 +1092,7 @@ export default function StudySessionComponent() {
       <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-6 sm:p-8">
         <div className="mb-6 sm:mb-8">
           <div className="text-lg sm:text-xl font-medium text-gray-900 mb-6">
-            <LaTeXRenderer content={currentQuestion.question} />
+            {renderContent(currentQuestion.question)}
           </div>
 
           {currentQuestion.type === 'multiple-choice' && currentQuestion.options ? (
@@ -919,7 +1132,7 @@ export default function StudySessionComponent() {
                       )}
                     </div>
                     <div className="text-gray-900 break-words flex-1">
-                      <LaTeXRenderer content={option} />
+                      {renderContent(option)}
                     </div>
                     {showFeedback && index === currentQuestion.correctAnswer && (
                       <CheckCircle className="w-5 h-5 text-green-600 ml-auto flex-shrink-0" />
@@ -943,9 +1156,17 @@ export default function StudySessionComponent() {
               />
               <p className="text-sm text-gray-500">
                 {language === 'pt-BR' 
-                  ? 'Forneça uma resposta abrangente explicando seu raciocínio e pontos-chave. Use LaTeX para equações matemáticas (ex: $x^2 + y^2 = z^2$ ou $$\\int_0^1 x dx$$).'
-                  : 'Provide a comprehensive answer explaining your reasoning and key points. Use LaTeX for mathematical equations (e.g., $x^2 + y^2 = z^2$ or $$\\int_0^1 x dx$$).'
+                  ? 'Forneça uma resposta abrangente explicando seu raciocínio e pontos-chave. Foque no seu processo de pensamento e plano de ação.'
+                  : 'Provide a comprehensive answer explaining your reasoning and key points. Focus on your thought process and action plan.'
                 }
+                {currentSession?.enableLatex && (
+                  <span>
+                    {language === 'pt-BR' 
+                      ? ' Use LaTeX para equações matemáticas (ex: $x^2 + y^2 = z^2$ ou $$\\int_0^1 x dx$$).'
+                      : ' Use LaTeX for mathematical equations (e.g., $x^2 + y^2 = z^2$ or $$\\int_0^1 x dx$$).'
+                    }
+                  </span>
+                )}
               </p>
             </div>
           )}
@@ -1001,7 +1222,7 @@ export default function StudySessionComponent() {
               <div className={`text-sm break-words ${
                 currentQuestion.isCorrect ? 'text-green-700' : 'text-red-700'
               }`}>
-                <LaTeXRenderer content={currentQuestion.feedback} />
+                {renderContent(currentQuestion.feedback)}
               </div>
             )}
 
@@ -1011,7 +1232,7 @@ export default function StudySessionComponent() {
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-1">{t.aiEvaluation}</h4>
                     <div className="text-sm text-gray-600 break-words">
-                      <LaTeXRenderer content={currentQuestion.aiEvaluation} />
+                      {renderContent(currentQuestion.aiEvaluation)}
                     </div>
                   </div>
                 )}
@@ -1019,7 +1240,7 @@ export default function StudySessionComponent() {
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-1">{t.modelAnswer}</h4>
                     <div className="text-sm text-gray-600 break-words">
-                      <LaTeXRenderer content={currentQuestion.correctAnswerText} />
+                      {renderContent(currentQuestion.correctAnswerText)}
                     </div>
                   </div>
                 )}

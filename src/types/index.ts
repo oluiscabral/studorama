@@ -11,6 +11,9 @@ export interface StudySession {
   learningSettings?: LearningSettings;
   spacedRepetition?: SpacedRepetitionData;
   currentQuestionIndex?: number; // Track which question the user was on
+  preloadedQuestions?: Question[]; // Questions loaded ahead of time
+  enableLatex?: boolean; // LaTeX visualization option
+  enableCodeVisualization?: boolean; // Code visualization option
 }
 
 export interface Question {
@@ -31,6 +34,7 @@ export interface Question {
   nextReview?: string;
   confidence?: number; // 1-5 scale
   retrievalStrength?: number; // How well the user knows this
+  isPreloaded?: boolean; // Mark if this question was preloaded
 }
 
 export interface LearningSettings {
@@ -65,6 +69,12 @@ export interface APISettings {
     elaborativePrompt: string;
     retrievalPrompt: string;
   };
+  preloadQuestions?: number; // Number of questions to preload
+}
+
+export interface PreloadingSettings {
+  preloadQuestions: number;
+  enableBackgroundLoading: boolean;
 }
 
 export type Language = 'en-US' | 'pt-BR';

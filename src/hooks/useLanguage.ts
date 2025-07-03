@@ -24,20 +24,19 @@ export function useLanguage() {
     setLanguageSettings({ language: newLanguage });
     setCurrentLanguage(newLanguage);
     
-    // Use a more reliable refresh method that works better on mobile browsers
+    // Use a more reliable refresh method that works better on mobile browsers and dev servers
     setTimeout(() => {
       try {
-        // First try the standard reload method
+        // For language changes, redirect to home page to ensure clean state
         if (typeof window !== 'undefined' && window.location) {
-          // For mobile browsers, use replace to avoid navigation issues
-          const currentUrl = window.location.href;
-          const url = new URL(currentUrl);
+          // Create a clean URL pointing to home page
+          const baseUrl = window.location.origin;
           
-          // Add a cache-busting parameter to ensure fresh load
-          url.searchParams.set('_refresh', Date.now().toString());
+          // Add cache-busting parameter to ensure fresh load
+          const refreshUrl = `${baseUrl}/?_lang_refresh=${Date.now()}`;
           
-          // Use location.replace instead of reload for better mobile compatibility
-          window.location.replace(url.toString());
+          // Use location.replace to avoid navigation issues and go to home
+          window.location.replace(refreshUrl);
         }
       } catch (error) {
         console.error('Error during language change refresh:', error);

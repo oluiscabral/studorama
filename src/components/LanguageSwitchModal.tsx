@@ -114,12 +114,12 @@ export default function LanguageSwitchModal({
               }}
             >
               <h4 className="font-medium mb-2" style={{ color: themeConfig.colors.warning }}>
-                📱 {t.language === 'pt-BR' ? 'Aviso para Dispositivos Móveis' : 'Mobile Device Notice'}
+                📱 {language === 'pt-BR' ? 'Aviso para Dispositivos Móveis' : 'Mobile Device Notice'}
               </h4>
               <p className="text-sm" style={{ color: themeConfig.colors.warning }}>
-                {t.language === 'pt-BR' 
-                  ? 'A página será recarregada para aplicar o novo idioma. Isso é normal e necessário para garantir que todas as traduções sejam aplicadas corretamente.'
-                  : 'The page will refresh to apply the new language. This is normal and necessary to ensure all translations are applied correctly.'
+                {language === 'pt-BR' 
+                  ? 'A página será recarregada e você será redirecionado para a página inicial para aplicar o novo idioma. Isso é normal e necessário para garantir que todas as traduções sejam aplicadas corretamente.'
+                  : 'The page will refresh and you will be redirected to the home page to apply the new language. This is normal and necessary to ensure all translations are applied correctly.'
                 }
               </p>
             </div>

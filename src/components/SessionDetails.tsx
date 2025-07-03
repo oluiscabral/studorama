@@ -5,7 +5,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useLanguage } from '../hooks/useLanguage';
 import { StudySession } from '../types';
 import { formatDate } from '../utils/i18n';
-import MarkdownRenderer from './MarkdownRenderer';
+import LaTeXRenderer from './LaTeXRenderer';
 
 export default function SessionDetails() {
   const { id } = useParams<{ id: string }>();
@@ -139,7 +139,7 @@ export default function SessionDetails() {
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
                     <div className="text-lg font-medium text-gray-900 break-words flex-1">
-                      <MarkdownRenderer content={question.question} />
+                      <LaTeXRenderer content={question.question} />
                     </div>
                     {question.isCorrect ? (
                       <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
@@ -163,7 +163,7 @@ export default function SessionDetails() {
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                             <div className="text-gray-900 break-words flex-1">
-                              <MarkdownRenderer content={option} />
+                              <LaTeXRenderer content={option} />
                             </div>
                             <div className="flex items-center space-x-2 flex-shrink-0">
                               {optionIndex === question.correctAnswer && (
@@ -186,14 +186,14 @@ export default function SessionDetails() {
                       <div className="bg-gray-50 rounded-lg p-4">
                         <h4 className="text-sm font-medium text-gray-700 mb-2">{t.yourAnswer}:</h4>
                         <div className="text-gray-900 break-words">
-                          <MarkdownRenderer content={question.userAnswer || (language === 'pt-BR' ? 'Nenhuma resposta fornecida' : 'No answer provided')} />
+                          <LaTeXRenderer content={question.userAnswer || (language === 'pt-BR' ? 'Nenhuma resposta fornecida' : 'No answer provided')} />
                         </div>
                       </div>
                       {question.correctAnswerText && (
                         <div className="bg-green-50 rounded-lg p-4">
                           <h4 className="text-sm font-medium text-green-700 mb-2">{t.modelAnswer}:</h4>
                           <div className="text-green-900 break-words">
-                            <MarkdownRenderer content={question.correctAnswerText} />
+                            <LaTeXRenderer content={question.correctAnswerText} />
                           </div>
                         </div>
                       )}
@@ -212,7 +212,7 @@ export default function SessionDetails() {
                       <div className={`text-sm break-words ${
                         question.isCorrect ? 'text-green-700' : 'text-red-700'
                       }`}>
-                        <MarkdownRenderer content={question.feedback} />
+                        <LaTeXRenderer content={question.feedback} />
                       </div>
                     </div>
                   )}
@@ -221,7 +221,7 @@ export default function SessionDetails() {
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                       <h4 className="text-sm font-medium text-blue-700 mb-2">{t.aiEvaluation}</h4>
                       <div className="text-sm text-blue-700 break-words">
-                        <MarkdownRenderer content={question.aiEvaluation} />
+                        <LaTeXRenderer content={question.aiEvaluation} />
                       </div>
                     </div>
                   )}

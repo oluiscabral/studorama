@@ -11,17 +11,12 @@
   },
   "dependencies": {
     "json5": "^2.2.3",
+    "katex": "^0.16.9",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-markdown": "^9.0.1",
-    "react-router-dom": "^6.26.1",
-    "react-syntax-highlighter": "^15.6.1",
-    "rehype-highlight": "^7.0.2",
-    "rehype-katex": "^7.0.1",
-    "remark-breaks": "^4.0.0",
-    "remark-gfm": "^4.0.0",
-    "remark-math": "^6.0.0"
+    "react-katex": "^3.0.1",
+    "react-router-dom": "^6.26.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

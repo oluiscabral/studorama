@@ -24,34 +24,33 @@ export function useLanguage() {
     setLanguageSettings({ language: newLanguage });
     setCurrentLanguage(newLanguage);
     
-    // Use a more reliable refresh method that works better on mobile browsers and dev servers
+    // Use a more reliable refresh method that always goes to home page
     setTimeout(() => {
       try {
-        // For language changes, redirect to home page to ensure clean state
-        if (typeof window !== 'undefined' && window.location) {
-          // Create a clean URL pointing to home page
-          const baseUrl = window.location.origin;
-          
-          // Add cache-busting parameter to ensure fresh load
-          const refreshUrl = `${baseUrl}/?_lang_refresh=${Date.now()}`;
-          
-          // Use location.replace to avoid navigation issues and go to home
-          window.location.replace(refreshUrl);
-        }
-      } catch (error) {
-        console.error('Error during language change refresh:', error);
+        // Always redirect to home page to avoid 404 errors
+        const baseUrl = window.location.origin;
+        const homeUrl = `${baseUrl}/`;
         
-        // Fallback: try standard reload
+        // Use window.location.href for the most reliable redirect
+        window.location.href = homeUrl;
+      } catch (error) {
+        console.error('Error during language change redirect:', error);
+        
+        // Fallback: try to reload the current page
         try {
           window.location.reload();
         } catch (fallbackError) {
-          console.error('Fallback refresh also failed:', fallbackError);
+          console.error('Fallback reload also failed:', fallbackError);
           
-          // Last resort: redirect to home page
-          window.location.href = window.location.origin;
+          // Last resort: force navigation to home
+          try {
+            window.location.replace('/');
+          } catch (lastResortError) {
+            console.error('All redirect methods failed:', lastResortError);
+          }
         }
       }
-    }, 150); // Slightly longer delay to ensure localStorage is updated
+    }, 200); // Longer delay to ensure localStorage is fully updated
   };
 
   const updateLanguageSwitchPreference = (preference: Partial<LanguageSwitchPreference>) => {

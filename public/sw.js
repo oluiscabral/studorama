@@ -7,18 +7,11 @@ const DYNAMIC_CACHE_NAME = 'studorama-dynamic-v1.0.0';
 const STATIC_FILES = [
   '/',
   '/index.html',
-  '/src/main.tsx',
-  '/src/index.css',
   '/manifest.json',
   '/favicon.ico',
   '/favicon-16x16.png',
   '/favicon-32x32.png',
   '/apple-touch-icon.png'
-];
-
-// API endpoints that should be cached
-const API_CACHE_PATTERNS = [
-  /^https:\/\/api\.openai\.com\//
 ];
 
 // Install event - cache static files
@@ -81,16 +74,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
+  // Skip development server specific requests that cause issues
+  if (url.pathname.includes('/node_modules/') || 
+      url.pathname.includes('/@vite/') ||
+      url.pathname.includes('/@fs/') ||
+      url.pathname.includes('/src/') ||
+      url.searchParams.has('v') || // Vite versioned assets
+      url.pathname.endsWith('.tsx') ||
+      url.pathname.endsWith('.ts') ||
+      url.pathname.endsWith('.jsx') ||
+      url.pathname.endsWith('.js.map')) {
+    // Let these requests go directly to network without caching
+    return;
+  }
+  
   // Handle different types of requests
   if (STATIC_FILES.includes(url.pathname) || url.pathname === '/') {
     // Static files - cache first strategy
     event.respondWith(cacheFirst(request));
-  } else if (API_CACHE_PATTERNS.some(pattern => pattern.test(request.url))) {
-    // API requests - network first with cache fallback
-    event.respondWith(networkFirstWithCache(request));
   } else if (url.origin === location.origin) {
-    // Same origin requests - stale while revalidate
-    event.respondWith(staleWhileRevalidate(request));
+    // Same origin requests - network first
+    event.respondWith(networkFirst(request));
   } else {
     // External resources - network only
     event.respondWith(fetch(request));
@@ -113,13 +117,17 @@ async function cacheFirst(request) {
     return networkResponse;
   } catch (error) {
     console.error('Cache first strategy failed:', error);
-    // Return offline page or fallback
-    return new Response('Offline', { status: 503 });
+    // Return a basic offline response
+    return new Response('Offline', { 
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: { 'Content-Type': 'text/plain' }
+    });
   }
 }
 
-// Network first with cache fallback - for API requests
-async function networkFirstWithCache(request) {
+// Network first strategy - for dynamic content
+async function networkFirst(request) {
   try {
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
@@ -137,25 +145,6 @@ async function networkFirstWithCache(request) {
   }
 }
 
-// Stale while revalidate - for dynamic content
-async function staleWhileRevalidate(request) {
-  const cache = await caches.open(DYNAMIC_CACHE_NAME);
-  const cachedResponse = await cache.match(request);
-  
-  const fetchPromise = fetch(request).then((networkResponse) => {
-    if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
-    }
-    return networkResponse;
-  }).catch(() => {
-    // Network failed, return cached version if available
-    return cachedResponse;
-  });
-  
-  // Return cached version immediately if available, otherwise wait for network
-  return cachedResponse || fetchPromise;
-}
-
 // Background sync for offline actions
 self.addEventListener('sync', (event) => {
   console.log('Service Worker: Background sync triggered', event.tag);
@@ -167,12 +156,8 @@ self.addEventListener('sync', (event) => {
 
 async function doBackgroundSync() {
   try {
-    // Handle any pending offline actions
     console.log('Service Worker: Performing background sync');
-    
-    // You can implement offline queue processing here
-    // For example, sync study sessions that were created offline
-    
+    // Handle any pending offline actions here
   } catch (error) {
     console.error('Background sync failed:', error);
   }
@@ -250,4 +235,6 @@ self.addEventListener('error', (event) => {
 
 self.addEventListener('unhandledrejection', (event) => {
   console.error('Service Worker: Unhandled promise rejection', event.reason);
+  // Prevent the default behavior to avoid console spam
+  event.preventDefault();
 });

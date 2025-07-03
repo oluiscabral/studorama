@@ -35,6 +35,8 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/success" element={<SuccessPage />} />
+          {/* Catch all route - redirect to home */}
+          <Route path="*" element={<Dashboard />} />
         </Routes>
       </Layout>
     </Router>

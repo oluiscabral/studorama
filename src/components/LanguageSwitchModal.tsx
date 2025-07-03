@@ -42,7 +42,7 @@ export default function LanguageSwitchModal({
     // Small delay to ensure modal is closed before triggering language change
     setTimeout(() => {
       onConfirm(resetPrompts, rememberChoice);
-    }, 100);
+    }, 150);
   };
 
   return (
@@ -104,7 +104,7 @@ export default function LanguageSwitchModal({
             </div>
           </div>
 
-          {/* Mobile Browser Warning */}
+          {/* Page Refresh Warning */}
           <div className="mb-6">
             <div 
               className="border rounded-lg p-4"
@@ -114,12 +114,12 @@ export default function LanguageSwitchModal({
               }}
             >
               <h4 className="font-medium mb-2" style={{ color: themeConfig.colors.warning }}>
-                📱 {language === 'pt-BR' ? 'Aviso para Dispositivos Móveis' : 'Mobile Device Notice'}
+                🔄 {t.languageChange} - {language === 'pt-BR' ? 'Aviso Importante' : 'Important Notice'}
               </h4>
               <p className="text-sm" style={{ color: themeConfig.colors.warning }}>
                 {language === 'pt-BR' 
-                  ? 'A página será recarregada e você será redirecionado para a página inicial para aplicar o novo idioma. Isso é normal e necessário para garantir que todas as traduções sejam aplicadas corretamente.'
-                  : 'The page will refresh and you will be redirected to the home page to apply the new language. This is normal and necessary to ensure all translations are applied correctly.'
+                  ? 'A página será recarregada e você será redirecionado para a página inicial para aplicar o novo idioma. Isso é necessário para garantir que todas as traduções sejam aplicadas corretamente.'
+                  : 'The page will refresh and you will be redirected to the home page to apply the new language. This is necessary to ensure all translations are applied correctly.'
                 }
               </p>
             </div>

@@ -81,6 +81,7 @@ class DeployManager {
    */
   build() {
     console.log('🏗️  Building application...');
+    this.exec('npm install');
     this.exec('npm run build');
     console.log('✅ Build completed');
   }

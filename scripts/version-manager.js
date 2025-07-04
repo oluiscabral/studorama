@@ -165,28 +165,34 @@ class VersionManager {
   }
 
   /**
-   * Update constants file (for build-time version)
+   * Update constants file with static version strings
    */
   updateConstants(newVersion) {
     try {
       let content = fs.readFileSync(this.constantsPath, 'utf8');
       
-      // Update cache names that use APP_VERSION
+      // Update APP_VERSION constant
       content = content.replace(
-        /STATIC: `studorama-static-v\$\{APP_VERSION\}`/,
+        /export const APP_VERSION = '[^']*'/,
+        `export const APP_VERSION = '${newVersion}'`
+      );
+      
+      // Update cache names in CACHE_NAMES object
+      content = content.replace(
+        /STATIC: `studorama-static-v[^`]*`/,
         `STATIC: \`studorama-static-v${newVersion}\``
       );
       content = content.replace(
-        /DYNAMIC: `studorama-dynamic-v\$\{APP_VERSION\}`/,
+        /DYNAMIC: `studorama-dynamic-v[^`]*`/,
         `DYNAMIC: \`studorama-dynamic-v${newVersion}\``
       );
       content = content.replace(
-        /MAIN: `studorama-v\$\{APP_VERSION\}`/,
+        /MAIN: `studorama-v[^`]*`/,
         `MAIN: \`studorama-v${newVersion}\``
       );
       
       fs.writeFileSync(this.constantsPath, content);
-      console.log(`✓ Updated constants.ts cache names to v${newVersion}`);
+      console.log(`✓ Updated constants.ts with static version ${newVersion}`);
     } catch (error) {
       console.error('Failed to update constants.ts:', error.message);
     }

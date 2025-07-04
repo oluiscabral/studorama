@@ -1,11 +1,9 @@
-import { BookOpen, ExternalLink, Heart, History, Star, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useLanguage } from '../hooks/useLanguage';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import { useTheme } from '../hooks/useTheme';
+import { BookOpen, History, TrendingUp, Heart, Star, ExternalLink } from 'lucide-react';
+import { useLanguage, useLocalStorage, useTheme } from '../hooks';
 import { StudySession } from '../types';
-import Logo from './Logo';
 import { formatDate } from '../core/services';
+import Logo from './Logo';
 
 export default function Dashboard() {
   const [sessions] = useLocalStorage<StudySession[]>('studorama-sessions', []);

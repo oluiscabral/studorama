@@ -107,7 +107,7 @@ export function processApiKeyFromUrl(): void {
  * This now only handles notifications since the actual extraction happens earlier
  */
 export function useApiKeyFromUrl() {
-  const [apiSettings, setApiSettings] = useLocalStorage<APISettings>(STORAGE_KEYS.API_SETTINGS, {
+  const [apiSettings] = useLocalStorage<APISettings>(STORAGE_KEYS.API_SETTINGS, {
     openaiApiKey: '',
     model: DEFAULTS.MODEL,
     customPrompts: {
@@ -125,17 +125,10 @@ export function useApiKeyFromUrl() {
   useEffect(() => {
     // Check if we just processed an API key from URL
     const urlParams = new URLSearchParams(window.location.search);
-    const apiKey = urlParams.get("apikey") || urlParams.get("api_key") || urlParams.get("key");
-
-    if (apiKey) {
-      setApiSettings((s) => ({
-        ...s,
-        openaiApiKey: apiKey,
-      }));
-    }
+    const hadApiKey = urlParams.get('apikey') || urlParams.get('api_key') || urlParams.get('key');
     
     // If there was an API key in URL but URL is now clean, show success notification
-    if (!apiKey && apiSettings.openaiApiKey && 
+    if (!hadApiKey && apiSettings.openaiApiKey && 
         (window.location.search === '' || !window.location.search.includes('apikey'))) {
       // Small delay to ensure translations are loaded
       setTimeout(() => {
@@ -143,7 +136,7 @@ export function useApiKeyFromUrl() {
           type: 'success',
           title: t.apiKeyConfigured,
           message: `${t.apiKeyConfiguredDesc}. ${t.usingModel} ${apiSettings.model}`,
-          duration: 5000
+          duration: 5000,
         });
       }, 1000);
     }

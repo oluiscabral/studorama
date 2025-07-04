@@ -118,6 +118,69 @@ Studorama is optimized for search engines with:
 - Structured data markup
 - Semantic HTML structure
 
+## 🚀 Development & Deployment
+
+### Version Management
+
+Studorama includes an automated versioning system that increments version numbers on deployment:
+
+#### Manual Version Bumping
+```bash
+# Bump patch version (bug fixes)
+npm run version:patch
+
+# Bump minor version (new features)
+npm run version:minor
+
+# Bump major version (breaking changes)
+npm run version:major
+
+# Check current version
+npm run version:info
+```
+
+#### Automated Deployment
+```bash
+# Deploy with patch version bump
+npm run deploy
+
+# Deploy with minor version bump
+npm run deploy:minor
+
+# Deploy with major version bump
+npm run deploy:major
+```
+
+The deployment script automatically:
+- Runs pre-deployment checks
+- Bumps the version number
+- Updates all relevant files (package.json, .env, index.html, service worker)
+- Creates a git tag
+- Builds the application
+- Pushes changes to the repository
+
+#### Version Files Updated
+- `package.json` - Main version field
+- `.env` - APP_VERSION environment variable
+- `index.html` - Structured data softwareVersion
+- `public/sw.js` - Service worker cache names
+- `public/version.json` - Build information
+
+### Build Process
+```bash
+# Development server
+npm run dev
+
+# Production build
+npm run build
+
+# Preview production build
+npm run preview
+
+# Lint code
+npm run lint
+```
+
 ## 🤝 Contributing
 
 We welcome contributions! Here's how you can help:
@@ -143,6 +206,7 @@ We welcome contributions! Here's how you can help:
 - Write clear, descriptive commit messages
 - Test across multiple browsers
 - Ensure accessibility compliance
+- Use the automated versioning system for releases
 
 ## 📄 License
 

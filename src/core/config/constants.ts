@@ -2,8 +2,8 @@
  * Application-wide constants
  */
 
-// Current application version
-export const APP_VERSION = Date.now();
+// Current application version - now uses build-time replacement
+export const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? __APP_VERSION__ ?? 'dev';
 
 // Local storage keys
 export const STORAGE_KEYS = {
@@ -37,7 +37,7 @@ export const SUPPORTED_LANGUAGES = ['en-US', 'pt-BR'];
 // Supported themes
 export const THEME_CATEGORIES = ['standard', 'focus', 'energy', 'calm'] as const;
 
-// Cache names for service worker
+// Cache names for service worker (updated automatically by version manager)
 export const CACHE_NAMES = {
   STATIC: `studorama-static-v${APP_VERSION}`,
   DYNAMIC: `studorama-dynamic-v${APP_VERSION}`,

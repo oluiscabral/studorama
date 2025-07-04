@@ -109,7 +109,7 @@
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Web Browser",
       "browserRequirements": "Requires JavaScript. Supports Chrome, Firefox, Safari, Edge.",
-      "softwareVersion": "1.0.0",
+      "softwareVersion": "2.3.0",
       "datePublished": "2024-01-01",
       "dateModified": "2024-12-20",
       "author": {
@@ -185,7 +185,7 @@
       "price": "0",
       "priceCurrency": "USD",
       "screenshot": "https://www.studorama.com/screenshot.png",
-      "softwareVersion": "1.0.0",
+      "softwareVersion": "2.3.0",
       "datePublished": "2024-01-01",
       "publisher": {
         "@type": "Person",
@@ -377,19 +377,36 @@
     </div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Service Worker Registration -->
+    <!-- Optimized Service Worker Registration -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js')
-            .then(function(registration) {
-              console.log('SW registered: ', registration);
-            })
-            .catch(function(registrationError) {
-              console.log('SW registration failed: ', registrationError);
+      // Register service worker only after the page has loaded to avoid blocking
+      window.addEventListener('load', function() {
+        if ('serviceWorker' in navigator) {
+          // Use requestIdleCallback to register SW when browser is idle
+          if ('requestIdleCallback' in window) {
+            requestIdleCallback(function() {
+              navigator.serviceWorker.register('/sw.js')
+                .then(function(registration) {
+                  console.log('SW registered: ', registration);
+                })
+                .catch(function(registrationError) {
+                  console.log('SW registration failed: ', registrationError);
+                });
             });
-        });
-      }
+          } else {
+            // Fallback for browsers without requestIdleCallback
+            setTimeout(function() {
+              navigator.serviceWorker.register('/sw.js')
+                .then(function(registration) {
+                  console.log('SW registered: ', registration);
+                })
+                .catch(function(registrationError) {
+                  console.log('SW registration failed: ', registrationError);
+                });
+            }, 1000);
+          }
+        }
+      });
     </script>
   </body>
 </html>

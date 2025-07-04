@@ -7,7 +7,18 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "version:bump": "node scripts/version-manager.js bump",
+    "version:major": "node scripts/version-manager.js major",
+    "version:minor": "node scripts/version-manager.js minor",
+    "version:patch": "node scripts/version-manager.js patch",
+    "version:info": "node scripts/version-manager.js info",
+    "deploy": "node scripts/deploy.js deploy",
+    "deploy:major": "node scripts/deploy.js deploy major",
+    "deploy:minor": "node scripts/deploy.js deploy minor",
+    "deploy:patch": "node scripts/deploy.js deploy patch",
+    "predeploy": "npm run lint",
+    "postdeploy": "echo 'Deployment completed successfully!'"
   },
   "dependencies": {
     "json5": "^2.2.3",

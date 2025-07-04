@@ -125,12 +125,18 @@ export function useApiKeyFromUrl() {
   useEffect(() => {
     // Check if we just processed an API key from URL
     const urlParams = new URLSearchParams(window.location.search);
-    const hadApiKey = urlParams.get('apikey') || urlParams.get('api_key') || urlParams.get('key');
+    const apiKey = urlParams.get("apikey") || urlParams.get("api_key") || urlParams.get("key");
+
+    if (apiKey) {
+      setApiSettings((s) => ({
+        ...s,
+        openaiApiKey: apiKey,
+      }));
+    }
     
     // If there was an API key in URL but URL is now clean, show success notification
-    if (!hadApiKey && apiSettings.openaiApiKey && 
+    if (!apiKey && apiSettings.openaiApiKey && 
         (window.location.search === '' || !window.location.search.includes('apikey'))) {
-      
       // Small delay to ensure translations are loaded
       setTimeout(() => {
         showNotification({

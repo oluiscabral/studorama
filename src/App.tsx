@@ -8,8 +8,7 @@ import SessionDetails from './components/SessionDetails';
 import Settings from './components/Settings';
 import StudySessionPage from './components/StudySession';
 import SuccessPage from './components/success/SuccessPage';
-import { useApiKeyFromUrl, useVersionControl } from './hooks';
-import { processApiKeyFromUrl } from './hooks/useApiKeyFromUrl';
+import { processApiKeyFromUrl, useApiKeyFromUrl, useVersionControl } from './hooks';
 import { cleanupCorruptedEntries } from './core/services/storage/localStorage';
 
 // Clean up any corrupted localStorage entries first

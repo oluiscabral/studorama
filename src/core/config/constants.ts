@@ -3,13 +3,12 @@
  */
 
 // Current application version
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = new Date().getTime.toString()
 
 // Local storage keys
 export const STORAGE_KEYS = {
   API_SETTINGS: 'studorama-api-settings',
   LANGUAGE: 'studorama-language',
-  LANGUAGE_SWITCH_PREFERENCE: 'studorama-language-switch-preference',
   SESSIONS: 'studorama-sessions',
   THEME: 'studorama-theme',
   TIMER_PREFERENCES: 'studorama-timer-preferences',
@@ -59,5 +58,8 @@ export const STATIC_FILES = [
 // Keys to preserve during version migration
 export const PRESERVED_STORAGE_KEYS = [
   STORAGE_KEYS.API_SETTINGS,
-  STORAGE_KEYS.VERSION
+  STORAGE_KEYS.LANGUAGE,
+  STORAGE_KEYS.SESSIONS,
+  STORAGE_KEYS.THEME,
+  STORAGE_KEYS.TIMER_PREFERENCES,
 ];

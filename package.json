@@ -1,7 +1,7 @@
 {
   "name": "studorama",
   "private": false,
-  "version": "2.3.5",
+  "version": "2.3.6",
   "type": "module",
   "scripts": {
     "dev": "vite",

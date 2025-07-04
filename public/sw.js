@@ -1,5 +1,5 @@
 // Lightweight Service Worker optimized for fast initial load
-const CACHE_NAME = 'studorama-v2.3.5';
+const CACHE_NAME = 'studorama-v2.3.6';
 const ESSENTIAL_FILES = [
   '/',
   '/index.html',

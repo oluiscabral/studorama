@@ -8,8 +8,8 @@ export default function LoadingScreen() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center">
       <div className="text-center">
         {/* Animated Logo */}
-        <div className="mb-6 animate-pulse">
-          <Logo size="lg" className="mx-auto" />
+        <div className="mb-6">
+          <Logo size="lg" className="mx-auto animate-pulse" />
         </div>
         
         {/* Loading Text */}
@@ -18,8 +18,8 @@ export default function LoadingScreen() {
         </h1>
         <p className="text-gray-600 mb-6">
           {language === 'pt-BR' 
-            ? 'Inicializando sua experiência de aprendizado...' 
-            : 'Initializing your learning experience...'}
+            ? 'Carregando sua experiência de aprendizado...' 
+            : 'Loading your learning experience...'}
         </p>
         
         {/* Loading Spinner */}
@@ -27,11 +27,11 @@ export default function LoadingScreen() {
           <div className="w-8 h-8 border-3 border-orange-200 border-t-orange-600 rounded-full animate-spin"></div>
         </div>
         
-        {/* Version Info */}
-        <div className="mt-8 text-xs text-gray-500">
+        {/* Performance Tip */}
+        <div className="mt-8 text-xs text-gray-500 max-w-sm mx-auto">
           {language === 'pt-BR' 
-            ? 'Verificando atualizações...' 
-            : 'Checking for updates...'}
+            ? 'Otimizando dados para melhor performance...' 
+            : 'Optimizing data for better performance...'}
         </div>
       </div>
     </div>

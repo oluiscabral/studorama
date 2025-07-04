@@ -6,7 +6,7 @@ import {
 import { APP_VERSION } from '../core/config/constants';
 
 /**
- * Hook to manage version control and migration
+ * Hook to manage version control and migration with performance optimizations
  */
 export function useVersionControl() {
   const [migrationPerformed, setMigrationPerformed] = useState(false);
@@ -14,11 +14,25 @@ export function useVersionControl() {
 
   useEffect(() => {
     // Perform version check and migration on app startup
-    const performMigration = () => {
+    const performMigration = async () => {
       try {
-        const migrated = handleVersionMigration();
+        // Use requestIdleCallback to avoid blocking the main thread
+        const runMigration = () => {
+          return new Promise<boolean>((resolve) => {
+            requestIdleCallback(() => {
+              try {
+                const migrated = handleVersionMigration();
+                resolve(migrated);
+              } catch (error) {
+                console.error('Error during version migration:', error);
+                resolve(false);
+              }
+            });
+          });
+        };
+
+        const migrated = await runMigration();
         setMigrationPerformed(migrated);
-        setIsReady(true);
         
         if (migrated) {
           console.log('Version migration completed successfully');
@@ -27,7 +41,8 @@ export function useVersionControl() {
         }
       } catch (error) {
         console.error('Error during version migration:', error);
-        setIsReady(true); // Still mark as ready to prevent blocking the app
+      } finally {
+        setIsReady(true);
       }
     };
 

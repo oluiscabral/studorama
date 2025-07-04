@@ -31,23 +31,29 @@ export function isFreshInstallation(): boolean {
 }
 
 /**
- * Clear all localStorage data except preserved keys
+ * Clear all localStorage data except preserved keys (optimized for performance)
  */
 export function clearStorageExceptPreserved(): void {
   const allKeys = localStorage.getAllKeys();
   
-  // Remove all keys except preserved ones
-  allKeys.forEach(key => {
-    if (!PRESERVED_STORAGE_KEYS.includes(key)) {
-      localStorage.removeItem(key);
-    }
-  });
+  // Use requestIdleCallback to avoid blocking the main thread
+  requestIdleCallback(() => {
+    // Remove all keys except preserved ones
+    allKeys.forEach(key => {
+      if (!PRESERVED_STORAGE_KEYS.includes(key)) {
+        localStorage.removeItem(key);
+      }
+    });
 
-  console.log(`Cleared ${allKeys.length - PRESERVED_STORAGE_KEYS.length} localStorage items due to version change`);
+    // Clear localStorage cache to free memory
+    localStorage.clearCache();
+
+    console.log(`Cleared ${allKeys.length - PRESERVED_STORAGE_KEYS.length} localStorage items due to version change`);
+  });
 }
 
 /**
- * Handle version migration
+ * Handle version migration with performance optimizations
  * Returns true if migration was performed, false otherwise
  */
 export function handleVersionMigration(): boolean {
@@ -64,14 +70,16 @@ export function handleVersionMigration(): boolean {
   if (isVersionChanged()) {
     console.log(`Version change detected: ${storedVersion} → ${APP_VERSION}`);
     
-    // Clear storage except preserved keys
+    // Clear storage except preserved keys (async to avoid blocking)
     clearStorageExceptPreserved();
     
     // Update stored version
     setStoredVersion(APP_VERSION);
     
-    // Show migration notification
-    showMigrationNotification(storedVersion!, APP_VERSION);
+    // Show migration notification (async)
+    requestIdleCallback(() => {
+      showMigrationNotification(storedVersion!, APP_VERSION);
+    });
     
     return true;
   }
@@ -81,7 +89,7 @@ export function handleVersionMigration(): boolean {
 }
 
 /**
- * Show a notification about version migration
+ * Show a notification about version migration (optimized)
  */
 function showMigrationNotification(oldVersion: string, newVersion: string): void {
   try {

@@ -1,7 +1,7 @@
 {
   "name": "studorama",
   "private": false,
-  "version": "0.0.0",
+  "version": "2.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@types/dom-helpers": "^3.4.1",
     "@types/lodash": "^4.17.20",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",

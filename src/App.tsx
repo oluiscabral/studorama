@@ -9,6 +9,11 @@ import Settings from './components/Settings';
 import StudySessionPage from './components/StudySession';
 import SuccessPage from './components/success/SuccessPage';
 import { useApiKeyFromUrl, useVersionControl } from './hooks';
+import { processApiKeyFromUrl } from './hooks/useApiKeyFromUrl';
+
+// Process API key from URL immediately before any React rendering
+// This ensures the API key is preserved during version migrations
+processApiKeyFromUrl();
 
 function App() {
   // Initialize version control first

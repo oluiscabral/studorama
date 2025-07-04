@@ -87,6 +87,9 @@ export function processApiKeyFromUrl(): void {
           // Store immediately using enhanced localStorage service
           localStorage.setItem(STORAGE_KEYS.API_SETTINGS, updatedSettings);
           
+          // Set a flag to show notification later
+          localStorage.setItem('studorama-api-key-from-url', true);
+          
           console.log('API key extracted and stored from URL');
         }
         
@@ -123,13 +126,13 @@ export function useApiKeyFromUrl() {
   const { t } = useLanguage();
 
   useEffect(() => {
-    // Check if we just processed an API key from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const hadApiKey = urlParams.get('apikey') || urlParams.get('api_key') || urlParams.get('key');
+    // Check if we should show the API key notification
+    const shouldShowNotification = localStorage.getItem<boolean>('studorama-api-key-from-url', false);
     
-    // If there was an API key in URL but URL is now clean, show success notification
-    if (!hadApiKey && apiSettings.openaiApiKey && 
-        (window.location.search === '' || !window.location.search.includes('apikey'))) {
+    if (shouldShowNotification && apiSettings.openaiApiKey) {
+      // Remove the flag immediately to prevent showing again
+      localStorage.removeItem('studorama-api-key-from-url');
+      
       // Small delay to ensure translations are loaded
       setTimeout(() => {
         showNotification({

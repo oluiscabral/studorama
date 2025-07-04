@@ -39,9 +39,9 @@ export const THEME_CATEGORIES = ['standard', 'focus', 'energy', 'calm'] as const
 
 // Cache names for service worker (updated automatically by version manager)
 export const CACHE_NAMES = {
-  STATIC: `studorama-static-v${APP_VERSION}`,
-  DYNAMIC: `studorama-dynamic-v${APP_VERSION}`,
-  MAIN: `studorama-v${APP_VERSION}`
+  STATIC: `studorama-static-v2.3.1`,
+  DYNAMIC: `studorama-dynamic-v2.3.1`,
+  MAIN: `studorama-v2.3.1`
 };
 
 // Static files to cache

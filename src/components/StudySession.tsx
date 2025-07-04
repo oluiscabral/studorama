@@ -5,13 +5,13 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useTheme } from '../hooks/useTheme';
 import { APISettings, LearningSettings, LearningTechniquesPreference, Question, QuestionTimer, SessionTimer, StudySession, TimerPreferences, TimerSettings } from '../types';
-import { getRandomModifierPlaceholder } from '../utils/i18n';
 import { evaluateAnswer, generateDissertativeQuestion, generateElaborativeQuestion, generateQuestion } from '../utils/openai';
 import MarkdownRenderer from './MarkdownRenderer';
 import SessionEditModal from './SessionEditModal';
 import TimerSettingsModal from './TimerSettingsModal';
 import IconButton from './ui/IconButton';
 import { isEqual } from 'lodash';
+import { getRandomModifierPlaceholder } from '../core/services';
 
 const DEFAULT_LEARNING_SETTINGS: LearningSettings = {
   spacedRepetition: true,

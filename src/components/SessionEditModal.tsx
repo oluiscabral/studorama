@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../hooks/useTheme';
 import { LearningSettings, StudySession, TimerSettings } from '../types';
-import { getRandomModifierPlaceholder } from '../utils/i18n';
 import IconButton from './ui/IconButton';
+import { getRandomModifierPlaceholder } from '../core/services';
 
 interface SessionEditModalProps {
   session: StudySession;

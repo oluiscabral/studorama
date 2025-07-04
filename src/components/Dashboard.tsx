@@ -4,8 +4,8 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useTheme } from '../hooks/useTheme';
 import { StudySession } from '../types';
-import { formatDate } from '../utils/i18n';
 import Logo from './Logo';
+import { formatDate } from '../core/services';
 
 export default function Dashboard() {
   const [sessions] = useLocalStorage<StudySession[]>('studorama-sessions', []);

@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { StudySession } from '../../types';
-import { formatDate } from '../../utils/i18n';
 import SessionEditModal from '../SessionEditModal';
+import { formatDate } from '../../core/services';
 
 export default function SessionHistory() {
   const [sessions, setSessions] = useLocalStorage<StudySession[]>('studorama-sessions', []);

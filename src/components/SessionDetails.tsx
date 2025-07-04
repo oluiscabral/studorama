@@ -3,8 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { StudySession } from '../types';
-import { formatDate } from '../utils/i18n';
 import MarkdownRenderer from './MarkdownRenderer';
+import { formatDate } from '../core/services';
 
 export default function SessionDetails() {
   const { id } = useParams<{ id: string }>();

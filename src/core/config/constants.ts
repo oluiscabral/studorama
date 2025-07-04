@@ -3,7 +3,7 @@
  */
 
 // Current application version
-export const APP_VERSION = new Date().getTime.toString()
+export const APP_VERSION = Date.now();
 
 // Local storage keys
 export const STORAGE_KEYS = {
@@ -58,8 +58,5 @@ export const STATIC_FILES = [
 // Keys to preserve during version migration
 export const PRESERVED_STORAGE_KEYS = [
   STORAGE_KEYS.API_SETTINGS,
-  STORAGE_KEYS.LANGUAGE,
-  STORAGE_KEYS.SESSIONS,
-  STORAGE_KEYS.THEME,
-  STORAGE_KEYS.TIMER_PREFERENCES,
+  STORAGE_KEYS.VERSION
 ];

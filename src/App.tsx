@@ -10,6 +10,10 @@ import StudySessionPage from './components/StudySession';
 import SuccessPage from './components/success/SuccessPage';
 import { useApiKeyFromUrl, useVersionControl } from './hooks';
 import { processApiKeyFromUrl } from './hooks/useApiKeyFromUrl';
+import { cleanupCorruptedEntries } from './core/services/storage/localStorage';
+
+// Clean up any corrupted localStorage entries first
+cleanupCorruptedEntries();
 
 // Process API key from URL immediately before any React rendering
 // This ensures the API key is preserved during version migrations

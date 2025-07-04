@@ -7,6 +7,17 @@ const cache = new Map<string, { value: any; timestamp: number }>();
 const CACHE_TTL = 5000; // 5 seconds cache TTL
 
 /**
+ * Check if a value is corrupted (like "[object Object]")
+ */
+function isCorruptedValue(item: string): boolean {
+  return item === '[object Object]' || 
+         item === '[object Array]' || 
+         item === 'undefined' || 
+         item === 'null' ||
+         (item.startsWith('[object ') && item.endsWith(']'));
+}
+
+/**
  * Get an item from localStorage with type safety and caching
  */
 export function getItem<T>(key: string, defaultValue: T): T {
@@ -22,6 +33,14 @@ export function getItem<T>(key: string, defaultValue: T): T {
       return defaultValue;
     }
 
+    // Check for corrupted data
+    if (isCorruptedValue(item)) {
+      console.warn(`Corrupted data detected for localStorage key "${key}": ${item}. Using default value.`);
+      // Remove corrupted data
+      window.localStorage.removeItem(key);
+      return defaultValue;
+    }
+
     const parsed = JSON.parse(item);
     
     // Update cache
@@ -30,6 +49,18 @@ export function getItem<T>(key: string, defaultValue: T): T {
     return parsed;
   } catch (error) {
     console.error(`Error reading localStorage key "${key}":`, error);
+    
+    // If parsing failed, try to clean up corrupted data
+    try {
+      const item = window.localStorage.getItem(key);
+      if (item && isCorruptedValue(item)) {
+        console.warn(`Removing corrupted localStorage key "${key}"`);
+        window.localStorage.removeItem(key);
+      }
+    } catch (cleanupError) {
+      console.error(`Error cleaning up corrupted localStorage key "${key}":`, cleanupError);
+    }
+    
     return defaultValue;
   }
 }
@@ -40,6 +71,13 @@ export function getItem<T>(key: string, defaultValue: T): T {
 export function setItem<T>(key: string, value: T): boolean {
   try {
     const serialized = JSON.stringify(value);
+    
+    // Validate that serialization worked correctly
+    if (isCorruptedValue(serialized)) {
+      console.error(`Attempted to store corrupted value for key "${key}": ${serialized}`);
+      return false;
+    }
+    
     window.localStorage.setItem(key, serialized);
     
     // Update cache
@@ -56,9 +94,12 @@ export function setItem<T>(key: string, value: T): boolean {
       
       // Try again after clearing cache
       try {
-        window.localStorage.setItem(key, JSON.stringify(value));
-        cache.set(key, { value, timestamp: Date.now() });
-        return true;
+        const serialized = JSON.stringify(value);
+        if (!isCorruptedValue(serialized)) {
+          window.localStorage.setItem(key, serialized);
+          cache.set(key, { value, timestamp: Date.now() });
+          return true;
+        }
       } catch (retryError) {
         console.error(`Retry failed for localStorage key "${key}":`, retryError);
       }
@@ -163,4 +204,37 @@ export function getCacheStats() {
     keys: Array.from(cache.keys()),
     totalMemory: JSON.stringify(Array.from(cache.values())).length
   };
+}
+
+/**
+ * Clean up corrupted localStorage entries
+ */
+export function cleanupCorruptedEntries(): number {
+  let cleanedCount = 0;
+  
+  try {
+    const keys = getAllKeys();
+    
+    for (const key of keys) {
+      try {
+        const item = window.localStorage.getItem(key);
+        if (item && isCorruptedValue(item)) {
+          console.warn(`Cleaning up corrupted localStorage entry: ${key}`);
+          window.localStorage.removeItem(key);
+          cache.delete(key);
+          cleanedCount++;
+        }
+      } catch (error) {
+        console.error(`Error checking localStorage key "${key}" for corruption:`, error);
+      }
+    }
+    
+    if (cleanedCount > 0) {
+      console.log(`Cleaned up ${cleanedCount} corrupted localStorage entries`);
+    }
+  } catch (error) {
+    console.error('Error during localStorage cleanup:', error);
+  }
+  
+  return cleanedCount;
 }

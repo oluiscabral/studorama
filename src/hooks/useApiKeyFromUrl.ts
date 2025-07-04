@@ -4,6 +4,7 @@ import { useLanguage } from './useLanguage';
 import { APISettings } from '../core/types';
 import { showNotification } from '../core/services/notification';
 import { STORAGE_KEYS, DEFAULTS, API } from '../core/config/constants';
+import * as localStorage from '../core/services/storage/localStorage';
 
 /**
  * Extract API key from URL immediately (before version control)
@@ -83,7 +84,7 @@ export function processApiKeyFromUrl(): void {
             ...(model && { model: model })
           };
           
-          // Store immediately using direct localStorage
+          // Store immediately using enhanced localStorage service
           localStorage.setItem(STORAGE_KEYS.API_SETTINGS, updatedSettings);
           
           console.log('API key extracted and stored from URL');

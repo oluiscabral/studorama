@@ -12,14 +12,14 @@ declare module 'react' {
 
 export interface StudySession {
   id: string;
-  subject: string;
-  subjectModifiers?: string[];
+  contexts: string[]; // List of study contexts (minimum 1)
+  instructions?: string[]; // Optional special instructions
   createdAt: string;
   questions: Question[];
   status: 'active' | 'completed';
   score: number;
   totalQuestions: number;
-  questionType?: 'multiple-choice' | 'dissertative' | 'mixed';
+  questionType?: 'multipleChoice' | 'dissertative' | 'mixed';
   learningSettings?: LearningSettings;
   spacedRepetition?: SpacedRepetitionData;
   currentQuestionIndex?: number; // Track which question the user was on
@@ -31,14 +31,9 @@ export interface StudySession {
   sessionState?: SessionState;
   
   // Session history tracking
-  subjectHistory?: SubjectHistoryEntry[];
-  modifierHistory?: ModifierHistoryEntry[];
+  contextsHistory?: ContextsHistoryEntry[];
+  instructionHistory?: InstructionHistoryEntry[];
   learningSettingsHistory?: LearningSettingsHistoryEntry[];
-  
-  // Timer settings
-  timerSettings?: TimerSettings;
-  sessionTimer?: SessionTimer;
-  questionTimers?: QuestionTimer[];
 }
 
 export interface SessionState {
@@ -54,18 +49,18 @@ export interface SessionState {
   lastSavedAt: string;
 }
 
-export interface SubjectHistoryEntry {
+export interface ContextsHistoryEntry {
   id: string;
-  previousSubject: string;
-  newSubject: string;
+  previousContexts: string[];
+  newContexts: string[];
   changedAt: string;
   reason?: string;
 }
 
-export interface ModifierHistoryEntry {
+export interface InstructionHistoryEntry {
   id: string;
-  action: 'added' | 'removed' | 'modified';
-  modifier: string;
+  action: 'added' | 'removed';
+  instruction: string;
   previousValue?: string;
   changedAt: string;
 }
@@ -77,36 +72,6 @@ export interface LearningSettingsHistoryEntry {
   changedAt: string;
 }
 
-export interface TimerSettings {
-  sessionTimerEnabled: boolean;
-  sessionTimerDuration?: number; // in minutes
-  questionTimerEnabled: boolean;
-  questionTimerDuration?: number; // in seconds
-  accumulateQuestionTime: boolean;
-  showTimerWarnings: boolean;
-  autoSubmitOnTimeout: boolean;
-  soundEnabled?: boolean;
-  vibrationEnabled?: boolean;
-}
-
-export interface SessionTimer {
-  startTime: string;
-  endTime?: string;
-  pausedTime?: number; // accumulated paused time in ms
-  isPaused: boolean;
-  totalElapsed?: number; // in ms
-}
-
-export interface QuestionTimer {
-  questionId: string;
-  startTime: string;
-  endTime?: string;
-  pausedTime?: number;
-  timeSpent: number; // in ms
-  accumulatedTime?: number; // from previous questions if accumulating
-  timedOut: boolean;
-}
-
 export interface Question {
   id: string;
   question: string;
@@ -116,7 +81,7 @@ export interface Question {
   isCorrect?: boolean;
   attempts: number;
   feedback?: string;
-  type: 'multiple-choice' | 'dissertative';
+  type: 'multipleChoice' | 'dissertative';
   correctAnswerText?: string;
   aiEvaluation?: string;
   difficulty?: 'easy' | 'medium' | 'hard';

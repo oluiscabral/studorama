@@ -1,15 +1,15 @@
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import Layout from './components/layout/Layout';
-import LoadingScreen from './components/LoadingScreen';
 import Dashboard from './components/pages/Dashboard';
 import SessionHistory from './components/pages/SessionHistory';
 import PricingPage from './components/pricing/PricingPage';
 import SessionDetails from './components/SessionDetails';
-import Settings from './components/Settings';
-import StudySessionPage from './components/StudySession';
+import SettingsPage from './components/pages/SettingsPage/SettingsPage';
+import StudyPage from './components/pages/StudyPage/StudyPage';
 import SuccessPage from './components/success/SuccessPage';
 import { processApiKeyFromUrl, useApiKeyFromUrl, useVersionControl } from './hooks';
 import { cleanupCorruptedEntries } from './core/services/storage/localStorage';
+import LoadingScreen from './components/LoadingScreen';
 
 // Clean up any corrupted localStorage entries first
 cleanupCorruptedEntries();
@@ -35,10 +35,10 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/study" element={<StudySessionPage />} />
+          <Route path="/study" element={<StudyPage />} />
           <Route path="/history" element={<SessionHistory />} />
           <Route path="/session/:id" element={<SessionDetails />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/success" element={<SuccessPage />} />
           {/* Catch all route - redirect to home */}

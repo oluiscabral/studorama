@@ -51,11 +51,11 @@ export default function SessionDetails() {
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{session.subject}</h1>
-            {session.subjectModifiers && session.subjectModifiers.length > 0 && (
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{session.contexts.join(', ')}</h1>
+            {session.instructions && session.instructions.length > 0 && (
               <div className="mt-1 space-y-1">
-                {session.subjectModifiers.map((modifier, index) => (
-                  <p key={index} className="text-sm text-gray-600 truncate">{modifier}</p>
+                {session.instructions.map((instruction, index) => (
+                  <p key={index} className="text-sm text-gray-600 truncate">{instruction}</p>
                 ))}
               </div>
             )}
@@ -147,7 +147,7 @@ export default function SessionDetails() {
                     )}
                   </div>
 
-                  {question.type === 'multiple-choice' && question.options ? (
+                  {question.type === 'multipleChoice' && question.options ? (
                     <div className="space-y-2 mb-4">
                       {question.options.map((option, optionIndex) => (
                         <div
@@ -232,7 +232,7 @@ export default function SessionDetails() {
                     </div>
                     <div className="flex items-center">
                       <BookOpen className="w-4 h-4 mr-1 flex-shrink-0" />
-                      {question.type === 'multiple-choice' ? t.multipleChoice : t.dissertative}
+                      {question.type === 'multipleChoice' ? t.multipleChoice : t.dissertative}
                     </div>
                   </div>
                 </div>

@@ -3,7 +3,7 @@
  */
 
 // Current application version - static string updated by version manager
-export const APP_VERSION = '2.3.8';
+export const APP_VERSION = '2.4.0';
 
 // Local storage keys
 export const STORAGE_KEYS = {
@@ -39,9 +39,9 @@ export const THEME_CATEGORIES = ['standard', 'focus', 'energy', 'calm'] as const
 
 // Cache names for service worker (updated automatically by version manager)
 export const CACHE_NAMES = {
-  STATIC: `studorama-static-v2.3.8`,
-  DYNAMIC: `studorama-dynamic-v2.3.8`,
-  MAIN: `studorama-v2.3.8`
+  STATIC: `studorama-static-v2.4.0`,
+  DYNAMIC: `studorama-dynamic-v2.4.0`,
+  MAIN: `studorama-v2.4.0`
 };
 
 // Static files to cache
@@ -50,16 +50,14 @@ export const STATIC_FILES = [
   '/index.html',
   '/manifest.json',
   '/favicon.ico',
-  '/favicon-16x16.png',
-  '/favicon-32x32.png',
   '/apple-touch-icon.png'
 ];
 
 // Keys to preserve during version migration
 export const PRESERVED_STORAGE_KEYS = [
-  STORAGE_KEYS.API_SETTINGS,
+  // STORAGE_KEYS.API_SETTINGS,
   STORAGE_KEYS.LANGUAGE,
-  STORAGE_KEYS.SESSIONS,
+  // STORAGE_KEYS.SESSIONS,
   STORAGE_KEYS.THEME,
-  STORAGE_KEYS.TIMER_PREFERENCES,
+  // STORAGE_KEYS.TIMER_PREFERENCES,
 ];

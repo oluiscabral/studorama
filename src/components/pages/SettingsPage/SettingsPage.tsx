@@ -72,7 +72,7 @@ export default function SettingsPage() {
     type: 'desktop',
     orientation: 'portrait'
   });
-  const [expandedProvider, setExpandedProvider] = useState<AIProvider | null>(null);
+  const [expandedProvider, setExpandedProvider] = useState<AIProvider | null>('openai');
   const settingsRef = useRef<HTMLDivElement>(null);
 
   // Get all available providers

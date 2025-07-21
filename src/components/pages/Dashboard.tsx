@@ -120,7 +120,7 @@ export default function Dashboard() {
       {/* Status Messages */}
       <div className="space-y-3 sm:space-y-4 max-w-3xl mx-auto">
         {/* API Key Warning */}
-        {!apiSettings && (
+        {/* {!apiSettings && (
           <div 
             className="rounded-xl sm:rounded-2xl p-4 sm:p-5 border shadow-sm animate-slide-up" 
             role="alert" 
@@ -155,10 +155,10 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Model Info */}
-        {apiSettings.openaiApiKey && apiSettings.model && (
+        {/* {apiSettings.openaiApiKey && apiSettings.model && (
           <div 
             className="rounded-xl sm:rounded-2xl p-4 sm:p-5 border shadow-sm animate-slide-up" 
             role="status" 
@@ -185,7 +185,7 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Privacy Notice */}
         {showWelcomeTip && (

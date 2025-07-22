@@ -322,7 +322,7 @@ export default function PricingPage() {
         </div>
 
         {/* Alternative Support Options */}
-        <div className="text-center mb-8 sm:mb-12">
+        {/* <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4" style={{ color: themeConfig.colors.text }}>
             {language === 'pt-BR' ? 'Outras Opções de Apoio' : 'Alternative Support Options'}
           </h2>
@@ -332,10 +332,10 @@ export default function PricingPage() {
               : 'Prefer other ways to support? Check out our direct support options:'
             }
           </p>
-        </div>
+        </div> */}
 
         {/* Support Tiers */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto mb-12 sm:mb-16">
+        {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto mb-12 sm:mb-16">
           {products.map((product, index) => (
             <div
               key={product.id}
@@ -426,7 +426,7 @@ export default function PricingPage() {
               </p>
             </div>
           ))}
-        </div>
+        </div> */}
 
         {/* Why Support Section */}
         <div 

@@ -58,7 +58,7 @@ export const enUS: Translations = {
   currentScore: 'Current Score',
   question: 'Question',
   easy: 'easy',
-  medium: 'medium',
+  // medium: 'medium',
   hard: 'hard',
   confidenceQuestion: 'How confident are you in your answer?',
   notConfident: 'Not confident',
@@ -122,7 +122,6 @@ export const enUS: Translations = {
   openaiPlatform: 'Visit',
   signInOrCreate: 'Sign in or create an account',
   createSecretKey: 'Click "Create new secret key"',
-  copyPasteKey: 'Copy and paste the key here',
   aiPrompts: 'AI Prompts',
   aiPromptsCustomization: 'AI Prompts Customization',
   customizeGeneration: 'Customize how the AI generates and evaluates questions',
@@ -213,6 +212,143 @@ export const enUS: Translations = {
   ready: 'Ready',
   requiresApiKey: 'Requires API Key',
   
+  // AI Provider Settings - NEW TRANSLATIONS
+  aiProvider: 'AI Provider',
+  aiProviderSelection: 'AI Provider Selection',
+  selectAiProvider: 'Select your preferred AI provider',
+  providerConfiguration: 'Provider Configuration',
+  configureProvider: 'Configure Provider',
+  providerStatus: 'Provider Status',
+  providerReady: 'Ready',
+  providerNotConfigured: 'Not Configured',
+  providerInvalidConfig: 'Invalid Configuration',
+  invalidConfiguration: 'Invalid Configuration',
+  apiKeyRequired: 'API key is required',
+  invalidApiKeyFormat: 'Invalid API key format',
+  invalidBaseUrl: 'Invalid base URL format',
+  modelSelection: 'Model Selection',
+  selectModel: 'Select Model',
+  modelInfo: 'Model Information',
+  costTier: 'Cost Tier',
+  contextWindow: 'Context Window',
+  capabilities: 'Capabilities',
+  recommended: 'Recommended',
+  tokens: 'tokens',
+  
+  // Cost Tiers
+  free: 'Free',
+  low: 'Low Cost',
+  medium: 'Medium Cost',
+  high: 'High Cost',
+  
+  // Provider Names & Descriptions
+  openaiProvider: 'OpenAI',
+  openaiDescription: 'Industry-leading AI models including GPT-4 and GPT-3.5',
+  geminiProvider: 'Google Gemini',
+  geminiDescription: 'Google\'s advanced AI models with large context windows',
+  anthropicProvider: 'Anthropic Claude',
+  anthropicDescription: 'Claude models known for safety and reasoning capabilities',
+  deepseekProvider: 'DeepSeek',
+  deepseekDescription: 'Cost-effective AI models with strong performance',
+  ollamaProvider: 'Ollama',
+  ollamaDescription: 'Run AI models locally on your machine',
+  browserProvider: 'Browser AI',
+  browserDescription: 'Experimental local AI running in the browser',
+  
+  // Model Names & Descriptions
+  gpt4o: 'GPT-4o',
+  gpt4oDescription: 'Latest and most capable model with multimodal capabilities',
+  gpt4oMini: 'GPT-4o Mini',
+  gpt4oMiniDescription: 'Faster and more cost-effective version of GPT-4o',
+  gpt4Turbo: 'GPT-4 Turbo',
+  gpt4TurboDescription: 'High performance model with large context window',
+  gpt4: 'GPT-4',
+  gpt4Description: 'Previous generation flagship model',
+  gpt35Turbo: 'GPT-3.5 Turbo',
+  gpt35TurboDescription: 'Fast and economical model',
+  
+  gemini15Pro: 'Gemini 1.5 Pro',
+  gemini15ProDescription: 'Most capable Gemini model with large context window',
+  gemini15Flash: 'Gemini 1.5 Flash',
+  gemini15FlashDescription: 'Fast and efficient model for quick responses',
+  geminiPro: 'Gemini Pro',
+  geminiProDescription: 'Balanced performance and cost',
+  
+  claude35Sonnet: 'Claude 3.5 Sonnet',
+  claude35SonnetDescription: 'Most capable Claude model with excellent reasoning',
+  claude3Haiku: 'Claude 3 Haiku',
+  claude3HaikuDescription: 'Fast and cost-effective model',
+  claude3Opus: 'Claude 3 Opus',
+  claude3OpusDescription: 'Most powerful Claude model for complex tasks',
+  
+  deepseekChat: 'DeepSeek Chat',
+  deepseekChatDescription: 'General purpose conversational model',
+  deepseekCoder: 'DeepSeek Coder',
+  deepseekCoderDescription: 'Specialized model for coding tasks',
+  
+  llama318b: 'Llama 3.1 8B',
+  llama318bDescription: 'Efficient local model for general tasks',
+  llama3170b: 'Llama 3.1 70B',
+  llama3170bDescription: 'Large local model with excellent performance',
+  mistral7b: 'Mistral 7B',
+  mistral7bDescription: 'Fast and efficient local model',
+  codellama13b: 'Code Llama 13B',
+  codellama13bDescription: 'Specialized local model for coding tasks',
+  
+  browserAi: 'Browser AI',
+  browserAiDescription: 'Local AI running in the browser (experimental)',
+  
+  // API Key Labels
+  openaiApiKeyLabel: 'OpenAI API Key',
+  geminiApiKeyLabel: 'Gemini API Key',
+  anthropicApiKeyLabel: 'Anthropic API Key',
+  deepseekApiKeyLabel: 'DeepSeek API Key',
+  
+  // Setup Instructions
+  setupInstructions: 'Setup Instructions',
+  howToGetKey: 'How to get your API key:',
+  
+  // OpenAI Setup
+  visitPlatformOpenai: 'Visit platform.openai.com',
+  signInOpenai: 'Sign in or create an account',
+  navigateApiKeys: 'Navigate to API Keys section',
+  createNewSecretKey: 'Create a new secret key',
+  copyPasteKey: 'Copy and paste the key here',
+  
+  // Gemini Setup
+  visitAiStudio: 'Visit aistudio.google.com',
+  signInGoogle: 'Sign in with Google account',
+  navigateApiKeysGoogle: 'Navigate to API Keys',
+  createNewApiKey: 'Create a new API key',
+  
+  // Anthropic Setup
+  visitConsoleAnthropic: 'Visit console.anthropic.com',
+  signInAnthropic: 'Sign in or create an account',
+  navigateApiKeysAnthropic: 'Navigate to API Keys',
+  createNewApiKeyAnthropic: 'Create a new API key',
+  
+  // DeepSeek Setup
+  visitPlatformDeepseek: 'Visit platform.deepseek.com',
+  signInDeepseek: 'Sign in or create an account',
+  navigateApiKeysDeepseek: 'Navigate to API Keys',
+  createNewApiKeyDeepseek: 'Create a new API key',
+  
+  // Ollama Setup
+  installOllama: 'Install Ollama from ollama.ai',
+  runOllamaServe: 'Run "ollama serve" to start the server',
+  pullModel: 'Pull a model with "ollama pull llama3.1:8b"',
+  configureBaseUrl: 'Configure the base URL if different from default',
+  
+  // Browser AI Setup
+  enableExperimentalFeatures: 'Enable experimental web features in your browser',
+  experimentalFeature: 'This feature is experimental and may not work in all browsers',
+  limitedPerformance: 'Performance may be limited compared to cloud-based models',
+  
+  // Configuration Fields
+  baseUrl: 'Base URL',
+  baseUrlPlaceholder: 'http://localhost:11434/v1',
+  model: 'Model',
+  
   // Data Management
   dataManagement: 'Data Management',
   manageYourData: 'Manage your Studorama data and privacy',
@@ -236,10 +372,6 @@ export const enUS: Translations = {
   
   // OpenAI Models
   gpt4oRecommended: 'GPT-4o (Recommended)',
-  gpt4oMini: 'GPT-4o Mini',
-  gpt4Turbo: 'GPT-4 Turbo',
-  gpt4: 'GPT-4',
-  gpt35Turbo: 'GPT-3.5 Turbo',
   latestMostCapable: 'Latest and most capable model',
   fasterCostEffective: 'Faster and more cost-effective',
   highPerformance: 'High performance model',

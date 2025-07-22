@@ -1,4 +1,4 @@
-import { Award, Bell, BookOpen, Calendar, CheckSquare, ChevronRight, ExternalLink, Heart, History, Info, Star, Zap } from 'lucide-react';
+import { Award, BookOpen, Calendar, CheckSquare, ChevronRight, ExternalLink, Heart, History, Info, Star, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDate } from '../../core/services/i18n';
@@ -8,10 +8,10 @@ import Logo from '../ui/Logo';
 
 export default function Dashboard() {
   const [sessions] = useLocalStorage<StudySession[]>('studorama-sessions', []);
-  const [apiSettings] = useLocalStorage('studorama-api-settings', { 
-    openaiApiKey: '',
-    model: 'gpt-4o-mini'
-  });
+  // const [apiSettings] = useLocalStorage('studorama-api-settings', { 
+  //   openaiApiKey: '',
+  //   model: 'gpt-4o-mini'
+  // });
   const { t, language } = useLanguage();
   const { themeConfig } = useTheme();
   const [showWelcomeTip, setShowWelcomeTip] = useState(true);

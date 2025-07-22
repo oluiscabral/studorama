@@ -217,6 +217,141 @@ export interface Translations {
   ready: string;
   requiresApiKey: string;
   
+  // AI Provider Settings
+  aiProvider: string;
+  aiProviderSelection: string;
+  selectAiProvider: string;
+  providerConfiguration: string;
+  configureProvider: string;
+  providerStatus: string;
+  providerReady: string;
+  providerNotConfigured: string;
+  providerInvalidConfig: string;
+  invalidConfiguration: string;
+  apiKeyRequired: string;
+  invalidApiKeyFormat: string;
+  invalidBaseUrl: string;
+  modelSelection: string;
+  selectModel: string;
+  modelInfo: string;
+  costTier: string;
+  contextWindow: string;
+  capabilities: string;
+  recommended: string;
+  tokens: string;
+  
+  // Cost Tiers
+  free: string;
+  low: string;
+  high: string;
+  
+  // Provider Names & Descriptions
+  openaiProvider: string;
+  openaiDescription: string;
+  geminiProvider: string;
+  geminiDescription: string;
+  anthropicProvider: string;
+  anthropicDescription: string;
+  deepseekProvider: string;
+  deepseekDescription: string;
+  ollamaProvider: string;
+  ollamaDescription: string;
+  browserProvider: string;
+  browserDescription: string;
+  
+  // Model Names & Descriptions
+  gpt4o: string;
+  gpt4oDescription: string;
+  gpt4oMini: string;
+  gpt4oMiniDescription: string;
+  gpt4Turbo: string;
+  gpt4TurboDescription: string;
+  gpt4: string;
+  gpt4Description: string;
+  gpt35Turbo: string;
+  gpt35TurboDescription: string;
+  
+  gemini15Pro: string;
+  gemini15ProDescription: string;
+  gemini15Flash: string;
+  gemini15FlashDescription: string;
+  geminiPro: string;
+  geminiProDescription: string;
+  
+  claude35Sonnet: string;
+  claude35SonnetDescription: string;
+  claude3Haiku: string;
+  claude3HaikuDescription: string;
+  claude3Opus: string;
+  claude3OpusDescription: string;
+  
+  deepseekChat: string;
+  deepseekChatDescription: string;
+  deepseekCoder: string;
+  deepseekCoderDescription: string;
+  
+  llama318b: string;
+  llama318bDescription: string;
+  llama3170b: string;
+  llama3170bDescription: string;
+  mistral7b: string;
+  mistral7bDescription: string;
+  codellama13b: string;
+  codellama13bDescription: string;
+  
+  browserAi: string;
+  browserAiDescription: string;
+  
+  // API Key Labels
+  openaiApiKeyLabel: string;
+  geminiApiKeyLabel: string;
+  anthropicApiKeyLabel: string;
+  deepseekApiKeyLabel: string;
+  
+  // Setup Instructions
+  setupInstructions: string;
+  howToGetKey: string;
+  
+  // OpenAI Setup
+  visitPlatformOpenai: string;
+  signInOpenai: string;
+  navigateApiKeys: string;
+  createNewSecretKey: string;
+  
+  // Gemini Setup
+  visitAiStudio: string;
+  signInGoogle: string;
+  navigateApiKeysGoogle: string;
+  createNewApiKey: string;
+  
+  // Anthropic Setup
+  visitConsoleAnthropic: string;
+  signInAnthropic: string;
+  navigateApiKeysAnthropic: string;
+  createNewApiKeyAnthropic: string;
+  
+  // DeepSeek Setup
+  visitPlatformDeepseek: string;
+  signInDeepseek: string;
+  navigateApiKeysDeepseek: string;
+  createNewApiKeyDeepseek: string;
+  
+  // Ollama Setup
+  installOllama: string;
+  runOllamaServe: string;
+  pullModel: string;
+  configureBaseUrl: string;
+  
+  // Browser AI Setup
+  enableExperimentalFeatures: string;
+  experimentalFeature: string;
+  limitedPerformance: string;
+  
+  // Configuration Fields
+  baseUrl: string;
+  baseUrlPlaceholder: string;
+  model: string;
+  
   // Data Management
   dataManagement: string;
   manageYourData: string;
@@ -240,10 +375,6 @@ export interface Translations {
   
   // OpenAI Models
   gpt4oRecommended: string;
-  gpt4oMini: string;
-  gpt4Turbo: string;
-  gpt4: string;
-  gpt35Turbo: string;
   latestMostCapable: string;
   fasterCostEffective: string;
   highPerformance: string;

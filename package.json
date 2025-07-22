@@ -21,6 +21,7 @@
     "postdeploy": "echo 'Deployment completed successfully!'"
   },
   "dependencies": {
+    "highlight.js": "^11.11.1",
     "json5": "^2.2.3",
     "lodash": "^4.17.21",
     "lucide-react": "^0.344.0",

@@ -55,6 +55,13 @@ Generate educational questions based exclusively on the subjects, topics, and ac
 **SPECIAL INSTRUCTIONS:**
 {instructionsList}
 
+**CRITICAL CODE REQUIREMENTS:**
+- If your question references code, pseudocode, algorithms, or any programming content, you MUST include the actual code in the question
+- Use proper code formatting with markdown code blocks and language specification
+- Never ask about "the following code" or "the code above" without actually providing the code
+- For programming questions, always include complete, runnable code examples
+- Use \`\`\`language syntax for code blocks (e.g., \`\`\`python, \`\`\`javascript, \`\`\`java)
+
 QUALITY STANDARDS:
 - Focus on conceptual understanding, not memorization
 - Test application of knowledge and problem-solving skills
@@ -70,21 +77,37 @@ CONTENT REQUIREMENTS:
 1. Use clear, well-formatted Markdown for all content
 2. Use **bold** for emphasis and *italics* for subtle emphasis
 3. Use \`inline code\` for technical terms, formulas, or specific values
-4. Use code blocks with language specification for code examples
+4. Use code blocks with language specification for code examples:
+   \`\`\`python
+   # Your code here
+   print("Hello World")
+   \`\`\`
 5. Use numbered lists or bullet points for structured information
 6. For mathematical expressions, use clear descriptive text or inline code
 7. Keep content well-organized and easy to read
 8. Ensure questions are appropriate for the educational setting indicated by the contexts
+9. **MANDATORY**: If asking about code output, behavior, or analysis, include the complete code in the question
 
 RESPONSE FORMAT:
 Return ONLY a JSON object wrapped in \`\`\`json code fences with:
-- question: string (with Markdown formatting)
+- question: string (with Markdown formatting, including code blocks when needed)
 - options: array of 4 strings (with Markdown formatting)
 - correctAnswer: number (0-3)
 - explanation: string (detailed explanation with Markdown formatting)
 - difficulty: string ("{difficulty}")
 
-Example format:
+Example format for code questions:
+\`\`\`json
+{
+  "question": "**What is the output of the following Python code?**\\n\\n\`\`\`python\\nfor i in range(3):\\n    print(i * 2)\\n\`\`\`",
+  "options": ["0\\n2\\n4", "1\\n2\\n3", "0\\n1\\n2", "2\\n4\\n6"],
+  "correctAnswer": 0,
+  "explanation": "**Explanation:** The code iterates through range(3) which gives values 0, 1, 2. Each value is multiplied by 2 and printed, resulting in 0, 2, 4.",
+  "difficulty": "{difficulty}"
+}
+\`\`\`
+
+Example format for non-code questions:
 \`\`\`json
 {
   "question": "**Question text here**",
@@ -124,6 +147,13 @@ Gere questões educacionais baseadas exclusivamente nas matérias, tópicos e n�
 **INSTRUÇÕES ESPECIAIS:**
 {instructionsList}
 
+**REQUISITOS CRÍTICOS PARA CÓDIGO:**
+- Se sua questão referenciar código, pseudocódigo, algoritmos ou qualquer conteúdo de programação, você DEVE incluir o código real na questão
+- Use formatação adequada de código com blocos de código markdown e especificação de linguagem
+- Nunca pergunte sobre "o seguinte código" ou "o código acima" sem realmente fornecer o código
+- Para questões de programação, sempre inclua exemplos de código completos e executáveis
+- Use a sintaxe \`\`\`linguagem para blocos de código (ex: \`\`\`python, \`\`\`javascript, \`\`\`java)
+
 PADRÕES DE QUALIDADE:
 - Foque na compreensão conceitual, não na memorização
 - Teste aplicação de conhecimento e habilidades de resolução de problemas
@@ -139,21 +169,37 @@ REQUISITOS DE CONTEÚDO:
 1. Use formatação Markdown clara e bem estruturada para todo o conteúdo
 2. Use **negrito** para ênfase e *itálico* para ênfase sutil
 3. Use \`código inline\` para termos técnicos, fórmulas ou valores específicos
-4. Use blocos de código com especificação de linguagem para exemplos de código
+4. Use blocos de código com especificação de linguagem para exemplos de código:
+   \`\`\`python
+   # Seu código aqui
+   print("Olá Mundo")
+   \`\`\`
 5. Use listas numeradas ou com marcadores para informações estruturadas
 6. Para expressões matemáticas, use texto descritivo claro ou código inline
 7. Mantenha o conteúdo bem organizado e fácil de ler
 8. Garanta que as questões sejam apropriadas para o ambiente educacional indicado pelos contextos
+9. **OBRIGATÓRIO**: Se perguntando sobre saída de código, comportamento ou análise, inclua o código completo na questão
 
 FORMATO DE RESPOSTA:
 Retorne APENAS um objeto JSON envolvido em \`\`\`json code fences com:
-- question: string (com formatação Markdown)
+- question: string (com formatação Markdown, incluindo blocos de código quando necessário)
 - options: array de 4 strings (com formatação Markdown)
 - correctAnswer: number (0-3)
 - explanation: string (explicação detalhada com formatação Markdown)
 - difficulty: string ("{difficulty}")
 
-Formato de exemplo:
+Formato de exemplo para questões de código:
+\`\`\`json
+{
+  "question": "**Qual é a saída do seguinte código Python?**\\n\\n\`\`\`python\\nfor i in range(3):\\n    print(i * 2)\\n\`\`\`",
+  "options": ["0\\n2\\n4", "1\\n2\\n3", "0\\n1\\n2", "2\\n4\\n6"],
+  "correctAnswer": 0,
+  "explanation": "**Explicação:** O código itera através de range(3) que fornece valores 0, 1, 2. Cada valor é multiplicado por 2 e impresso, resultando em 0, 2, 4.",
+  "difficulty": "{difficulty}"
+}
+\`\`\`
+
+Formato de exemplo para questões não-código:
 \`\`\`json
 {
   "question": "**Texto da questão aqui**",
@@ -186,6 +232,13 @@ Generate educational dissertative questions based exclusively on the subjects, t
 **SPECIAL INSTRUCTIONS:**
 {instructionsList}
 
+**CRITICAL CODE REQUIREMENTS:**
+- If your question references code, pseudocode, algorithms, or any programming content, you MUST include the actual code in the question
+- Use proper code formatting with markdown code blocks and language specification
+- Never ask about "the following code" or "the code above" without actually providing the code
+- For programming questions, always include complete, runnable code examples
+- Use \`\`\`language syntax for code blocks (e.g., \`\`\`python, \`\`\`javascript, \`\`\`java)
+
 QUALITY STANDARDS:
 - Encourage analytical thinking and reasoning
 - Require explanation of thought processes and methodologies
@@ -201,18 +254,34 @@ CONTENT REQUIREMENTS:
 1. Use clear, well-formatted Markdown for all content
 2. Use **bold** for emphasis and *italics* for subtle emphasis
 3. Use \`inline code\` for technical terms, formulas, or specific values
-4. Use numbered lists or bullet points for structured information
-5. For mathematical expressions, use clear descriptive text or inline code
-6. Keep content well-organized and easy to read
+4. Use code blocks with language specification for code examples:
+   \`\`\`python
+   # Your code here
+   print("Hello World")
+   \`\`\`
+5. Use numbered lists or bullet points for structured information
+6. For mathematical expressions, use clear descriptive text or inline code
+7. Keep content well-organized and easy to read
+8. **MANDATORY**: If asking about code analysis, behavior, or review, include the complete code in the question
 
 RESPONSE FORMAT:
 Return ONLY a JSON object wrapped in \`\`\`json code fences with:
-- question: string (with Markdown formatting)
+- question: string (with Markdown formatting, including code blocks when needed)
 - sampleAnswer: string (comprehensive model answer with Markdown formatting)
 - evaluationCriteria: array of 3-4 short evaluation criteria strings
 - difficulty: string ("{difficulty}")
 
-Example format:
+Example format for code questions:
+\`\`\`json
+{
+  "question": "**Analyze the following Python function and explain its purpose, efficiency, and potential improvements:**\\n\\n\`\`\`python\\ndef find_max(numbers):\\n    max_val = numbers[0]\\n    for num in numbers:\\n        if num > max_val:\\n            max_val = num\\n    return max_val\\n\`\`\`",
+  "sampleAnswer": "**Purpose:** This function finds the maximum value in a list of numbers...\\n\\n**Efficiency:** The algorithm has O(n) time complexity...",
+  "evaluationCriteria": ["Correctly identifies function purpose", "Analyzes time complexity", "Suggests meaningful improvements", "Uses proper technical terminology"],
+  "difficulty": "{difficulty}"
+}
+\`\`\`
+
+Example format for non-code questions:
 \`\`\`json
 {
   "question": "**Question text here**",
@@ -232,6 +301,13 @@ Gere questões dissertativas educacionais baseadas exclusivamente nas matérias,
 **INSTRUÇÕES ESPECIAIS:**
 {instructionsList}
 
+**REQUISITOS CRÍTICOS PARA CÓDIGO:**
+- Se sua questão referenciar código, pseudocódigo, algoritmos ou qualquer conteúdo de programação, você DEVE incluir o código real na questão
+- Use formatação adequada de código com blocos de código markdown e especificação de linguagem
+- Nunca pergunte sobre "o seguinte código" ou "o código acima" sem realmente fornecer o código
+- Para questões de programação, sempre inclua exemplos de código completos e executáveis
+- Use a sintaxe \`\`\`linguagem para blocos de código (ex: \`\`\`python, \`\`\`javascript, \`\`\`java)
+
 PADRÕES DE QUALIDADE:
 - Encoraje pensamento analítico e raciocínio
 - Exija explicação de processos de pensamento e metodologias
@@ -247,18 +323,34 @@ REQUISITOS DE CONTEÚDO:
 1. Use formatação Markdown clara e bem estruturada para todo o conteúdo
 2. Use **negrito** para ênfase e *itálico* para ênfase sutil
 3. Use \`código inline\` para termos técnicos, fórmulas ou valores específicos
-4. Use listas numeradas ou com marcadores para informações estruturadas
-5. Para expressões matemáticas, use texto descritivo claro ou código inline
-6. Mantenha o conteúdo bem organizado e fácil de ler
+4. Use blocos de código com especificação de linguagem para exemplos de código:
+   \`\`\`python
+   # Seu código aqui
+   print("Olá Mundo")
+   \`\`\`
+5. Use listas numeradas ou com marcadores para informações estruturadas
+6. Para expressões matemáticas, use texto descritivo claro ou código inline
+7. Mantenha o conteúdo bem organizado e fácil de ler
+8. **OBRIGATÓRIO**: Se perguntando sobre análise de código, comportamento ou revisão, inclua o código completo na questão
 
 FORMATO DE RESPOSTA:
 Retorne APENAS um objeto JSON envolvido em \`\`\`json code fences com:
-- question: string (com formatação Markdown)
+- question: string (com formatação Markdown, incluindo blocos de código quando necessário)
 - sampleAnswer: string (resposta modelo abrangente com formatação Markdown)
 - evaluationCriteria: array de 3-4 strings curtas de critérios de avaliação
 - difficulty: string ("{difficulty}")
 
-Formato de exemplo:
+Formato de exemplo para questões de código:
+\`\`\`json
+{
+  "question": "**Analise a seguinte função Python e explique seu propósito, eficiência e possíveis melhorias:**\\n\\n\`\`\`python\\ndef encontrar_maximo(numeros):\\n    valor_max = numeros[0]\\n    for num in numeros:\\n        if num > valor_max:\\n            valor_max = num\\n    return valor_max\\n\`\`\`",
+  "sampleAnswer": "**Propósito:** Esta função encontra o valor máximo em uma lista de números...\\n\\n**Eficiência:** O algoritmo tem complexidade de tempo O(n)...",
+  "evaluationCriteria": ["Identifica corretamente o propósito da função", "Analisa complexidade de tempo", "Sugere melhorias significativas", "Usa terminologia técnica adequada"],
+  "difficulty": "{difficulty}"
+}
+\`\`\`
+
+Formato de exemplo para questões não-código:
 \`\`\`json
 {
   "question": "**Texto da questão aqui**",
@@ -405,6 +497,13 @@ Generate retrieval practice questions based exclusively on the subjects, topics,
 
 Previous Questions Context: {previousQuestions}
 
+**CRITICAL CODE REQUIREMENTS:**
+- If your question references code, pseudocode, algorithms, or any programming content, you MUST include the actual code in the question
+- Use proper code formatting with markdown code blocks and language specification
+- Never ask about "the following code" or "the code above" without actually providing the code
+- For programming questions, always include complete, runnable code examples
+- Use \`\`\`language syntax for code blocks (e.g., \`\`\`python, \`\`\`javascript, \`\`\`java)
+
 RETRIEVAL PRACTICE PRINCIPLES:
 - Test recall of key concepts from previous material
 - Connect new information to previously learned concepts
@@ -418,11 +517,13 @@ CONTENT REQUIREMENTS:
 1. Use clear, well-formatted Markdown for all content
 2. Use **bold** for emphasis and *italics* for subtle emphasis
 3. Use \`inline code\` for technical terms or specific values
-4. Keep content concise to avoid truncation
+4. Use code blocks with language specification for code examples
+5. Keep content concise to avoid truncation
+6. **MANDATORY**: If asking about code output, behavior, or analysis, include the complete code in the question
 
 RESPONSE FORMAT:
 Return ONLY a JSON object wrapped in \`\`\`json code fences with:
-- question: string (with Markdown formatting)
+- question: string (with Markdown formatting, including code blocks when needed)
 - type: "multipleChoice" or "dissertative"
 - If multipleChoice: options (array), correctAnswer (number), explanation (string)
 - If dissertative: sampleAnswer (string)
@@ -438,6 +539,13 @@ Gere questões de prática de recuperação baseadas exclusivamente nas matéria
 
 Contexto de Questões Anteriores: {previousQuestions}
 
+**REQUISITOS CRÍTICOS PARA CÓDIGO:**
+- Se sua questão referenciar código, pseudocódigo, algoritmos ou qualquer conteúdo de programação, você DEVE incluir o código real na questão
+- Use formatação adequada de código com blocos de código markdown e especificação de linguagem
+- Nunca pergunte sobre "o seguinte código" ou "o código acima" sem realmente fornecer o código
+- Para questões de programação, sempre inclua exemplos de código completos e executáveis
+- Use a sintaxe \`\`\`linguagem para blocos de código (ex: \`\`\`python, \`\`\`javascript, \`\`\`java)
+
 PRINCÍPIOS DE PRÁTICA DE RECUPERAÇÃO:
 - Teste recordação de conceitos-chave do material anterior
 - Conecte novas informações a conceitos previamente aprendidos
@@ -451,11 +559,13 @@ REQUISITOS DE CONTEÚDO:
 1. Use formatação Markdown clara e bem estruturada para todo o conteúdo
 2. Use **negrito** para ênfase e *itálico* para ênfase sutil
 3. Use \`código inline\` para termos técnicos ou valores específicos
-4. Mantenha o conteúdo conciso para evitar truncamento
+4. Use blocos de código com especificação de linguagem para exemplos de código
+5. Mantenha o conteúdo conciso para evitar truncamento
+6. **OBRIGATÓRIO**: Se perguntando sobre saída de código, comportamento ou análise, inclua o código completo na questão
 
 FORMATO DE RESPOSTA:
 Retorne APENAS um objeto JSON envolvido em \`\`\`json code fences com:
-- question: string (com formatação Markdown)
+- question: string (com formatação Markdown, incluindo blocos de código quando necessário)
 - type: "multipleChoice" ou "dissertative"
 - Se múltipla escolha: options (array), correctAnswer (number), explanation (string)
 - Se dissertativa: sampleAnswer (string)

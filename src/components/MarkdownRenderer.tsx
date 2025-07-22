@@ -15,6 +15,36 @@ interface MarkdownRendererProps {
 }
 
 /**
+ * CRITICAL FIX: Extract text content from React elements recursively
+ */
+function extractTextFromReactElement(element: any): string {
+  // Handle null/undefined
+  if (element == null) return '';
+  
+  // Handle strings and numbers directly
+  if (typeof element === 'string' || typeof element === 'number') {
+    return String(element);
+  }
+  
+  // Handle arrays (recursively process each element)
+  if (Array.isArray(element)) {
+    return element.map(extractTextFromReactElement).join('');
+  }
+  
+  // Handle React elements
+  if (element && typeof element === 'object' && element.$$typeof) {
+    // Extract text from props.children recursively
+    if (element.props && element.props.children) {
+      return extractTextFromReactElement(element.props.children);
+    }
+    return '';
+  }
+  
+  // Fallback for other objects
+  return String(element);
+}
+
+/**
  * Enhanced mathematical expression processor for human readability
  */
 export function processMathematicalExpressions(text: string): string {
@@ -160,19 +190,51 @@ function containsMathematicalContent(text: string): boolean {
 }
 
 /**
- * Enterprise-grade Markdown renderer with enhanced mathematical expression support
+ * Check if content contains programming code
+ */
+function containsProgrammingCode(text: string): boolean {
+  // Check for code block markers
+  if (text.includes('```') || text.includes('~~~')) {
+    return true;
+  }
+  
+  // Check for inline code with programming keywords
+  const codePattern = /`[^`]*(?:def|function|class|import|from|if|else|for|while|return|var|let|const|public|private|void|int|string|print|console\.log)[^`]*`/i;
+  if (codePattern.test(text)) {
+    return true;
+  }
+  
+  // Check for common programming patterns
+  const programmingPatterns = [
+    /\b(?:def|function|class|import|from)\s+\w+/i,
+    /\b(?:if|else|for|while|return)\s*[\(\{]/i,
+    /\b(?:var|let|const|public|private|void|int|string)\s+\w+/i,
+    /\b(?:print|console\.log)\s*\(/i,
+    /\w+\s*=\s*\w+\s*\([^)]*\)/,
+    /\w+\.\w+\s*\(/,
+    /\{[^}]*\}/,
+    /\[[^\]]*\]/
+  ];
+  
+  return programmingPatterns.some(pattern => pattern.test(text));
+}
+
+/**
+ * Enterprise-grade Markdown renderer with enhanced code block support
  */
 export default function MarkdownRenderer({
   content,
   className = '',
   darkMode = false,
 }: MarkdownRendererProps) {
-  // Process mathematical expressions in the content before rendering
+  // Process content with improved handling
   const processedContent = useMemo(() => {
+    if (!content) return '';
+    
     let processed = content.trim();
     
-    // If the content contains mathematical expressions, process them
-    if (containsMathematicalContent(processed)) {
+    // Don't process mathematical expressions if content contains programming code
+    if (!containsProgrammingCode(processed) && containsMathematicalContent(processed)) {
       processed = processMathematicalExpressions(processed);
     }
     
@@ -180,6 +242,7 @@ export default function MarkdownRenderer({
   }, [content]);
 
   if (!content) return null;
+
   return (
     <div className={`markdown-renderer ${className}`}>      
       <ReactMarkdown
@@ -187,11 +250,65 @@ export default function MarkdownRenderer({
         rehypePlugins={[rehypeHighlight]}
         components={{
           code({ node, inline, className, children, ...props }) {
-            const codeText = String(children).replace(/\n$/, '');
+            // CRITICAL FIX: Extract text from React elements properly
+            const codeText = extractTextFromReactElement(children).replace(/\n$/, '');
+            
+            console.log('=== DEBUG: Code Component ===');
+            console.log('Inline:', inline);
+            console.log('Children type:', typeof children);
+            console.log('Children value:', children);
+            console.log('Extracted code text:', codeText);
+            console.log('Class name:', className);
+            
             const match = /language-(\w+)/.exec(className || '');
             const lang = match?.[1] ?? '';
 
-            // Check if this is a mathematical expression
+            // CRITICAL FIX: Don't process programming code as mathematical expressions
+            if (containsProgrammingCode(codeText)) {
+              // Handle inline programming code
+              if (inline) {
+                return (
+                  <code 
+                    className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded font-mono text-sm text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600" 
+                    {...props}
+                  >
+                    {codeText}
+                  </code>
+                );
+              }
+
+              // Handle block programming code with syntax highlighting
+              return (
+                <div className="relative my-4">
+                  <SyntaxHighlighter
+                    language={lang || 'text'}
+                    //@ts-ignore
+                    style={darkMode ? materialDark : materialLight}
+                    showLineNumbers={true}
+                    PreTag="div"
+                    className="rounded-lg border border-gray-300 dark:border-gray-600"
+                    customStyle={{
+                      margin: 0,
+                      padding: '1rem',
+                      fontSize: '0.875rem',
+                      lineHeight: '1.5'
+                    }}
+                    {...props}
+                  >
+                    {codeText}
+                  </SyntaxHighlighter>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(codeText)}
+                    className="absolute top-2 right-2 p-1.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded shadow-sm text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    title="Copy code"
+                  >
+                    📋
+                  </button>
+                </div>
+              );
+            }
+
+            // Handle mathematical expressions (existing logic)
             if (containsMathematicalContent(codeText)) {
               const processedMath = processMathematicalExpressions(codeText);
               
@@ -205,8 +322,9 @@ export default function MarkdownRenderer({
                   </span>
                 );
               } else {
+                return (
                   // @ts-ignore
-                  return <div 
+                  <div 
                     className="my-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center"
                     {...props}
                   >
@@ -214,10 +332,11 @@ export default function MarkdownRenderer({
                       {processedMath}
                     </div>
                   </div>
+                );
               }
             }
 
-            // Regular inline code
+            // Regular inline code (non-programming, non-mathematical)
             if (inline) {
               return (
                 <code className="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded font-mono text-sm text-gray-800 dark:text-gray-200" {...props}>
@@ -226,34 +345,39 @@ export default function MarkdownRenderer({
               );
             }
 
-            // Block code with syntax highlighting
+            // Regular block code without syntax highlighting
             return (
               <div className="relative my-4">
-                <SyntaxHighlighter
-                  language={lang}
-                  ref={props.ref as any}
-                  style={darkMode ? materialDark : materialLight as any}
-                  showLineNumbers
-                  PreTag="div"
-                  className="rounded-lg"
-                  {...props}
-                >
-                  {codeText}
-                </SyntaxHighlighter>
+                <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto border border-gray-300 dark:border-gray-600">
+                  <code className="font-mono text-sm text-gray-800 dark:text-gray-200">
+                    {codeText}
+                  </code>
+                </pre>
                 <button
                   onClick={() => navigator.clipboard.writeText(codeText)}
                   className="absolute top-2 right-2 p-1.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded shadow-sm text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   title="Copy code"
                 >
-                  Copy
+                  📋
                 </button>
               </div>
             );
           },
           
-          // Enhanced paragraph handling for mathematical content
+          // CRITICAL FIX: Handle paragraph children properly
           p({ children }) {
-            const textContent = String(children);
+            // CRITICAL FIX: Extract text from React elements
+            const textContent = extractTextFromReactElement(children);
+            
+            console.log('=== DEBUG: Paragraph Component ===');
+            console.log('Children type:', typeof children);
+            console.log('Children value:', children);
+            console.log('Extracted text content:', textContent);
+            
+            // Skip mathematical processing if content contains programming code
+            if (containsProgrammingCode(textContent)) {
+              return <p className="mb-4 leading-relaxed">{children}</p>;
+            }
             
             if (containsMathematicalContent(textContent)) {
               const processedContent = processMathematicalExpressions(textContent);
@@ -268,6 +392,13 @@ export default function MarkdownRenderer({
             }
             
             return <p className="mb-4 leading-relaxed">{children}</p>;
+          },
+          
+          // Enhanced pre block handling for code blocks
+          pre({ children }) {
+            console.log('=== DEBUG: Pre Component ===');
+            console.log('Pre children:', children);
+            return <div className="my-4">{children}</div>;
           },
           
           a({ href, children }) {
@@ -303,22 +434,22 @@ export default function MarkdownRenderer({
           
           // Enhanced heading styles
           h1({ children }) {
-            return <h1 className="text-2xl font-bold mb-4 text-gray-900">{children}</h1>;
+            return <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">{children}</h1>;
           },
           
           h2({ children }) {
-            return <h2 className="text-xl font-bold mb-3 text-gray-900">{children}</h2>;
+            return <h2 className="text-xl font-bold mb-3 text-gray-900 dark:text-gray-100">{children}</h2>;
           },
           
           h3({ children }) {
-            return <h3 className="text-lg font-bold mb-2 text-gray-900">{children}</h3>;
+            return <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-gray-100">{children}</h3>;
           },
           
           // Enhanced table styling
           table({ children }) {
             return (
               <div className="overflow-x-auto my-4">
-                <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+                <table className="min-w-full border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
                   {children}
                 </table>
               </div>
@@ -327,7 +458,7 @@ export default function MarkdownRenderer({
           
           th({ children }) {
             return (
-              <th className="px-4 py-2 bg-gray-100 border-b border-gray-300 text-left font-semibold text-gray-900">
+              <th className="px-4 py-2 bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-600 text-left font-semibold text-gray-900 dark:text-gray-100">
                 {children}
               </th>
             );
@@ -335,7 +466,7 @@ export default function MarkdownRenderer({
           
           td({ children }) {
             return (
-              <td className="px-4 py-2 border-b border-gray-200 text-gray-800">
+              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200">
                 {children}
               </td>
             );

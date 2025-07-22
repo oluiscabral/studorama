@@ -22,6 +22,13 @@ import { useEffect, useRef, useState } from 'react';
 import { STORAGE_KEYS } from '../../../core/config/constants';
 import {
   getAllProviders,
+  getLocalizedApiKeyLabel,
+  getLocalizedCostTier,
+  getLocalizedModelDescription,
+  getLocalizedModelName,
+  getLocalizedProviderDescription,
+  getLocalizedProviderName,
+  getLocalizedSetupInstructions,
   getModel,
   getProviderConfig,
   validateProviderConfig
@@ -83,7 +90,8 @@ export default function SettingsPage() {
   // Validate current provider
   const validation = validateProviderConfig(
     multiProviderSettings.currentProvider,
-    currentProviderSettings
+    currentProviderSettings,
+    language
   );
 
   // Detect device type and orientation
@@ -178,7 +186,7 @@ export default function SettingsPage() {
   const getProviderStatusColor = (providerId: AIProvider) => {
     const settings = multiProviderSettings.providers[providerId];
     const config = getProviderConfig(providerId);
-    const validation = validateProviderConfig(providerId, settings);
+    const validation = validateProviderConfig(providerId, settings, language);
     
     if (!validation.valid) return 'text-red-500';
     if (config.requiresApiKey && !settings.apiKey) return 'text-yellow-500';
@@ -198,10 +206,7 @@ export default function SettingsPage() {
 
     return (
       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${badgeColors[model.costTier]}`}>
-        {model.costTier === 'free' ? (language === 'pt-BR' ? 'Gratuito' : 'Free') :
-         model.costTier === 'low' ? (language === 'pt-BR' ? 'Baixo' : 'Low') :
-         model.costTier === 'medium' ? (language === 'pt-BR' ? 'Médio' : 'Medium') :
-         (language === 'pt-BR' ? 'Alto' : 'High')}
+        {getLocalizedCostTier(model.costTier, language)}
       </span>
     );
   };
@@ -238,8 +243,8 @@ export default function SettingsPage() {
           style={{ backgroundColor: themeConfig.colors.surface }}
         >
           {[
-            { id: 'providers', label: language === 'pt-BR' ? 'IA' : 'AI', icon: Brain },
-            { id: 'language', label: language === 'pt-BR' ? 'Idioma' : 'Language', icon: Globe },
+            { id: 'providers', label: t.aiProvider, icon: Brain },
+            { id: 'language', label: t.language, icon: Globe },
             { id: 'data', label: language === 'pt-BR' ? 'Dados' : 'Data', icon: Trash2 },
           ].map(({ id, label, icon: Icon }) => (
             <button
@@ -273,7 +278,7 @@ export default function SettingsPage() {
                 }}
               >
                 <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4" style={{ color: themeConfig.colors.text }}>
-                  {language === 'pt-BR' ? 'Provedor de IA' : 'AI Provider'}
+                  {t.aiProvider}
                 </h3>
                 
                 <div className="space-y-2 sm:space-y-3">
@@ -310,11 +315,11 @@ export default function SettingsPage() {
                           </div>
                           <div>
                             <span className="font-semibold text-sm sm:text-base" style={{ color: themeConfig.colors.text }}>
-                              {provider.name}
+                              {getLocalizedProviderName(provider.id, language)}
                             </span>
                             {deviceInfo.type !== 'mobile' && (
                               <p className="text-xs sm:text-sm mt-0.5 sm:mt-1" style={{ color: themeConfig.colors.textSecondary }}>
-                                {provider.description}
+                                {getLocalizedProviderDescription(provider.id, language)}
                               </p>
                             )}
                           </div>
@@ -333,7 +338,7 @@ export default function SettingsPage() {
                       {/* Mobile description */}
                       {deviceInfo.type === 'mobile' && (
                         <p className="text-xs mt-1 ml-11" style={{ color: themeConfig.colors.textSecondary }}>
-                          {provider.description}
+                          {getLocalizedProviderDescription(provider.id, language)}
                         </p>
                       )}
                     </button>
@@ -359,10 +364,10 @@ export default function SettingsPage() {
                     </div>
                     <div>
                       <h3 className="text-base sm:text-lg font-semibold" style={{ color: themeConfig.colors.text }}>
-                        {currentProviderConfig.name}
+                        {getLocalizedProviderName(multiProviderSettings.currentProvider, language)}
                       </h3>
                       <p className="text-xs sm:text-sm" style={{ color: themeConfig.colors.textSecondary }}>
-                        {language === 'pt-BR' ? 'Configuração' : 'Configuration'}
+                        {t.providerConfiguration}
                       </p>
                     </div>
                   </div>
@@ -372,7 +377,7 @@ export default function SettingsPage() {
                     {currentProviderConfig.requiresApiKey && (
                       <div>
                         <label className="block text-sm font-semibold mb-2 sm:mb-3" style={{ color: themeConfig.colors.text }}>
-                          {currentProviderConfig.apiKeyLabel}
+                          {getLocalizedApiKeyLabel(multiProviderSettings.currentProvider, language)}
                         </label>
                         <div className="relative">
                           <input
@@ -427,11 +432,11 @@ export default function SettingsPage() {
                           <div className="flex items-center space-x-2 mb-2 sm:mb-3">
                             <Info className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: themeConfig.colors.info }} />
                             <p className="text-xs sm:text-sm font-semibold" style={{ color: themeConfig.colors.info }}>
-                              {language === 'pt-BR' ? 'Como obter sua chave:' : 'How to get your key:'}
+                              {t.howToGetKey}
                             </p>
                           </div>
                           <div className="space-y-2">
-                            {currentProviderConfig.setupInstructions.map((instruction, index) => (
+                            {getLocalizedSetupInstructions(multiProviderSettings.currentProvider, language).map((instruction, index) => (
                               <div key={index} className="flex items-start space-x-2">
                                 <div 
                                   className="w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0"
@@ -456,7 +461,7 @@ export default function SettingsPage() {
                     {(multiProviderSettings.currentProvider === 'ollama') && (
                       <div>
                         <label className="block text-sm font-semibold mb-2 sm:mb-3" style={{ color: themeConfig.colors.text }}>
-                          {language === 'pt-BR' ? 'URL Base' : 'Base URL'}
+                          {t.baseUrl}
                         </label>
                         <input
                           type="url"
@@ -466,7 +471,7 @@ export default function SettingsPage() {
                             'baseUrl',
                             e.target.value
                           )}
-                          placeholder="http://localhost:11434/v1"
+                          placeholder={t.baseUrlPlaceholder}
                           className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 rounded-xl sm:rounded-2xl focus:border-2 outline-none transition-all duration-200 text-sm sm:text-base"
                           style={{
                             backgroundColor: themeConfig.colors.background,
@@ -481,7 +486,7 @@ export default function SettingsPage() {
                     {/* Model Selection */}
                     <div>
                       <label className="block text-sm font-semibold mb-2 sm:mb-3" style={{ color: themeConfig.colors.text }}>
-                        {language === 'pt-BR' ? 'Modelo' : 'Model'}
+                        {t.model}
                       </label>
                       <select
                         value={currentProviderSettings.model}
@@ -503,7 +508,7 @@ export default function SettingsPage() {
                       >
                         {currentProviderConfig.models.map((model) => (
                           <option key={model.id} value={model.id}>
-                            {model.name} {model.recommended ? '(Recommended)' : ''}
+                            {getLocalizedModelName(multiProviderSettings.currentProvider, model.id, language)} {model.recommended ? `(${t.recommended})` : ''}
                           </option>
                         ))}
                       </select>
@@ -516,7 +521,7 @@ export default function SettingsPage() {
                         return (
                           <div className="mt-3 sm:mt-4 flex flex-wrap items-center justify-between gap-2">
                             <p className="text-xs sm:text-sm" style={{ color: themeConfig.colors.textSecondary }}>
-                              {selectedModel.description}
+                              {getLocalizedModelDescription(multiProviderSettings.currentProvider, selectedModel.id, language)}
                             </p>
                             {getModelBadge(multiProviderSettings.currentProvider, currentProviderSettings.model)}
                           </div>
@@ -537,7 +542,7 @@ export default function SettingsPage() {
                           <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 mt-0.5 flex-shrink-0" style={{ color: themeConfig.colors.error }} />
                           <div>
                             <p className="text-xs sm:text-sm font-semibold mb-1 sm:mb-2" style={{ color: themeConfig.colors.error }}>
-                              {language === 'pt-BR' ? 'Configuração Inválida' : 'Invalid Configuration'}
+                              {t.invalidConfiguration}
                             </p>
                             <div className="space-y-1">
                               {validation.errors.map((error, index) => (

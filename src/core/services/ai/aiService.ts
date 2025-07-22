@@ -2,7 +2,6 @@
  * Centralized AI Service with multi-provider support
  */
 
-import { parseJSON } from '../../../utils/openai';
 import { Language } from '../../types';
 import {
   AIError,

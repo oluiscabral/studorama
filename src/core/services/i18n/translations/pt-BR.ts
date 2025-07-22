@@ -122,7 +122,6 @@ export const ptBR: Translations = {
   openaiPlatform: 'Visite a',
   signInOrCreate: 'Faça login ou crie uma conta',
   createSecretKey: 'Clique em "Create new secret key"',
-  copyPasteKey: 'Copie e cole a chave aqui',
   aiPrompts: 'Prompts da IA',
   aiPromptsCustomization: 'Personalização de Prompts da IA',
   customizeGeneration: 'Personalize como a IA gera e avalia questões',
@@ -213,6 +212,142 @@ export const ptBR: Translations = {
   ready: 'Pronto',
   requiresApiKey: 'Requer Chave da API',
   
+  // AI Provider Settings - NEW TRANSLATIONS
+  aiProvider: 'Provedor de IA',
+  aiProviderSelection: 'Seleção de Provedor de IA',
+  selectAiProvider: 'Selecione seu provedor de IA preferido',
+  providerConfiguration: 'Configuração do Provedor',
+  configureProvider: 'Configurar Provedor',
+  providerStatus: 'Status do Provedor',
+  providerReady: 'Pronto',
+  providerNotConfigured: 'Não Configurado',
+  providerInvalidConfig: 'Configuração Inválida',
+  invalidConfiguration: 'Configuração Inválida',
+  apiKeyRequired: 'Chave da API é obrigatória',
+  invalidApiKeyFormat: 'Formato de chave da API inválido',
+  invalidBaseUrl: 'Formato de URL base inválido',
+  modelSelection: 'Seleção de Modelo',
+  selectModel: 'Selecionar Modelo',
+  modelInfo: 'Informações do Modelo',
+  costTier: 'Nível de Custo',
+  contextWindow: 'Janela de Contexto',
+  capabilities: 'Capacidades',
+  recommended: 'Recomendado',
+  tokens: 'tokens',
+  
+  // Cost Tiers
+  free: 'Gratuito',
+  low: 'Baixo Custo',
+  high: 'Alto Custo',
+  
+  // Provider Names & Descriptions
+  openaiProvider: 'OpenAI',
+  openaiDescription: 'Modelos de IA líderes da indústria incluindo GPT-4 e GPT-3.5',
+  geminiProvider: 'Google Gemini',
+  geminiDescription: 'Modelos avançados de IA do Google com grandes janelas de contexto',
+  anthropicProvider: 'Anthropic Claude',
+  anthropicDescription: 'Modelos Claude conhecidos por segurança e capacidades de raciocínio',
+  deepseekProvider: 'DeepSeek',
+  deepseekDescription: 'Modelos de IA econômicos com forte desempenho',
+  ollamaProvider: 'Ollama',
+  ollamaDescription: 'Execute modelos de IA localmente em sua máquina',
+  browserProvider: 'IA do Navegador',
+  browserDescription: 'IA local experimental executando no navegador',
+  
+  // Model Names & Descriptions
+  gpt4o: 'GPT-4o',
+  gpt4oDescription: 'Modelo mais recente e capaz com capacidades multimodais',
+  gpt4oMini: 'GPT-4o Mini',
+  gpt4oMiniDescription: 'Versão mais rápida e econômica do GPT-4o',
+  gpt4Turbo: 'GPT-4 Turbo',
+  gpt4TurboDescription: 'Modelo de alta performance com grande janela de contexto',
+  gpt4: 'GPT-4',
+  gpt4Description: 'Modelo principal da geração anterior',
+  gpt35Turbo: 'GPT-3.5 Turbo',
+  gpt35TurboDescription: 'Modelo rápido e econômico',
+  
+  gemini15Pro: 'Gemini 1.5 Pro',
+  gemini15ProDescription: 'Modelo Gemini mais capaz com grande janela de contexto',
+  gemini15Flash: 'Gemini 1.5 Flash',
+  gemini15FlashDescription: 'Modelo rápido e eficiente para respostas rápidas',
+  geminiPro: 'Gemini Pro',
+  geminiProDescription: 'Performance e custo equilibrados',
+  
+  claude35Sonnet: 'Claude 3.5 Sonnet',
+  claude35SonnetDescription: 'Modelo Claude mais capaz com excelente raciocínio',
+  claude3Haiku: 'Claude 3 Haiku',
+  claude3HaikuDescription: 'Modelo rápido e econômico',
+  claude3Opus: 'Claude 3 Opus',
+  claude3OpusDescription: 'Modelo Claude mais poderoso para tarefas complexas',
+  
+  deepseekChat: 'DeepSeek Chat',
+  deepseekChatDescription: 'Modelo conversacional de propósito geral',
+  deepseekCoder: 'DeepSeek Coder',
+  deepseekCoderDescription: 'Modelo especializado para tarefas de programação',
+  
+  llama318b: 'Llama 3.1 8B',
+  llama318bDescription: 'Modelo local eficiente para tarefas gerais',
+  llama3170b: 'Llama 3.1 70B',
+  llama3170bDescription: 'Modelo local grande com excelente performance',
+  mistral7b: 'Mistral 7B',
+  mistral7bDescription: 'Modelo local rápido e eficiente',
+  codellama13b: 'Code Llama 13B',
+  codellama13bDescription: 'Modelo local especializado para tarefas de programação',
+  
+  browserAi: 'IA do Navegador',
+  browserAiDescription: 'IA local executando no navegador (experimental)',
+  
+  // API Key Labels
+  openaiApiKeyLabel: 'Chave da API OpenAI',
+  geminiApiKeyLabel: 'Chave da API Gemini',
+  anthropicApiKeyLabel: 'Chave da API Anthropic',
+  deepseekApiKeyLabel: 'Chave da API DeepSeek',
+  
+  // Setup Instructions
+  setupInstructions: 'Instruções de Configuração',
+  howToGetKey: 'Como obter sua chave da API:',
+  
+  // OpenAI Setup
+  visitPlatformOpenai: 'Visite platform.openai.com',
+  signInOpenai: 'Faça login ou crie uma conta',
+  navigateApiKeys: 'Navegue até a seção de Chaves da API',
+  createNewSecretKey: 'Crie uma nova chave secreta',
+  copyPasteKey: 'Copie e cole a chave aqui',
+  
+  // Gemini Setup
+  visitAiStudio: 'Visite aistudio.google.com',
+  signInGoogle: 'Faça login com conta Google',
+  navigateApiKeysGoogle: 'Navegue até Chaves da API',
+  createNewApiKey: 'Crie uma nova chave da API',
+  
+  // Anthropic Setup
+  visitConsoleAnthropic: 'Visite console.anthropic.com',
+  signInAnthropic: 'Faça login ou crie uma conta',
+  navigateApiKeysAnthropic: 'Navegue até Chaves da API',
+  createNewApiKeyAnthropic: 'Crie uma nova chave da API',
+  
+  // DeepSeek Setup
+  visitPlatformDeepseek: 'Visite platform.deepseek.com',
+  signInDeepseek: 'Faça login ou crie uma conta',
+  navigateApiKeysDeepseek: 'Navegue até Chaves da API',
+  createNewApiKeyDeepseek: 'Crie uma nova chave da API',
+  
+  // Ollama Setup
+  installOllama: 'Instale o Ollama de ollama.ai',
+  runOllamaServe: 'Execute "ollama serve" para iniciar o servidor',
+  pullModel: 'Baixe um modelo com "ollama pull llama3.1:8b"',
+  configureBaseUrl: 'Configure a URL base se diferente do padrão',
+  
+  // Browser AI Setup
+  enableExperimentalFeatures: 'Habilite recursos experimentais da web no seu navegador',
+  experimentalFeature: 'Este recurso é experimental e pode não funcionar em todos os navegadores',
+  limitedPerformance: 'A performance pode ser limitada comparada a modelos baseados em nuvem',
+  
+  // Configuration Fields
+  baseUrl: 'URL Base',
+  baseUrlPlaceholder: 'http://localhost:11434/v1',
+  model: 'Modelo',
+  
   // Data Management
   dataManagement: 'Gerenciamento de Dados',
   manageYourData: 'Gerencie seus dados do Studorama e privacidade',
@@ -236,10 +371,6 @@ export const ptBR: Translations = {
   
   // OpenAI Models
   gpt4oRecommended: 'GPT-4o (Recomendado)',
-  gpt4oMini: 'GPT-4o Mini',
-  gpt4Turbo: 'GPT-4 Turbo',
-  gpt4: 'GPT-4',
-  gpt35Turbo: 'GPT-3.5 Turbo',
   latestMostCapable: 'Modelo mais recente e capaz',
   fasterCostEffective: 'Mais rápido e econômico',
   highPerformance: 'Modelo de alta performance',

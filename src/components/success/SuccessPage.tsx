@@ -40,8 +40,8 @@ export default function SuccessPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Questions? Contact us at{' '}
-            <a href="mailto:support@studorama.com" className="text-orange-600 hover:text-orange-700">
-              support@studorama.com
+            <a href="mailto:support@studorama.vercel.app" className="text-orange-600 hover:text-orange-700">
+              support@studorama.vercel.app
             </a>
           </p>
         </div>

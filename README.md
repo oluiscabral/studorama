@@ -4,7 +4,7 @@
 
 Transform your learning experience with Studorama, an intelligent study platform that supports multiple AI providers and implements proven learning techniques to enhance your understanding of any subject.
 
-🌐 **Live at: [www.studorama.com](https://www.studorama.com)**
+🌐 **Live at: [www.studorama.vercel.app](https://www.studorama.vercel.app)**
 
 ![Studorama Banner](https://github.com/user-attachments/assets/9c74ca79-9f32-467d-a264-9641d405da02)
 
@@ -75,7 +75,7 @@ Transform your learning experience with Studorama, an intelligent study platform
 ## 🌟 Getting Started
 
 ### 🎯 Quick Start (No Installation)
-1. **Visit [www.studorama.com](https://www.studorama.com)**
+1. **Visit [www.studorama.vercel.app](https://www.studorama.vercel.app)**
 2. **Choose your AI provider** and configure API key (or use free local options)
 3. **Select your language** (English or Portuguese)
 4. **Start studying** - enter any subject and begin learning!
@@ -201,7 +201,7 @@ Studorama implements evidence-based learning techniques from cognitive science r
 ## 🚀 Deployment & Versioning
 
 ### 🌐 Live Deployment
-- **Production**: [www.studorama.com](https://www.studorama.com)
+- **Production**: [www.studorama.vercel.app](https://www.studorama.vercel.app)
 - **CDN**: Global content delivery for fast loading
 - **SSL**: Secure HTTPS with modern encryption
 - **Monitoring**: Real-time performance tracking
@@ -326,4 +326,4 @@ If Studorama helps you learn better, please consider:
 
 *Empowering learners worldwide with AI-driven education technology and evidence-based learning science.*
 
-**🌐 Start learning today at [www.studorama.com](https://www.studorama.com)**
+**🌐 Start learning today at [www.studorama.vercel.app](https://www.studorama.vercel.app)**

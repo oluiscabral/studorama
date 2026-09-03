@@ -5,123 +5,123 @@
   
   <!-- Homepage -->
   <url>
-    <loc>https://www.studorama.com/</loc>
+    <loc>https://www.studorama.vercel.app/</loc>
     <lastmod>2024-12-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/?lang=pt-BR" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.com/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.vercel.app/" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.vercel.app/?lang=pt-BR" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.vercel.app/" />
   </url>
   
   <!-- Portuguese Homepage -->
   <url>
-    <loc>https://www.studorama.com/?lang=pt-BR</loc>
+    <loc>https://www.studorama.vercel.app/?lang=pt-BR</loc>
     <lastmod>2024-12-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/?lang=pt-BR" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.com/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.vercel.app/" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.vercel.app/?lang=pt-BR" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.vercel.app/" />
   </url>
   
   <!-- Study Page -->
   <url>
-    <loc>https://www.studorama.com/study</loc>
+    <loc>https://www.studorama.vercel.app/study</loc>
     <lastmod>2024-12-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/study" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/study?lang=pt-BR" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.com/study" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.vercel.app/study" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.vercel.app/study?lang=pt-BR" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.vercel.app/study" />
   </url>
   
   <!-- Portuguese Study Page -->
   <url>
-    <loc>https://www.studorama.com/study?lang=pt-BR</loc>
+    <loc>https://www.studorama.vercel.app/study?lang=pt-BR</loc>
     <lastmod>2024-12-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/study" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/study?lang=pt-BR" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.com/study" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.vercel.app/study" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.vercel.app/study?lang=pt-BR" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.vercel.app/study" />
   </url>
   
   <!-- History Page -->
   <url>
-    <loc>https://www.studorama.com/history</loc>
+    <loc>https://www.studorama.vercel.app/history</loc>
     <lastmod>2024-12-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/history" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/history?lang=pt-BR" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.com/history" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.vercel.app/history" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.vercel.app/history?lang=pt-BR" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.vercel.app/history" />
   </url>
   
   <!-- Portuguese History Page -->
   <url>
-    <loc>https://www.studorama.com/history?lang=pt-BR</loc>
+    <loc>https://www.studorama.vercel.app/history?lang=pt-BR</loc>
     <lastmod>2024-12-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/history" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/history?lang=pt-BR" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.com/history" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.vercel.app/history" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.vercel.app/history?lang=pt-BR" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.vercel.app/history" />
   </url>
   
   <!-- Settings Page -->
   <url>
-    <loc>https://www.studorama.com/settings</loc>
+    <loc>https://www.studorama.vercel.app/settings</loc>
     <lastmod>2024-12-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/settings" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/settings?lang=pt-BR" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.com/settings" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.vercel.app/settings" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.vercel.app/settings?lang=pt-BR" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.vercel.app/settings" />
   </url>
   
   <!-- Portuguese Settings Page -->
   <url>
-    <loc>https://www.studorama.com/settings?lang=pt-BR</loc>
+    <loc>https://www.studorama.vercel.app/settings?lang=pt-BR</loc>
     <lastmod>2024-12-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/settings" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/settings?lang=pt-BR" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.com/settings" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.vercel.app/settings" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.vercel.app/settings?lang=pt-BR" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.vercel.app/settings" />
   </url>
   
   <!-- Pricing Page -->
   <url>
-    <loc>https://www.studorama.com/pricing</loc>
+    <loc>https://www.studorama.vercel.app/pricing</loc>
     <lastmod>2024-12-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/pricing" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/pricing?lang=pt-BR" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.com/pricing" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.vercel.app/pricing" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.vercel.app/pricing?lang=pt-BR" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.vercel.app/pricing" />
   </url>
   
   <!-- Portuguese Pricing Page -->
   <url>
-    <loc>https://www.studorama.com/pricing?lang=pt-BR</loc>
+    <loc>https://www.studorama.vercel.app/pricing?lang=pt-BR</loc>
     <lastmod>2024-12-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/pricing" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/pricing?lang=pt-BR" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.com/pricing" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.vercel.app/pricing" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.vercel.app/pricing?lang=pt-BR" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.vercel.app/pricing" />
   </url>
   
   <!-- Success Page -->
   <url>
-    <loc>https://www.studorama.com/success</loc>
+    <loc>https://www.studorama.vercel.app/success</loc>
     <lastmod>2024-12-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.com/success" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.com/success?lang=pt-BR" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.com/success" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.studorama.vercel.app/success" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://www.studorama.vercel.app/success?lang=pt-BR" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.studorama.vercel.app/success" />
   </url>
   
 </urlset>
